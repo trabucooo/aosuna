@@ -1,0 +1,54 @@
+/* Página 404: solo CSS y fuentes, sin la intro ni las partículas de la web */
+@import '@fontsource/big-shoulders-display/900';
+@import '@fontsource/schibsted-grotesk/400';
+@import '@fontsource/martian-mono/600';
+
+:root{
+  color-scheme:dark;
+  --ground:#0E1014; --ink:#EEF0F4; --accent:#7D8BFF; --crew:#D6264F;
+  --display:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;
+  --body:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
+  --mono:"Martian Mono",ui-monospace,Menlo,monospace;
+}
+html{background:var(--ground)}
+/* El mismo plano de obra de la web: rejilla de 72 px y un halo de luz */
+body{
+  margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;
+  color:var(--ink);font:400 17px/1.55 var(--body);
+  background:
+    radial-gradient(46vmax 46vmax at 72% 28%,color-mix(in srgb,var(--accent) 18%,transparent),transparent 72%),
+    linear-gradient(color-mix(in srgb,var(--ink) 6%,transparent) 1px,transparent 1px) 0 0/72px 72px,
+    linear-gradient(90deg,color-mix(in srgb,var(--ink) 6%,transparent) 1px,transparent 1px) 0 0/72px 72px,
+    var(--ground);
+}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+p,h1{margin:0}
+
+.lost{box-sizing:border-box;width:100%;max-width:56rem;padding:64px max(16px,env(safe-area-inset-right,0px)) 64px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:18px}
+.eyebrow{font:600 11px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
+
+/* «404» con el cero arrancado: queda su casilla vacía y un cursor del equipo buscándolo */
+.code{display:flex;align-items:center;gap:.04em;font:900 clamp(130px,34vw,300px)/.84 var(--display);color:var(--accent)}
+.slot{position:relative;display:inline-block;width:.44em;height:.74em;margin-inline:.03em;border:3px dashed var(--accent)}
+.cur{position:absolute;left:0;top:0;animation:search 6s ease-in-out infinite}
+.cur svg{display:block;width:20px;height:24px;fill:var(--crew);stroke:#fff;stroke-width:1.3;filter:drop-shadow(0 2px 2px rgba(0,0,0,.25))}
+.cur b{position:absolute;left:15px;top:19px;background:var(--crew);color:#fff;font:600 10px/1 var(--mono);padding:4px 6px;white-space:nowrap}
+/* En em: se mueve en proporción al tamaño del 404, recorriendo la casilla */
+@keyframes search{
+  0%,100%{translate:-.04em -.03em}
+  25%{translate:.3em .06em}
+  50%{translate:.27em .56em}
+  75%{translate:-.02em .46em}
+}
+
+h1{font:900 clamp(38px,8vw,84px)/.95 var(--display);text-transform:uppercase;text-wrap:balance}
+.lead{max-width:36rem;font-size:19px}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
+.btn{background:var(--ink);color:var(--ground);border:1.5px solid var(--ink);padding:14px 18px;font:600 12px/1 var(--mono);text-decoration:none}
+.btn.alt{background:transparent;color:var(--ink)}
+.btn:hover{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+
+@media (prefers-reduced-motion:reduce){
+  .cur{animation:none;translate:.2em .32em}
+}

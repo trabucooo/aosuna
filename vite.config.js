@@ -12,6 +12,7 @@ export default defineConfig({
       input: {
         es: page('./index.html'),
         en: page('./en/index.html'),
+        notFound: page('./404.html'),
       },
     },
   },
