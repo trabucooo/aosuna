@@ -10,6 +10,9 @@ const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const small=()=>innerWidth<=860;
 let vw=innerWidth,vh=innerHeight;
 
+/* ---------- Analítica (Umami). Si no carga o está bloqueada, no pasa nada ---------- */
+function track(name,data){try{window.umami?.track(name,data)}catch(e){}}
+
 /* ---------- Tonos por sección ---------- */
 const TONES={
   paper:['#0E1014','#EEF0F4','#7D8BFF'],
@@ -139,7 +142,7 @@ let gather=false;
 /* Tirar de las letras */
 let repairs=0;
 function bindLetters(){
-  letters.forEach(L=>{
+  letters.forEach((L,i)=>{
     let px=0,py=0,lt=0,drag=false;
     L.el.addEventListener('pointerdown',e=>{
       if(root.classList.contains('intro'))return;
@@ -155,7 +158,7 @@ function bindLetters(){
     const up=()=>{
       if(!drag)return;drag=false;
       if(Math.abs(L.x)+Math.abs(L.y)<3){L.x=L.y=L.r=0;L.mode='rest';return}
-      L.mode='loose';
+      L.mode='loose';track('letra-rota',{letra:'ALONSO'[i]});
       setTimeout(()=>{
         if(L.mode!=='loose')return;
         const nx=L.cx+L.x,ny=L.cy+L.y;
@@ -394,7 +397,7 @@ groups.forEach(g=>{const d=document.createElement('i');d.className='dot on';d.da
 const zOpts=[['47 registros',['as','au','fl','ot']],['41 conductores',['as','au']],['36 asalariados',['as']],['5 autónomos',['au']],['4 de flota',['fl']],['2 con perfil Otro',['ot']]];
 const zPills=$('#zPills'),zRead=$('#zRead');
 zOpts.forEach(([t,g],i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;b.setAttribute('aria-pressed',i==0);
-  b.onclick=()=>{$$('.pill',zPills).forEach(x=>x.setAttribute('aria-pressed',x===b));zRead.textContent=t;$$('.dot').forEach(d=>d.classList.toggle('on',g.includes(d.dataset.g)))};zPills.appendChild(b)});
+  b.onclick=()=>{track('zalapp-filtro',{filtro:t});$$('.pill',zPills).forEach(x=>x.setAttribute('aria-pressed',x===b));zRead.textContent=t;$$('.dot').forEach(d=>d.classList.toggle('on',g.includes(d.dataset.g)))};zPills.appendChild(b)});
 
 /* ---------- Nautes ---------- */
 const nSteps=[
@@ -405,7 +408,7 @@ const nSteps=[
 ];
 const nPills=$('#nPills'),nPanel=$('#nPanel');
 function showStep(i){const s=nSteps[i];nPanel.innerHTML=`<p class="eyebrow">${s[0]}</p><h4>${s[1]}</h4><ul>${s[2].map(x=>`<li>${x}</li>`).join('')}</ul>`;$$('.pill',nPills).forEach((p,k)=>p.setAttribute('aria-pressed',k===i))}
-nSteps.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=s[0];b.onclick=()=>showStep(i);nPills.appendChild(b)});showStep(0);
+nSteps.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=s[0];b.onclick=()=>{track('nautes-paso',{paso:s[0]});showStep(i)};nPills.appendChild(b)});showStep(0);
 
 /* ---------- Alcar: la captura se deshace en ceros y unos ---------- */
 const PORTAL_URL=''; // Dirección de la web nueva
@@ -444,6 +447,7 @@ portal.addEventListener('focus',()=>{if(!portal.matches(':focus-visible'))return
 portal.addEventListener('blur',shutP);
 portal.addEventListener('click',e=>{
   if(!fine&&!P.on){e.preventDefault();aimPortal(e);P.x=P.tx;P.y=P.ty;openP();return}
+  track('portal-alcar');
   P.wave=0;P.hold=40;P.wx=P.x;P.wy=P.y;P.dirty=true;
   if(!PORTAL_URL){e.preventDefault();$('#portalNote').textContent='Enlace pendiente: la web nueva todavía no está publicada.'}
 });
@@ -479,6 +483,7 @@ function stepPortal(){
 const stage=$('#stage'),map=$('#map'),mctx=map.getContext('2d'),mRead=$('#mRead');
 const goal=[[.28,.22],[.76,.16],[.78,.72],[.26,.66]];
 const pts=[[.08,.1],[.56,.05],[.66,.58],[.16,.52]];
+let fitted=false;
 const hs=pts.map((p,i)=>{const b=document.createElement('button');b.type='button';b.className='h';b.setAttribute('aria-label',`Esquina ${i+1}. Usa las flechas para moverla`);stage.appendChild(b);return b});
 function warp(){
   const W=stage.clientWidth,H=stage.clientHeight;if(!W)return;
@@ -493,7 +498,7 @@ function warp(){
   const off=Math.max(...pts.map((p,i)=>Math.hypot(p[0]-goal[i][0],p[1]-goal[i][1])));
   const ok=off<.035;
   stage.classList.toggle('done',ok);
-  if(ok){pts.forEach((p,i)=>{p[0]=goal[i][0];p[1]=goal[i][1]});mRead.textContent='Encajado. Así se ajusta en un sitio real'}
+  if(ok){pts.forEach((p,i)=>{p[0]=goal[i][0];p[1]=goal[i][1]});if(!fitted){fitted=true;track('videomapping-encajado')}mRead.textContent='Encajado. Así se ajusta en un sitio real'}
   else{const left=pts.filter((p,i)=>Math.hypot(p[0]-goal[i][0],p[1]-goal[i][1])>=.035).length;mRead.textContent=left===1?'Falta 1 esquina':`Faltan ${left} esquinas`}
 }
 hs.forEach((b,i)=>{
@@ -537,7 +542,7 @@ const TOOLS=[
 ];
 const pit=$('#pit'),chips=[];
 function pickTool(i){const t=TOOLS[i];$('#tName').textContent=t[0];$('#tWhere').textContent=t[2];$('#tLevel').textContent=t[3];chips.forEach((c,k)=>c.el.setAttribute('aria-pressed',k===i))}
-TOOLS.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t[0];b.style.setProperty('--f',t[1]);b.onclick=()=>pickTool(i);pit.appendChild(b);chips.push({el:b})});
+TOOLS.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t[0];b.style.setProperty('--f',t[1]);b.onclick=()=>{track('herramienta',{nombre:t[0]});pickTool(i)};pit.appendChild(b);chips.push({el:b})});
 pickTool(0);
 let pitOn=false,pitBuilt=false,pW=0,pH=0;
 function startPit(){
@@ -593,6 +598,7 @@ function stepPit(){
 }
 new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn)startPit()},{threshold:.15}).observe(pit);
 $('#dump').onclick=()=>{
+  track('caja-volcada');
   if(!pitBuilt)return;
   chips.forEach(c=>{c.vx=rand(-12,12);c.vy=rand(-30,-14)});
 };
@@ -600,11 +606,15 @@ $('#dump').onclick=()=>{
 /* ---------- Contacto ---------- */
 const copy=$('#copy');
 copy.onclick=()=>{
+  track('email-copiado');
   const mail=$('#mail').textContent;
   const ok=()=>{copy.textContent='Copiado';setTimeout(()=>copy.textContent='Copiar email',1800)};
   const fallback=()=>{const s=getSelection(),r=document.createRange();r.selectNodeContents($('#mail'));s.removeAllRanges();s.addRange(r);copy.textContent='Email seleccionado'};
   if(navigator.clipboard)navigator.clipboard.writeText(mail).then(ok,fallback);else fallback();
 };
+$('#linkedin').addEventListener('click',()=>track('linkedin'));
+const seenContact=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){track('scroll-contacto');seenContact.disconnect()}},{threshold:.2});
+seenContact.observe($('#contacto'));
 
 /* ---------- Plumbing común de órdenes ---------- */
 const strip=t=>t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
@@ -645,11 +655,12 @@ function command(raw){
 }
 ['Pinta el fondo de rojo','Traed la O','Rompe el nombre','Bailad','Seguidme','Formad un círculo','Id a Zalapp','Vacaciones','Huelga','Déjalo normal'].forEach(t=>{
   const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;
-  b.onclick=()=>{bossReply.textContent=command(t)};$('#bossChips').appendChild(b)});
-function openBoss(){closeNote();setAudit(false);boss.hidden=false;bBoss.setAttribute('aria-pressed',true);bossReply.textContent='';if(fine)bossIn.focus()}
+  b.onclick=()=>giveOrder(t);$('#bossChips').appendChild(b)});
+function giveOrder(raw){const t=strip(raw);if(t)track('jefe-orden',{orden:t.slice(0,40)});bossReply.textContent=command(raw)}
+function openBoss(){track('jefe-abierto');closeNote();setAudit(false);boss.hidden=false;bBoss.setAttribute('aria-pressed',true);bossReply.textContent='';if(fine)bossIn.focus()}
 function closeBoss(){boss.hidden=true;bBoss.setAttribute('aria-pressed',false)}
 bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
-boss.addEventListener('submit',e=>{e.preventDefault();bossReply.textContent=command(bossIn.value);bossIn.value=''});
+boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
   if(e.key==='Escape'){closeBoss();closeNote();setAudit(false)}
@@ -715,11 +726,12 @@ function showNote(i,go){
   noteI=(i+NOTES.length)%NOTES.length;const n=NOTES[noteI];
   $('#nNum').textContent=`Nota ${noteI+1} de ${NOTES.length}`;$('#nTitle').textContent=n[1];$('#nText').textContent=n[2];note.hidden=false;
   pinEls.forEach((p,k)=>p.classList.toggle('on',k===noteI));
+  track('auditar-nota',{nota:noteI+1});
   if(go){const el=$(n[0]);el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
 }
 function closeNote(){note.hidden=true}
 function setAudit(on){auditOn=on;bAudit.setAttribute('aria-pressed',on);pinEls.forEach(p=>p.hidden=!on);if(!on)closeNote()}
-bAudit.onclick=()=>{if(auditOn){setAudit(false);return}closeBoss();setAudit(true);showNote(0,true)};
+bAudit.onclick=()=>{if(auditOn){setAudit(false);return}track('auditar-abierto');closeBoss();setAudit(true);showNote(0,true)};
 $('#nPrev').onclick=()=>showNote(noteI-1,true);$('#nNext').onclick=()=>showNote(noteI+1,true);$('#nClose').onclick=()=>setAudit(false);
 function stepPins(){
   if(!auditOn)return;
@@ -765,7 +777,7 @@ async function boot(){
   document.fonts.ready.then(()=>{layout();warp();sizePortal()});
   if(rm){introDone=true;skipped=true;$('#loader').remove();$('#skip').remove();return}
   surEl.textContent='';
-  $('#skip').onclick=finish;
+  $('#skip').onclick=()=>{track('intro-saltada');finish()};
   addEventListener('wheel',finish,{passive:true});addEventListener('touchmove',finish,{passive:true});addEventListener('keydown',finish);
   await intro();clearTimeout(guard);
 }
