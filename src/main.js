@@ -1,6 +1,7 @@
 import './fonts.js';
 import './style.css';
 import { T, ES, LANG } from './i18n.js';
+import alcarShot from './assets/alcar.webp';
 
 (()=>{
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -407,7 +408,7 @@ nSteps.forEach((s,i)=>{const b=document.createElement('button');b.type='button';
 
 /* ---------- Alcar: la captura se deshace en ceros y unos ---------- */
 const PORTAL_URL=''; // Dirección de la web nueva
-const PORTAL_IMG=''; // Captura de la web nueva
+const PORTAL_IMG=alcarShot; // Captura de la web nueva
 const portal=$('#portal'),bitsC=$('#bits'),bc=bitsC.getContext('2d'),enter=$('#enter');
 const CELL=13,base=document.createElement('canvas');
 const P={x:0,y:0,tx:0,ty:0,on:false,w:0,h:0,cols:0,rows:0,d:null,n:null,b:null,rgb:null,dirty:true,wave:-1,wx:0,wy:0,hold:0};
