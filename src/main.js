@@ -1,6 +1,6 @@
 import './fonts.js';
 import './style.css';
-import { T, ES } from './i18n.js';
+import { T, ES, LANG } from './i18n.js';
 
 (()=>{
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -592,6 +592,7 @@ copy.onclick=()=>{
   if(navigator.clipboard)navigator.clipboard.writeText(mail).then(ok,fallback);else fallback();
 };
 $('#linkedin').addEventListener('click',()=>track('linkedin'));
+$('#cv').addEventListener('click',()=>track('cv-descargado',{idioma:LANG}));
 $$('[data-lang]').forEach(a=>a.addEventListener('click',()=>track('idioma',{a:a.dataset.lang})));
 const seenContact=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){track('scroll-contacto');seenContact.disconnect()}},{threshold:.2});
 seenContact.observe($('#contacto'));
