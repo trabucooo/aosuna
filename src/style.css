@@ -15,7 +15,7 @@ img{max-width:100%}
   --gutter-r:max(16px,env(safe-area-inset-right,0px));
 }
 html{scroll-behavior:smooth;background:var(--ground)}
-html.locked{overflow:hidden}
+.js.locked{overflow:hidden}
 body{background:var(--ground);color:var(--ink);font:400 17px/1.55 var(--body);transition:background-color .7s ease,color .5s ease;overflow-x:clip}
 h1,h2,h3,p,dl,dd,ul{margin:0;padding:0}
 ul{list-style:none}
@@ -33,7 +33,7 @@ main{position:relative;z-index:2}
 .top .lang{display:flex;gap:5px}
 .top .lang span{opacity:.5}
 .top .lang .on{opacity:1;color:var(--accent)}
-.intro .top{opacity:0}
+.js.intro .top{opacity:0}
 
 /* Cursores */
 .c{position:absolute;left:0;top:0;will-change:transform;transition:opacity .35s}
@@ -49,7 +49,7 @@ main{position:relative;z-index:2}
 
 /* Carga */
 #loader{position:fixed;inset:0;z-index:25;display:none;place-items:center;background:var(--ground)}
-.intro #loader{display:grid}
+.js.intro #loader{display:grid}
 #loader.pop{background:transparent;pointer-events:none}
 .ring{width:64px;height:64px;border-radius:50%;border:5px solid color-mix(in srgb,var(--ink) 15%,transparent);border-top-color:var(--ink);animation:spin .7s linear infinite;transition:transform .25s cubic-bezier(.5,-.6,.8,.4),opacity .25s}
 #loader.pop .ring{transform:scale(2.6);opacity:0}
@@ -57,10 +57,11 @@ main{position:relative;z-index:2}
 #loader.pop .pct{opacity:0}
 @keyframes spin{to{rotate:360deg}}
 #skip{position:fixed;z-index:32;right:var(--gutter-r);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:none;background:var(--ink);color:var(--ground);border:0;font:600 11px var(--mono);padding:10px 12px}
-.intro #skip{display:block}
+.js.intro #skip{display:block}
 
 /* Portada */
-.hero{height:175vh;position:relative}
+.hero{position:relative}
+.js .hero{height:175vh}
 .stick{position:sticky;top:0;height:100vh;height:100svh;overflow:clip;display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,2vh,20px);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:64px 44px}
 .name{font:900 200px/.84 var(--display);text-transform:uppercase;letter-spacing:-.01em;display:flex;flex-direction:column;align-items:center}
 .word{display:flex;justify-content:center;white-space:nowrap}
@@ -68,17 +69,17 @@ main{position:relative;z-index:2}
 .l:active{cursor:grabbing}
 .l i{font-style:normal;color:transparent;-webkit-text-stroke:2px var(--ink);display:block}
 .l b{position:absolute;inset:0;font-weight:inherit;color:var(--accent);clip-path:inset(0);transition:clip-path .38s ease-in-out}
-.intro .l{opacity:0}
-.intro .l.on{opacity:1}
-.intro .l b{clip-path:inset(0 0 100% 0)}
-.intro .l.painted b{clip-path:inset(0)}
+.js.intro .l{opacity:0}
+.js.intro .l.on{opacity:1}
+.js.intro .l b{clip-path:inset(0 0 100% 0)}
+.js.intro .l.painted b{clip-path:inset(0)}
 .sur{font:700 clamp(30px,6.4vw,76px)/1 var(--display);letter-spacing:.05em;text-align:center;min-height:1em}
 .tag{font:900 clamp(26px,4.2vw,50px)/1 var(--display);text-transform:uppercase;text-align:center;text-wrap:balance}
 .lead{max-width:40rem;margin-inline:auto;text-align:center;text-wrap:pretty}
 .hint{font:400 11px/1.5 var(--mono);text-align:center}
-.reveal{transition:opacity .5s,translate .5s}
-.intro .reveal{opacity:0;translate:0 10px}
-.intro .reveal.shown{opacity:1;translate:0 0}
+.js .reveal{transition:opacity .5s,translate .5s}
+.js.intro .reveal{opacity:0;translate:0 10px}
+.js.intro .reveal.shown{opacity:1;translate:0 0}
 
 /* Historia */
 .wrap{max-width:1200px;margin-inline:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
@@ -145,6 +146,7 @@ main{position:relative;z-index:2}
 .contact .wrap{width:100%;display:flex;flex-direction:column;gap:20px}
 .contact p{max-width:36rem;font-size:20px}
 #mail{font:900 clamp(25px,6.2vw,84px)/1.05 var(--display);overflow-wrap:anywhere;width:fit-content;max-width:100%;user-select:all;-webkit-user-select:all}
+#mail a{text-decoration:none}
 .actions{display:flex;flex-wrap:wrap;gap:10px}
 .btn{background:var(--ink);color:var(--ground);border:1.5px solid var(--ink);padding:14px 18px;font:600 12px/1 var(--mono);text-decoration:none}
 .btn.alt{background:transparent;color:var(--ink)}
@@ -167,7 +169,7 @@ footer{font:400 11px/1.6 var(--mono);margin-top:7vh}
 /* Dock, auditoría, jefe de obra, y huelga */
 [hidden]{display:none!important}
 .dock{position:fixed;z-index:28;left:var(--gutter-l);bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;transition:opacity .4s}
-.intro .dock{opacity:0;pointer-events:none}
+.js.intro .dock{opacity:0;pointer-events:none}
 .dock button{background:var(--ground);border:1px solid var(--ink);padding:9px 11px;font:600 10px/1 var(--mono)}
 .dock button:hover,.dock button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--ground)}
 #pins{position:fixed;inset:0;z-index:33;pointer-events:none;overflow:hidden}
@@ -186,3 +188,18 @@ footer{font:400 11px/1.6 var(--mono);margin-top:7vh}
 .gap-top{margin-top:8px}
 #mRead{font-size:26px}
 .intro-text{margin-top:14px;max-width:36rem}
+
+/* Sin JavaScript (boot.js no ha puesto .js en <html>): fuera lo que solo funciona con él,
+   y en su lugar las versiones estáticas que van en <noscript> */
+html:not(.js) :is(#dock,#crew,#you,#dust,#aura,#pins,#skip,#copy,.toy,.lab-grid,.needs-js){display:none}
+html:not(.js) .name{font-size:min(calc((100vw - 32px) / 2.95),50vh)}
+html:not(.js) .l{cursor:auto}
+html:not(.js) .ch{min-height:0;padding-block:12vh}
+.nojs-note{position:fixed;z-index:28;left:var(--gutter-l);bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);box-sizing:border-box;margin:0;background:var(--ground);border:1px solid var(--ink);padding:9px 11px;font:600 10px/1.4 var(--mono)}
+.static{display:flex;flex-direction:column;gap:12px;min-width:0}
+.static-list{display:grid;gap:10px;margin:0;padding:0;list-style:none;font-size:15px}
+.static-list li{border-top:1px solid color-mix(in srgb,currentColor 35%,transparent);padding-top:8px}
+.static-list b{display:block;font:600 10px/1.9 var(--mono);text-transform:uppercase}
+.static-list .sub{display:block;opacity:.75;font-size:14px}
+.tool-list{margin-top:28px;grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr));gap:14px 24px}
+.scene{display:block;width:100%;height:auto;background:#17151F}

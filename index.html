@@ -32,6 +32,7 @@
 <script type="module" src="/src/main.js"></script>
 </head>
 <body>
+<noscript><p class="nojs-note">Esta web es interactiva. Con JavaScript activado la verás como está pensada.</p></noscript>
 <div id="aura" aria-hidden="true"></div>
 <canvas id="dust" aria-hidden="true"></canvas>
 <div id="crew" aria-hidden="true"></div>
@@ -80,7 +81,7 @@
     </h1>
     <p class="tag reveal">Marketing, web e ideas en práctica</p>
     <p class="lead reveal">Estudio Marketing y Publicidad en Córdoba. Aquí enseño proyectos de contenidos, diseño web, investigación e inteligencia artificial, con su proceso y lo que hice yo.</p>
-    <p class="hint reveal" id="hint">Arrastra una letra y rompe el nombre. Mi equipo lo arregla.</p>
+    <p class="hint reveal needs-js" id="hint">Arrastra una letra y rompe el nombre. Mi equipo lo arregla.</p>
   </div>
 </section>
 
@@ -130,6 +131,12 @@
       <p class="note gap-top">7,39 sobre 10: intención de uso declarada por los 41 conductores</p>
       <div class="gauge" aria-hidden="true"><i></i></div>
     </div>
+    <noscript><div class="static">
+      <p class="readout">47 registros</p>
+      <p>36 conductores asalariados, 5 autónomos, 4 responsables de flota y 2 con perfil Otro.</p>
+      <p class="note gap-top">7,39 sobre 10: intención de uso declarada por los 41 conductores</p>
+      <div class="gauge" aria-hidden="true"><i></i></div>
+    </div></noscript>
   </div></article>
 
   <article class="proj" data-tone="sea" data-shape="wave" data-alpha=".35"><div class="wrap proj-grid">
@@ -148,6 +155,14 @@
       <div class="pills" id="nPills"></div>
       <div class="step-panel" id="nPanel" aria-live="polite"></div>
     </div>
+    <noscript><div class="static">
+      <ol class="static-list">
+        <li><b>Pregunta</b>¿Cuánto cuesta mantener un barco?<span class="sub">Lo que se pregunta quien tiene un barco o piensa en comprarlo. · Primer paso: entender la intención de búsqueda.</span></li>
+        <li><b>Brief</b>Guía de costes reales según eslora y uso (2026)<span class="sub">Palabra clave principal y secundarias · Audiencia · Objetivo de la pieza</span></li>
+        <li><b>Estructura</b>Un guion antes de escribir<span class="sub">H1 y bloques H2 · Preguntas frecuentes · Enlaces internos propuestos</span></li>
+        <li><b>Metadatos</b>Listo para buscadores<span class="sub">Metatítulo · Metadescripción · Slug</span></li>
+      </ol>
+    </div></noscript>
   </div></article>
 
   <article class="proj" data-tone="concrete" data-shape="facade" data-alpha=".22"><div class="wrap proj-grid">
@@ -168,6 +183,7 @@
       </a>
       <p class="note" id="portalNote"></p>
     </div>
+    <noscript><div class="static"><p class="note">Enlace pendiente: la web nueva todavía no está publicada.</p></div></noscript>
   </div></article>
 
   <article class="proj" data-tone="void" data-shape="beam" data-alpha=".28"><div class="wrap proj-grid">
@@ -177,7 +193,7 @@
       <p>Participé en pruebas para comercios: montaje del equipo, visuales creados con IA y configuración de las proyecciones. Lo que más me interesó fue adaptar una pieza digital al espacio real.</p>
       <dl class="facts">
         <div><dt>Con qué</dt><dd>Equipo de proyección y herramientas de generación con IA.</dd></div>
-        <div><dt>Pruébalo</dt><dd>Arrastra las cuatro esquinas hasta que la luz encaje en el escaparate.</dd></div>
+        <div class="needs-js"><dt>Pruébalo</dt><dd>Arrastra las cuatro esquinas hasta que la luz encaje en el escaparate.</dd></div>
       </dl>
     </div>
     <div class="toy">
@@ -187,6 +203,10 @@
       </div>
       <p class="readout" id="mRead" aria-live="polite">Desajustado</p>
     </div>
+    <noscript><div class="static">
+      <svg class="scene" viewBox="0 0 400 300" role="img" aria-label="Escaparate con la proyección ya encajada"><defs><linearGradient id="beam" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF3D9A"/><stop offset=".5" stop-color="#B47CFF"/><stop offset="1" stop-color="#6FD3F2"/></linearGradient></defs><rect x="40" y="16" width="320" height="284" fill="#262233"/><rect x="40" y="228" width="320" height="72" fill="#1C1926"/><polygon points="112,66 304,48 312,216 104,198" fill="url(#beam)" stroke="#39E08A" stroke-width="2"/></svg>
+      <p class="note">Así queda la proyección encajada en el escaparate. Con JavaScript activado puedes ajustarla tú.</p>
+    </div></noscript>
   </div></article>
 
 </section>
@@ -194,7 +214,7 @@
 <section class="wrap lab" id="herramientas" data-tone="paper" data-shape="scatter" data-alpha=".35">
   <p class="eyebrow">Herramientas</p>
   <h2 class="big">La caja de herramientas</h2>
-  <p class="intro-text">Agítalas, tíralas y pulsa cualquiera para ver dónde la he usado y con qué nivel real.</p>
+  <p class="intro-text needs-js">Agítalas, tíralas y pulsa cualquiera para ver dónde la he usado y con qué nivel real.</p>
   <div class="lab-grid">
     <div id="pit"></div>
     <aside id="tool" aria-live="polite">
@@ -204,6 +224,24 @@
       <button id="dump" type="button">Volcar la caja</button>
     </aside>
   </div>
+  <noscript><ul class="static-list tool-list">
+    <li><b>WordPress</b>Nautes, con OceanWP, Directorist, Spectra y Stackable.<span class="sub">Nivel: Experiencia práctica en prácticas de empresa.</span></li>
+    <li><b>Palabras clave y SEO</b>Briefs y estructura de contenidos náuticos.<span class="sub">Nivel: Práctico. Sin resultados de posicionamiento medidos.</span></li>
+    <li><b>GEO</b>Contenidos pensados para buscadores de IA, en Explora Natura.<span class="sub">Nivel: Trabajo exploratorio.</span></li>
+    <li><b>ChatGPT, Gemini, NotebookLM</b>Investigación, textos y organización de información.<span class="sub">Nivel: Uso habitual, siempre revisando el resultado.</span></li>
+    <li><b>Runway</b>Visuales y vídeo generados con IA.<span class="sub">Nivel: Uso en proyectos visuales.</span></li>
+    <li><b>Resolume Arena</b>Software de vídeo y proyección.<span class="sub">Nivel: Intermedio, según mi autoevaluación.</span></li>
+    <li><b>Canva</b>Materiales académicos y de proyectos.<span class="sub">Nivel: Uso habitual.</span></li>
+    <li><b>Affinity Designer</b>Diseño vectorial.<span class="sub">Nivel: Intermedio, según mi autoevaluación.</span></li>
+    <li><b>Illustrator</b>Diseño vectorial.<span class="sub">Nivel: Intermedio, según mi autoevaluación.</span></li>
+    <li><b>Photoshop</b>Edición de imagen.<span class="sub">Nivel: Conocimientos básicos.</span></li>
+    <li><b>HTML, CSS y JS</b>Páginas y prototipos en VS Code.<span class="sub">Nivel: Creo y adapto con apoyo de IA. Sigo aprendiendo.</span></li>
+    <li><b>Google Docs y Sheets</b>Organización diaria de documentos y datos, junto con Drive.<span class="sub">Nivel: Uso habitual.</span></li>
+    <li><b>CRMdelSol</b>Actividades académicas de gestión comercial.<span class="sub">Nivel: Uso académico, intermedio según mi autoevaluación.</span></li>
+    <li><b>Shopify</b>Comercio electrónico.<span class="sub">Nivel: Conocimientos básicos.</span></li>
+    <li><b>Hostinger</b>Alojamiento web.<span class="sub">Nivel: Intermedio, según mi autoevaluación.</span></li>
+    <li><b>Atención al cliente</b>Almazaras de la Subbética: asesoramiento y venta consultiva.<span class="sub">Nivel: Experiencia real de trabajo.</span></li>
+  </ul></noscript>
 </section>
 
 <section class="contact" id="contacto" data-tone="oil" data-shape="arrow" data-alpha=".55">
@@ -211,7 +249,7 @@
     <p class="eyebrow">Contacto</p>
     <h2 class="big">¿Construimos algo?</h2>
     <p>Busco prácticas en Europa y un puesto de entrada en marketing donde apoyar contenidos, gestión web, investigación y comunicación, y seguir aprendiendo dentro de un equipo.</p>
-    <p id="mail" data-sel>alonsoosunasoto@gmail.com</p>
+    <p id="mail" data-sel><a href="mailto:alonsoosunasoto@gmail.com">alonsoosunasoto@gmail.com</a></p>
     <div class="actions">
       <button class="btn" id="copy" type="button">Copiar email</button>
       <a class="btn alt" id="linkedin" href="https://www.linkedin.com/in/alonso-osuna-soto-23522835b/" target="_blank" rel="noopener">LinkedIn</a>

@@ -32,6 +32,7 @@
 <script type="module" src="/src/main.js"></script>
 </head>
 <body>
+<noscript><p class="nojs-note">This site is interactive. Turn on JavaScript to see it as intended.</p></noscript>
 <div id="aura" aria-hidden="true"></div>
 <canvas id="dust" aria-hidden="true"></canvas>
 <div id="crew" aria-hidden="true"></div>
@@ -80,7 +81,7 @@
     </h1>
     <p class="tag reveal">Marketing, web and ideas in practice</p>
     <p class="lead reveal">I study Marketing and Advertising in Córdoba, Spain. Here you'll find projects in content, web design, research and artificial intelligence, with the process behind each one and what I did myself.</p>
-    <p class="hint reveal" id="hint">Drag a letter and break my name. My crew will fix it.</p>
+    <p class="hint reveal needs-js" id="hint">Drag a letter and break my name. My crew will fix it.</p>
   </div>
 </section>
 
@@ -130,6 +131,12 @@
       <p class="note gap-top">7.39 out of 10: stated intention to use the app, among the 41 drivers</p>
       <div class="gauge" aria-hidden="true"><i></i></div>
     </div>
+    <noscript><div class="static">
+      <p class="readout">47 responses</p>
+      <p>36 employed drivers, 5 self-employed drivers, 4 fleet managers and 2 other profiles.</p>
+      <p class="note gap-top">7.39 out of 10: stated intention to use the app, among the 41 drivers</p>
+      <div class="gauge" aria-hidden="true"><i></i></div>
+    </div></noscript>
   </div></article>
 
   <article class="proj" data-tone="sea" data-shape="wave" data-alpha=".35"><div class="wrap proj-grid">
@@ -148,6 +155,14 @@
       <div class="pills" id="nPills"></div>
       <div class="step-panel" id="nPanel" aria-live="polite"></div>
     </div>
+    <noscript><div class="static">
+      <ol class="static-list">
+        <li><b>Question</b>How much does it cost to keep a boat?<span class="sub">What boat owners, or people thinking of buying one, actually ask. · Step one: understand the search intent.</span></li>
+        <li><b>Brief</b>A guide to real costs by boat length and use (2026)<span class="sub">Main and secondary keywords · Audience · Goal of the piece</span></li>
+        <li><b>Structure</b>An outline before writing a word<span class="sub">H1 and H2 sections · FAQs · Suggested internal links</span></li>
+        <li><b>Metadata</b>Ready for search engines<span class="sub">Meta title · Meta description · Slug</span></li>
+      </ol>
+    </div></noscript>
   </div></article>
 
   <article class="proj" data-tone="concrete" data-shape="facade" data-alpha=".22"><div class="wrap proj-grid">
@@ -168,6 +183,7 @@
       </a>
       <p class="note" id="portalNote"></p>
     </div>
+    <noscript><div class="static"><p class="note">Link coming soon: the new website isn't live yet.</p></div></noscript>
   </div></article>
 
   <article class="proj" data-tone="void" data-shape="beam" data-alpha=".28"><div class="wrap proj-grid">
@@ -177,7 +193,7 @@
       <p>I took part in trials for local shops: setting up the equipment, creating visuals with AI and configuring the projections. What interested me most was fitting a digital piece to a real space.</p>
       <dl class="facts">
         <div><dt>Tools</dt><dd>Projection equipment and AI generation tools.</dd></div>
-        <div><dt>Try it</dt><dd>Drag the four corners until the light fits the shop window.</dd></div>
+        <div class="needs-js"><dt>Try it</dt><dd>Drag the four corners until the light fits the shop window.</dd></div>
       </dl>
     </div>
     <div class="toy">
@@ -187,6 +203,10 @@
       </div>
       <p class="readout" id="mRead" aria-live="polite">Misaligned</p>
     </div>
+    <noscript><div class="static">
+      <svg class="scene" viewBox="0 0 400 300" role="img" aria-label="Shop window with the projection lined up"><defs><linearGradient id="beam" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FF3D9A"/><stop offset=".5" stop-color="#B47CFF"/><stop offset="1" stop-color="#6FD3F2"/></linearGradient></defs><rect x="40" y="16" width="320" height="284" fill="#262233"/><rect x="40" y="228" width="320" height="72" fill="#1C1926"/><polygon points="112,66 304,48 312,216 104,198" fill="url(#beam)" stroke="#39E08A" stroke-width="2"/></svg>
+      <p class="note">This is how the projection looks once it's lined up with the shop window. With JavaScript on, you can line it up yourself.</p>
+    </div></noscript>
   </div></article>
 
 </section>
@@ -194,7 +214,7 @@
 <section class="wrap lab" id="herramientas" data-tone="paper" data-shape="scatter" data-alpha=".35">
   <p class="eyebrow">Toolbox</p>
   <h2 class="big">The toolbox</h2>
-  <p class="intro-text">Shake them, throw them, and tap any of them to see where I've used it and how well I really know it.</p>
+  <p class="intro-text needs-js">Shake them, throw them, and tap any of them to see where I've used it and how well I really know it.</p>
   <div class="lab-grid">
     <div id="pit"></div>
     <aside id="tool" aria-live="polite">
@@ -204,6 +224,24 @@
       <button id="dump" type="button">Tip out the box</button>
     </aside>
   </div>
+  <noscript><ul class="static-list tool-list">
+    <li><b>WordPress</b>Nautes, with OceanWP, Directorist, Spectra and Stackable.<span class="sub">Level: Hands-on experience from a work placement.</span></li>
+    <li><b>Keywords and SEO</b>Briefs and content structure for a boating website.<span class="sub">Level: Hands-on. No measured ranking results.</span></li>
+    <li><b>GEO</b>Generative engine optimisation: content written to be found by AI search tools, at Explora Natura.<span class="sub">Level: Exploratory work.</span></li>
+    <li><b>ChatGPT, Gemini, NotebookLM</b>Research, writing and organising information.<span class="sub">Level: Regular use, always checking the output.</span></li>
+    <li><b>Runway</b>AI-generated visuals and video.<span class="sub">Level: Used in visual projects.</span></li>
+    <li><b>Resolume Arena</b>Video and projection software.<span class="sub">Level: Intermediate, by my own assessment.</span></li>
+    <li><b>Canva</b>College and project materials.<span class="sub">Level: Regular use.</span></li>
+    <li><b>Affinity Designer</b>Vector design.<span class="sub">Level: Intermediate, by my own assessment.</span></li>
+    <li><b>Illustrator</b>Vector design.<span class="sub">Level: Intermediate, by my own assessment.</span></li>
+    <li><b>Photoshop</b>Image editing.<span class="sub">Level: Basic knowledge.</span></li>
+    <li><b>HTML, CSS and JS</b>Pages and prototypes in VS Code.<span class="sub">Level: I build and adapt with help from AI. Still learning.</span></li>
+    <li><b>Google Docs and Sheets</b>Day-to-day organisation of documents and data, alongside Drive.<span class="sub">Level: Regular use.</span></li>
+    <li><b>CRMdelSol</b>A Spanish CRM, used for coursework in sales management.<span class="sub">Level: Academic use, intermediate by my own assessment.</span></li>
+    <li><b>Shopify</b>E-commerce.<span class="sub">Level: Basic knowledge.</span></li>
+    <li><b>Hostinger</b>Web hosting.<span class="sub">Level: Intermediate, by my own assessment.</span></li>
+    <li><b>Customer service</b>Almazaras de la Subbética: advising customers and consultative selling.<span class="sub">Level: Real work experience.</span></li>
+  </ul></noscript>
 </section>
 
 <section class="contact" id="contacto" data-tone="oil" data-shape="arrow" data-alpha=".55">
@@ -211,7 +249,7 @@
     <p class="eyebrow">Contact</p>
     <h2 class="big">Shall we build something?</h2>
     <p>I'm looking for an internship in Europe and an entry-level marketing role where I can support content, website management, research and communications, and keep learning as part of a team.</p>
-    <p id="mail" data-sel>alonsoosunasoto@gmail.com</p>
+    <p id="mail" data-sel><a href="mailto:alonsoosunasoto@gmail.com">alonsoosunasoto@gmail.com</a></p>
     <div class="actions">
       <button class="btn" id="copy" type="button">Copy email</button>
       <a class="btn alt" id="linkedin" href="https://www.linkedin.com/in/alonso-osuna-soto-23522835b/" target="_blank" rel="noopener">LinkedIn</a>
