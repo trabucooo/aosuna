@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Vista previa al compartir (1200×630). Para regenerar og.png: npm run og -->
+  <defs>
+    <pattern id="grid" width="72" height="72" patternUnits="userSpaceOnUse" x="24" y="27">
+      <path d="M72 0H0V72" fill="none" stroke="#EEF0F4" stroke-opacity=".07"/>
+    </pattern>
+    <radialGradient id="aura" cx="84%" cy="40%" r="58%">
+      <stop offset="0" stop-color="#7D8BFF" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#7D8BFF" stop-opacity="0"/>
+    </radialGradient>
+    <path id="cursor" d="M1.5 1.5v18.6l5-4.5 3.4 7.6 3.5-1.6-3.4-7.4 7-.6z" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/>
+  </defs>
+  <rect width="1200" height="630" fill="#0E1014"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <rect width="1200" height="630" fill="url(#aura)"/>
+
+  <text x="80" y="96" font-family="Martian Mono" font-weight="600" font-size="20" letter-spacing="2" fill="#7D8BFF">PORTFOLIO · AOSUNA.ES</text>
+
+  <!-- El nombre, con la O arrancada: el equipo la está devolviendo a su casilla -->
+  <text x="74" y="362" font-family="Big Shoulders Display" font-weight="900" font-size="290" fill="#7D8BFF">ALONS</text>
+  <rect x="770" y="121" width="136" height="250" fill="none" stroke="#7D8BFF" stroke-width="2.5" stroke-dasharray="12 9"/>
+  <path d="M906 246C950 250 965 262 982 284" fill="none" stroke="#2A3FF0" stroke-opacity=".6" stroke-width="2"/>
+  <path d="M906 330C940 352 985 372 1022 380" fill="none" stroke="#0A8A5C" stroke-opacity=".6" stroke-width="2"/>
+  <g transform="rotate(12 1010 300)">
+    <text x="938" y="417" font-family="Big Shoulders Display" font-weight="900" font-size="290" fill="none" stroke="#EEF0F4" stroke-width="3.5">O</text>
+  </g>
+
+  <g transform="translate(979 269) scale(2.1)"><use href="#cursor" fill="#2A3FF0"/></g>
+  <g transform="translate(1010 309)">
+    <rect width="132" height="34" fill="#2A3FF0"/>
+    <text x="10" y="23" font-family="Martian Mono" font-weight="600" font-size="15" fill="#fff">WordPress</text>
+  </g>
+  <g transform="translate(1034 366) scale(2.1)"><use href="#cursor" fill="#0A8A5C"/></g>
+  <g transform="translate(1065 406)">
+    <rect width="88" height="34" fill="#0A8A5C"/>
+    <text x="10" y="23" font-family="Martian Mono" font-weight="600" font-size="15" fill="#fff">Sales</text>
+  </g>
+
+  <text x="80" y="478" font-family="Big Shoulders Display" font-weight="900" font-size="112" letter-spacing="3" fill="#EEF0F4">OSUNA SOTO</text>
+  <text x="80" y="556" font-family="Big Shoulders Display" font-weight="900" font-size="44" letter-spacing="1" fill="#EEF0F4" fill-opacity=".78">MARKETING, WEB AND IDEAS IN PRACTICE</text>
+</svg>
