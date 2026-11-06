@@ -23,11 +23,12 @@ Los valores de los datos van siempre en español, aunque la visita sea en la ver
 | `intro-saltada` | Clic en «Saltar intro» (`#skip`) | — |
 | `letra-rota` | Al soltar una letra del nombre después de arrastrarla | `letra`: A, L, O, N o S |
 | `auditar-abierto` | Al activar «Auditar esta web» (`#bAudit`) | — |
-| `auditar-nota` | Cada vez que se abre una nota de la auditoría | `nota`: número de 1 a 11 (ver tabla de abajo) |
+| `auditar-nota` | Cada vez que se abre una nota de la auditoría | `nota`: número de 1 a 12 (ver tabla de abajo) |
 | `jefe-abierto` | Al abrir el panel «Jefe de obra» (botón o tecla `/`) | — |
 | `jefe-orden` | Al enviar una orden, escrita o con una de las sugerencias | `orden`: el texto en minúsculas, sin tildes y recortado a 40 caracteres |
 | `zalapp-filtro` | Al pulsar un filtro de la muestra de Zalapp | `filtro`: p. ej. «41 conductores» |
 | `nautes-paso` | Al pulsar un paso de Nautes | `paso`: Pregunta, Brief, Estructura o Metadatos |
+| `sello` | Al abrir uno de los sellos de formación de «Ese equipo soy yo» (no cuenta al cerrarlo) | `sello`: 1 (Actividades Comerciales) o 2 (Marketing y Publicidad) |
 | `portal-alcar` | Clic en la captura de Alcar (`#portal`). En móvil, el primer toque solo abre la vista previa y no cuenta; cuenta el segundo, el que entra | — |
 | `videomapping-encajado` | La primera vez que se encajan las cuatro esquinas del videomapping | — |
 | `herramienta` | Al pulsar una herramienta de la caja | `nombre`: p. ej. «WordPress» |
@@ -45,12 +46,13 @@ Números de `auditar-nota`:
 3. Invitar a tocar
 4. Menú corto
 5. Trayectoria elegida
-6. Enseñar la base
-7. Decir el límite
-8. Entrar a la web
-9. Probar en vez de leer
-10. Nivel real
-11. Un solo objetivo
+6. Formación con sello
+7. Enseñar la base
+8. Decir el límite
+9. Entrar a la web
+10. Probar en vez de leer
+11. Nivel real
+12. Un solo objetivo
 
 Ten en cuenta que `jefe-orden` envía lo que el visitante escribe (recortado a 40 caracteres). Es lo que pediste para ver qué órdenes prueba la gente, pero si alguien escribe algo personal, llegará a tu Umami.
 

@@ -21,6 +21,29 @@ const es = {
     placeholderSub: 'Aquí va la web nueva',
     pending: 'Enlace pendiente: la web nueva todavía no está publicada.',
   },
+  // Sellos de formación de la escena «Ese equipo soy yo». El HTML lleva una copia para quien
+  // navega sin JavaScript: si cambias un texto aquí, cámbialo también en index.html.
+  // En 2027, para pasar el sello 2 a completo:
+  //   1. Pon half: false y quita la clase "half" de #stamp2 en index.html y en/index.html
+  //      (quita la máscara a medias, tinta-media.svg).
+  //   2. Pie: '2025–2027' (sin «EN CURSO»). En inglés, foot: '2025–2027'.
+  //   3. Cambia la segunda frase por «Ahora sí, con toda la tinta.» (en inglés, “Now fully inked.”).
+  stamps: [
+    {
+      title: 'TÉCNICO EN ACTIVIDADES COMERCIALES',
+      school: 'IES Fernando III · Priego de Córdoba',
+      foot: 'FP Dual · 2023–2025',
+      lines: ['«Aquí aprendí que detrás de cada venta hay una persona.»', '«Mostrador, almacén y facturas: el marketing empieza por saber cómo se vende.»'],
+      half: false,
+    },
+    {
+      title: 'TÉCNICO SUPERIOR EN MARKETING Y PUBLICIDAD',
+      school: 'IES Luis de Góngora · Córdoba',
+      foot: 'EN CURSO · 2025–2027',
+      lines: ['«Aquí aprendo a convertir lo que vendo en lo que comunico.»', '«Le falta tinta, pero ya imprime.»'],
+      half: true,
+    },
+  ],
   mapping: {
     corner: i => `Esquina ${i}. Usa las flechas para moverla`,
     done: 'Encajado. Así se ajusta en un sitio real',
@@ -60,7 +83,7 @@ const es = {
     painted: c => `Fondo pintado de ${c}.`,
     rePaint: /\b(pinta|pintad|color)\b/,
     noColor: 'De ese color no queda bote. Prueba rojo, azul, verde, rosa o morado.',
-    places: [['projects', /proyectos/, 'proyectos'], ['contact', /contacto/, 'contacto'], ['tools', /herramientas/, 'herramientas'], ['home', /inicio/, 'inicio'], ['zalapp', /zalapp/, 'zalapp'], ['nautes', /nautes/, 'nautes'], ['alcar', /alcar/, 'alcar'], ['mapping', /videomapping/, 'videomapping'], ['mapping', /mapping/, 'mapping']],
+    places: [['projects', /proyectos/, 'proyectos'], ['contact', /contacto/, 'contacto'], ['tools', /herramientas/, 'herramientas'], ['home', /inicio/, 'inicio'], ['zalapp', /zalapp/, 'zalapp'], ['nautes', /nautes/, 'nautes'], ['alcar', /alcar/, 'alcar'], ['mapping', /videomapping/, 'videomapping'], ['mapping', /mapping/, 'mapping'], ['formacion', /formacion/, 'formación'], ['sellos', /\bsellos?\b/, 'los sellos']],
     goTo: p => `Vamos a ${p}.`,
     reDance: /(baila|bailad|fiesta)/,
     dance: 'Música, maestro.',
@@ -89,6 +112,7 @@ const es = {
     ['Invitar a tocar', 'Pido que rompas la web a propósito. Quien interactúa con algo se queda más tiempo y lo recuerda mejor.'],
     ['Menú corto', 'Pocos enlaces y fijos. Puedes irte directo a lo que buscas sin tragarte toda la historia.'],
     ['Trayectoria elegida', 'Solo cuento lo que conecta con el trabajo que busco. Un portfolio también se hace quitando cosas.'],
+    ['Formación con sello', 'La formación no va en una lista: la traen los mismos cursores que construyen la web. El segundo sello está a medias porque el grado aún no ha terminado.'],
     ['Enseñar la base', 'Un dato sin contexto no convence. Enseño de dónde sale cada cifra y puedes filtrar la muestra.'],
     ['Decir el límite', 'El 7,39 solo describe a quienes respondieron. Prefiero aclararlo a que parezca un dato de todo el sector.'],
     ['Entrar a la web', 'En vez de describir la web nueva, la dejo a la vista. Al tocarla se deshace en código y dan ganas de entrar.'],
@@ -118,6 +142,22 @@ const en = {
     placeholderSub: 'The new website goes here',
     pending: "Link coming soon: the new website isn't live yet.",
   },
+  stamps: [
+    {
+      title: 'VOCATIONAL DIPLOMA IN SALES & COMMERCE',
+      school: 'IES Fernando III · Priego de Córdoba',
+      foot: 'Dual VET (school + company) · 2023–2025',
+      lines: ['“This is where I learned there\'s a person behind every sale.”', '“Counter, stockroom and invoices: marketing starts with knowing how things get sold.”'],
+      half: false,
+    },
+    {
+      title: 'HIGHER VOCATIONAL DIPLOMA IN MARKETING & ADVERTISING',
+      school: 'IES Luis de Góngora · Córdoba',
+      foot: 'IN PROGRESS · 2025–2027',
+      lines: ['“Learning to turn what I sell into what I communicate.”', '“Running low on ink, but it already prints.”'],
+      half: true,
+    },
+  ],
   mapping: {
     corner: i => `Corner ${i}. Use the arrow keys to move it`,
     done: "Lined up. That's how it's done on a real site",
@@ -155,7 +195,7 @@ const en = {
     painted: c => `Background painted ${c}.`,
     rePaint: /\b(paint|colou?r)\b/,
     noColor: "We're out of that colour. Try red, blue, green, pink or purple.",
-    places: [['projects', /\bprojects?\b/, 'the projects'], ['contact', /\bcontact\b/, 'the contact section'], ['tools', /\b(tools?|toolbox)\b/, 'the toolbox'], ['home', /\b(home|top)\b/, 'the top'], ['zalapp', /zalapp/, 'Zalapp'], ['nautes', /nautes/, 'Nautes'], ['alcar', /alcar/, 'Alcar'], ['mapping', /mapping/, 'the videomapping']],
+    places: [['projects', /\bprojects?\b/, 'the projects'], ['contact', /\bcontact\b/, 'the contact section'], ['tools', /\b(tools?|toolbox)\b/, 'the toolbox'], ['home', /\b(home|top)\b/, 'the top'], ['zalapp', /zalapp/, 'Zalapp'], ['nautes', /nautes/, 'Nautes'], ['alcar', /alcar/, 'Alcar'], ['mapping', /mapping/, 'the videomapping'], ['formacion', /\beducation\b/, 'my education'], ['sellos', /\bstamps?\b/, 'the stamps']],
     goTo: p => `Off to ${p}.`,
     reDance: /\b(dance|party|boogie)\b/,
     dance: 'Cue the music.',
@@ -183,6 +223,7 @@ const en = {
     ['An invitation to play', 'I ask you to break the site on purpose. People who interact with something stay longer and remember it better.'],
     ['A short menu', "A handful of fixed links. You can jump straight to what you're after without sitting through the whole story."],
     ['A chosen path', "I only include what connects with the work I'm looking for. A portfolio is also made by leaving things out."],
+    ['Stamped, not listed', "My education isn't a bullet list: the same cursors that build this site bring it in. The second stamp is only half-inked because I haven't finished that course yet."],
     ['Show the base', "A figure without context convinces no one. I show where each number comes from, and you can filter the sample."],
     ['State the limits', "The 7.39 only describes the people who responded. I'd rather say so than let it pass as a figure for the whole industry."],
     ['Step inside', 'Rather than describe the new website, I put it on show. Touch it and it dissolves into code, which makes you want to go in.'],

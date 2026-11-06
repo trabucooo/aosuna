@@ -87,7 +87,7 @@ function wanderTarget(c){
   else{c.tx=(Math.random()<.5?rand(.01,.09):rand(.84,.93))*vw;c.ty=rand(.15,.85)*vh}
   c.next=performance.now()+rand(1400,4200);
 }
-function freeCursors(){return cursors.filter(c=>!c.job&&!c.script&&!c.follow)}
+function freeCursors(){return cursors.filter(c=>!c.job&&!c.script&&!c.follow&&!c.task)}
 function fetchLetter(L,list){
   L.mode='wait';
   const offs=[[-.3,-.1],[.3,.25]];
@@ -118,6 +118,8 @@ function stepCursors(f,now){
     if(c.job){
       const L=c.job.L;c.tx=L.cx+L.x+c.job.ox;c.ty=L.cy+L.y+c.job.oy;
       if(L.mode==='wait'&&Math.hypot(c.tx-c.x,c.ty-c.y)<34)L.mode='carry';
+    }else if(c.task){
+      aimTask(c,now);c.box.classList.remove('on');
     }else if(orderTarget(c,cursors.indexOf(c),cursors.length,now)){
       c.box.classList.remove('on');
     }else if(c.follow){
@@ -245,9 +247,13 @@ function finish(){
 /* ---------- Polvo: partículas que cambian de forma ---------- */
 const fine=matchMedia('(pointer:fine)').matches;
 const cv=$('#dust'),ctx=cv.getContext('2d');
-const N=matchMedia('(max-width:860px)').matches?1100:2600;
+const N=matchMedia('(max-width:860px)').matches?1800:4000;
 const px=new Float32Array(N),py=new Float32Array(N),pvx=new Float32Array(N),pvy=new Float32Array(N),ez=new Float32Array(N),ps=new Float32Array(N);
-for(let i=0;i<N;i++){px[i]=rand(0,vw);py[i]=rand(0,vh);ez[i]=rand(.045,.12);ps[i]=rand(1.7,3.3)}
+// Ruido de reposo: cada punto oscila con su propia fase y frecuencia
+const nph=new Float32Array(N),nfq=new Float32Array(N);
+for(let i=0;i<N;i++){px[i]=rand(0,vw);py[i]=rand(0,vh);ez[i]=rand(.045,.12);ps[i]=rand(1.7,3.3);nph[i]=rand(0,6.283);nfq[i]=rand(.0006,.0014)}
+const NOISE=.4; // px por eje: en diagonal no pasa de 0,57 px
+let scrollT=0;
 let dustNow=[125,139,255],dustTarget=[125,139,255],inkRgb=[238,240,244],layer=T.layerHome;
 const aura=$('#aura');
 const SHAPES={
@@ -281,16 +287,41 @@ function heroPts(){
   return sample(vw>>1,vh>>1,(c)=>{c.font=`900 ${fs/2}px ${getComputedStyle(nameEl).fontFamily}`;c.textAlign='center';c.textBaseline='middle';
     letters.forEach((L,i)=>c.fillText('ALONSO'[i],L.cx/2,L.cy/2))});
 }
-const stops=$$('[data-shape]').map(el=>({el,shape:el.dataset.shape,alpha:+el.dataset.alpha,s:0,t:null}));
+/* Cada parada tiene s (la forma queda completa) y e (empieza a deshacerse). Casi todas son un punto
+   (e = s); el retrato tiene meseta. Entre dos paradas a y b, los puntos viajan de a.e a b.s. */
+const stops=$$('[data-shape]').map(el=>({el,shape:el.dataset.shape,alpha:+el.dataset.alpha,s:0,e:0,t:null,z:null,flat:el.dataset.shape==='portrait'}));
+function stopRange(st){
+  if(st.shape==='hero'){st.s=st.e=vh*.32;return}
+  if(st.shape==='portrait'){st.s=scene.top+scene.len*PORTRAIT_IN;st.e=scene.top+scene.len*PORTRAIT_OUT;return}
+  const r=st.el.getBoundingClientRect();st.s=st.e=r.top+scrollY+r.height/2-vh/2;
+}
+/* Retrato: puntos de public/retrato-puntos.json ({ratio, desktop:[x,y,s,...], mobile:[...]}) */
+let portrait=null;
+const portraitLoad=fetch(import.meta.env.BASE_URL+'retrato-puntos.json').then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ratio&&d.desktop?.length&&d.mobile?.length)portrait=d;return portrait}).catch(()=>null);
+function portraitTargets(){
+  const sm=small(),pts=sm?portrait.mobile:portrait.desktop,M=Math.floor(pts.length/3);
+  const sr=scene.slot.getBoundingClientRect(),kr=scene.stick.getBoundingClientRect();
+  if(!M||!sr.width||!sr.height)return null;
+  // Encaja el recorte en el hueco respetando la proporción; en ordenador, como mucho el 78 % del alto
+  const H=Math.min(sr.height,sm?sr.height:vh*.78,sr.width/portrait.ratio),W=H*portrait.ratio;
+  const x0=sr.left+(sr.width-W)/2,y0=sr.top-kr.top+(sr.height-H)/2; // con el sticky ya pegado arriba
+  const t=new Float32Array(N*2),z=new Float32Array(N),[z0,zk]=sm?[1.3,2.4]:[1.1,2.6];
+  // Si hay más partículas que puntos, se repiten con un desplazamiento mínimo; si hay menos, se recortan
+  for(let i=0;i<N;i++){const k=(i%M)*3,j=i>=M?.8:0;t[i*2]=x0+pts[k]*W+rand(-j,j);t[i*2+1]=y0+pts[k+1]*H+rand(-j,j);z[i]=z0+pts[k+2]*zk}
+  return{t,z};
+}
 function layout(){
   vw=innerWidth;vh=innerHeight;
   const d=Math.min(devicePixelRatio||1,1.6);cv.width=vw*d;cv.height=vh*d;ctx.setTransform(d,0,0,d,0,0);
-  fitName();
+  fitName();measureScene();
   const sm=small();
   for(const st of stops){
-    const r=st.el.getBoundingClientRect();
-    st.s=st.shape==='hero'?vh*.32:r.top+scrollY+r.height/2-vh/2;
+    stopRange(st);st.z=null;
     if(st.shape==='hero'){st.t=toTargets(heroPts(),0,0,2,2);continue}
+    if(st.shape==='portrait'){
+      const pt=portrait&&portraitTargets();
+      if(pt){st.t=pt.t;st.z=pt.z}else st.t=toTargets(sample(320,180,SHAPES.scatter),0,0,vw/320,vh/180);
+      continue}
     if(FULL[st.shape]){st.t=toTargets(sample(320,180,SHAPES[st.shape]),0,0,vw/320,vh/180);continue}
     const size=sm?Math.min(vw*.74,vh*.38):Math.min(vw*.4,vh*.62);
     const x0=sm?(vw-size)/2:vw*.72-size/2,y0=sm?vh*.1:(vh-size)/2;
@@ -341,18 +372,25 @@ function stepDust(f,now){
   crew.style.opacity=1;
   let i=0;while(i<stops.length-2&&y>=stops[i+1].s)i++;
   const a=stops[i],b=stops[i+1];
-  const raw=clamp((y-a.s)/Math.max(1,b.s-a.s));
-  const t=smooth(clamp((raw-.22)/.56));
+  const raw=clamp((y-a.e)/Math.max(1,b.s-a.e));
+  // El viaje ocupa el centro del tramo; hacia una meseta termina justo al llegar y desde ella sale nada más empezar
+  const lo=a.flat?0:.22,hi=b.flat?1:.78;
+  let t=smooth(clamp((raw-lo)/(hi-lo)));
   let al=(a.alpha+(b.alpha-a.alpha)*t);
+  // Sin animaciones: el retrato aparece ya formado (fundido, sin viaje)
+  if(rm&&(a.flat||b.flat)){t=raw<.5?0:1;al=(t?b.alpha:a.alpha)*smooth(clamp(Math.abs(raw-.5)*4))}
   if(i===0)al*=clamp(hp*1.6);
   const wa=a.shape==='wave'?1-t:b.shape==='wave'?t:0;
   const ta=a.t,tb=b.t;
   const mr=small()?70:110,mr2=mr*mr;
+  // Ruido solo cuando no se hace scroll: entra en medio segundo
+  const amp=rm?0:NOISE*smooth(clamp((now-scrollT-150)/500));
   for(let n=0;n<N;n++){
     const k=n*2;
     let gx=ta[k]+(tb[k]-ta[k])*t,gy=ta[k+1]+(tb[k+1]-ta[k+1])*t;
     if(wa)gy+=Math.sin(gx*.012+now*.0016)*16*wa;
     if(rm){px[n]=gx;py[n]=gy;continue}
+    if(amp){const w=now*nfq[n]+nph[n];gx+=Math.sin(w)*amp;gy+=Math.cos(w*1.31+nph[n])*amp}
     const e=ez[n]*f;
     pvx[n]+=(gx-px[n])*e*.55;pvy[n]+=(gy-py[n])*e*.55;
     const dx=px[n]-mouse.x,dy=py[n]-mouse.y,d2=dx*dx+dy*dy;
@@ -366,7 +404,9 @@ function stepDust(f,now){
   ctx.globalAlpha=al;
   const lift=c=>Math.min(255,dustNow[c]*.72+90)|0;
   ctx.fillStyle=`rgb(${lift(0)},${lift(1)},${lift(2)})`;
-  for(let n=0;n<N;n++)ctx.fillRect(px[n],py[n],ps[n],ps[n]);
+  const za=a.z,zb=b.z;
+  if(za||zb){for(let n=0;n<N;n++){const s0=za?za[n]:ps[n],s=s0+((zb?zb[n]:ps[n])-s0)*t;ctx.fillRect(px[n],py[n],s,s)}}
+  else for(let n=0;n<N;n++)ctx.fillRect(px[n],py[n],ps[n],ps[n]);
   ctx.globalAlpha=1;
 }
 
@@ -377,19 +417,115 @@ function updateTeam(){
   gather=con.top<vh*.45&&con.bottom>0;
   cursors.forEach((c,i)=>{
     const guide=i<3;
-    c.el.classList.toggle('off',introDone&&heroOut&&!gather&&!strike&&!order&&!(guide&&(c.follow||!small())));
+    c.el.classList.toggle('off',introDone&&heroOut&&!gather&&!strike&&!order&&!c.task&&!(guide&&(c.follow||!small())));
   });
 }
 const selObs=new IntersectionObserver(es=>{
   es.forEach(e=>{
     if(e.target.id==='mail')return;
-    const free=cursors.slice(0,3).find(c=>!c.follow);
+    const free=cursors.slice(0,3).find(c=>!c.follow&&!c.task);
     const cur=cursors.slice(0,3).find(c=>c.follow===e.target);
     if(e.isIntersecting&&free&&!cur&&introDone){free.follow=e.target;free.job=null;free.box.classList.add('on')}
     if(!e.isIntersecting&&cur){cur.follow=null;cur.box.classList.remove('on');cur.tx=rand(.2,.8)*vw;cur.ty=rand(.8,.95)*vh;cur.next=performance.now()+1200}
   });
 },{rootMargin:'-18% 0px -22% 0px'});
 $$('[data-sel]').forEach(e=>selObs.observe(e));
+
+/* ---------- Escena «Ese equipo soy yo»: retrato de partículas y sellos de formación ---------- */
+// p = progreso del scroll dentro de la escena: 0 cuando el sticky se pega arriba, 1 cuando se suelta
+const PORTRAIT_IN=.3,PORTRAIT_OUT=.92;  // el retrato está completo entre estos dos puntos (meseta)
+// Cada sello: a (los cursores lo traen desde la derecha), hover (encima de su sitio), drop (estampa), end (fin del tramo)
+const STAMP_T=[{a:.5,hover:.64,drop:.66,end:.7},{a:.7,hover:.84,drop:.86,end:.92}];
+const LIFT=40,DROP_MS=90,BOUNCE_MS=240,SHAKE_MS=180,SHAKE_PX=2;
+const scene={el:$('#open'),stick:$('#open .open-stick'),grid:$('#open .open-grid'),slot:$('#portraitSlot'),text:$('#openText'),top:0,len:1,on:false,shake:-1e9};
+const stamps=T.stamps.map((d,i)=>{
+  const el=$('#stamp'+(i+1)),info=$('#stamp'+(i+1)+'Info');
+  // Textos desde i18n.js; el HTML lleva la misma copia para quien navega sin JavaScript
+  el.querySelector('.stamp-title').textContent=d.title;el.querySelector('.stamp-school').textContent=d.school;el.querySelector('.stamp-foot').textContent=d.foot;
+  info.replaceChildren(...d.lines.map(l=>{const q=document.createElement('p');q.textContent=l;return q}));
+  el.classList.toggle('half',!!d.half);info.hidden=true;
+  return{n:i+1,el,info,slot:el.parentElement,cfg:STAMP_T[i],rot:parseFloat(getComputedStyle(el).getPropertyValue('--rot'))||0,
+    mode:'out',dropT:-1e9,inked:false,open:false,crew:[],role:null,bringer:null,w:0,h:0,box:{x:0,y:0,w:0,h:0}};
+});
+function measureScene(){
+  const r=scene.el.getBoundingClientRect();scene.top=r.top+scrollY;
+  scene.len=Math.max(1,scene.el.offsetHeight-scene.stick.offsetHeight);
+  stamps.forEach(st=>{st.w=st.el.offsetWidth;st.h=st.el.offsetHeight});
+}
+function goScene(q){scrollTo({top:scene.top+q*scene.len,behavior:rm?'auto':'smooth'})}
+function setInk(st,on){if(st.inked===on)return;st.inked=on;st.el.classList.toggle('inked',on)}
+function setStamp(st,on){
+  if(on)stamps.forEach(o=>{if(o!==st)setStamp(o,false)});
+  if(st.open===on)return;
+  st.open=on;st.el.setAttribute('aria-expanded',on);st.info.hidden=!on;st.info.classList.remove('up');
+  // Si el panel no cabe por encima de la barra de abajo (Auditar / Jefe de obra), se abre hacia arriba
+  if(on){track('sello',{sello:st.n});if(st.info.getBoundingClientRect().bottom>vh-60)st.info.classList.add('up')}
+}
+function closeStamps(){stamps.forEach(st=>setStamp(st,false))}
+stamps.forEach(st=>{
+  st.el.addEventListener('click',()=>setStamp(st,!st.open));
+  // Con teclado, si el sello aún no está puesto, baja hasta donde ya están estampados los dos
+  st.el.addEventListener('focus',()=>{if(st.el.matches(':focus-visible')&&st.mode!=='landed')goScene(.9)});
+});
+document.addEventListener('pointerdown',e=>{if(!e.target.closest?.('.stamp-slot'))closeStamps()});
+/* Cursores retenidos por un sello: carry (lo llevan), point (lo señalan al abrirlo), touch (lo retocan) */
+function releaseCursor(c){c.task=null;c.script=false;c.rt=null;c.tx=vw+80;c.ty=c.y;c.next=performance.now()+1300}
+function crewFor(st,n){
+  let changed=false;
+  while(st.crew.length>n){releaseCursor(st.crew.pop());changed=true}
+  while(st.crew.length<n){
+    const pool=freeCursors();if(!pool.length)break;
+    const c=pool.includes(st.bringer)?st.bringer:pool[0];
+    c.task=st;c.script=true;c.rt=null;
+    // Si estaba escondido, entra desde fuera de la pantalla por la derecha
+    if(c.el.classList.contains('off')){c.x=vw+30;c.y=clamp(st.box.y,40,vh-40);c.vx=c.vy=0;c.trail.length=0}
+    st.crew.push(c);changed=true;
+  }
+  if(changed)updateTeam();
+}
+function aimTask(c,now){
+  const st=c.task,b=st.box,i=st.crew.indexOf(c);
+  if(st.role==='carry'){c.tx=b.x+b.w*(i?.78:.22);c.ty=b.y+6;return}
+  if(st.role==='point'){c.tx=b.x+b.w-10;c.ty=b.y+b.h-8+Math.sin(now*.005)*3;return}
+  // Retoque: espera al lado; cada pocos segundos se acerca, hace un trazo corto y se aparta
+  const R=c.rt||(c.rt={ph:0,t:now+rand(900,1800),x:0,y:0});
+  if(R.ph===0){c.tx=Math.min(b.x+b.w+24,vw-28);c.ty=b.y+b.h*.35;if(now>R.t){R.ph=1;R.t=now+450;R.x=b.x+b.w*rand(.25,.75);R.y=b.y+b.h*rand(.3,.7)}}
+  else if(R.ph===1){c.tx=R.x;c.ty=R.y;if(now>R.t){R.ph=2;R.t=now+560}}
+  else{const k=clamp(1-(R.t-now)/560);c.tx=R.x+Math.sin(k*Math.PI*3)*12;c.ty=R.y+k*6;if(now>R.t){R.ph=0;R.t=now+rand(2200,4200)}}
+}
+function stepScene(now){
+  const y=scrollY,p=(y-scene.top)/scene.len,wasOn=scene.on;
+  scene.on=y>scene.top-vh&&y<scene.top+scene.len+vh;
+  if(!scene.on){if(wasOn){stamps.forEach(st=>crewFor(st,0));closeStamps()}return}
+  scene.text.style.opacity=rm?1:smooth(clamp(p/PORTRAIT_IN));
+  stamps.forEach(st=>{
+    const c=st.cfg,r=st.slot.getBoundingClientRect();
+    const mode=rm?'landed':p<c.a?'out':p<c.drop?'carry':'landed';
+    if(mode!==st.mode){
+      // Solo se ve el golpe si se llega desde el tramo anterior; si la escena acaba de entrar en pantalla, ya está puesto
+      if(mode==='landed'){st.dropT=!rm&&wasOn?now:-1e9;st.bringer=st.crew[0]||st.bringer}
+      else{setInk(st,false);setStamp(st,false)}
+      st.mode=mode;
+    }
+    let dx=0,dy=0,rot=st.rot,sc=1;
+    const off=vw-r.left+40;
+    if(mode==='out'){dx=off;dy=-LIFT}
+    else if(mode==='carry'){
+      const q=clamp((p-c.a)/(c.hover-c.a)),e=1-Math.pow(1-q,3);
+      dx=off*(1-e);dy=-LIFT+(q>=1?Math.sin(now*.006)*2:0);rot+=7*(1-e);
+    }else{
+      const t=now-st.dropT;
+      if(t<DROP_MS){const k=t/DROP_MS;dy=-LIFT*(1-k*k)}
+      else{if(!st.inked){setInk(st,true);if(t<DROP_MS+120)scene.shake=now}sc=1+.06*(1-smooth(clamp((t-DROP_MS)/BOUNCE_MS)))}
+    }
+    st.el.style.transform=`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(${sc})`;
+    st.box.x=r.left+dx;st.box.y=r.top+dy;st.box.w=st.w;st.box.h=st.h;
+    st.role=rm?null:mode==='carry'?'carry':mode==='landed'&&st.open?'point':mode==='landed'&&st.n===2&&p<c.end?'touch':null;
+    crewFor(st,st.role==='carry'?2:st.role?1:0);
+  });
+  if(!rm&&now-scene.shake<SHAKE_MS)scene.grid.style.transform=`translate(${rand(-SHAKE_PX,SHAKE_PX)}px,${rand(-SHAKE_PX,SHAKE_PX)}px)`;
+  else if(scene.grid.style.transform)scene.grid.style.transform='';
+}
 
 /* ---------- Zalapp ---------- */
 const dots=$('#dots');
@@ -615,7 +751,7 @@ async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'sm
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
-const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zRead',nautes:'#nPanel',alcar:'#portal',mapping:'#stage'};
+const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zRead',nautes:'#nPanel',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
 function command(raw){
   const B=T.boss,t=strip(raw);if(!t)return B.empty;
   let m;
@@ -626,7 +762,10 @@ function command(raw){
   if(B.reReset.test(t)){paint=null;repaint();return B.reset}
   for(const[id,re,name] of B.colors)if(re.test(t)){paint=PAINT[id];repaint();return B.painted(name)}
   if(B.rePaint.test(t))return B.noColor;
-  for(const[id,re,name] of B.places)if(re.test(t)){$(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});return B.goTo(name)}
+  for(const[id,re,name] of B.places)if(re.test(t)){
+    // La escena es alta: se baja hasta donde los dos sellos ya están puestos
+    if(PLACES[id]==='#open')goScene(.9);else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});
+    return B.goTo(name)}
   if(B.reDance.test(t)){setOrder('dance');return B.dance}
   if(B.reFollow.test(t)){setOrder('follow');return B.follow}
   if(B.reCircle.test(t)){setOrder('circle');return B.circle}
@@ -645,7 +784,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false)}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps()}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -688,7 +827,7 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#zRead','.gauge','#portal','#stage','#tool','#mail'];
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zRead','.gauge','#portal','#stage','#tool','#mail'];
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
@@ -698,7 +837,10 @@ function showNote(i,go){
   $('#nNum').textContent=T.noteCount(noteI+1,NOTES.length);$('#nTitle').textContent=n[1];$('#nText').textContent=n[2];note.hidden=false;
   pinEls.forEach((p,k)=>p.classList.toggle('on',k===noteI));
   track('auditar-nota',{nota:noteI+1});
-  if(go){const el=$(n[0]);el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
+  if(go){const el=$(n[0]);
+    // Dentro de la escena alta: el texto se lee con el retrato formado, los sellos cuando ya están los dos
+    if(scene.el.contains(el)){goScene(el===scene.el?.4:.9);return}
+    el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
 }
 function closeNote(){note.hidden=true}
 function setAudit(on){auditOn=on;bAudit.setAttribute('aria-pressed',on);pinEls.forEach(p=>p.hidden=!on);if(!on)closeNote()}
@@ -722,21 +864,19 @@ let last=performance.now();
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;
   requestAnimationFrame(loop);
-  for(const step of [()=>stepLetters(f),()=>stepCursors(f,now),()=>stepDust(f,now),stepPit,stepPortal,()=>stepStrike(now),stepPins,()=>{if(mapOn)drawMap(now)}]){try{step()}catch(e){console.error(e)}}
+  for(const step of [()=>stepScene(now),()=>stepLetters(f),()=>stepCursors(f,now),()=>stepDust(f,now),stepPit,stepPortal,()=>stepStrike(now),stepPins,()=>{if(mapOn)drawMap(now)}]){try{step()}catch(e){console.error(e)}}
 }
-function placeStops(){
-  for(const st of stops){if(st.shape==='hero')continue;const r=st.el.getBoundingClientRect();st.s=r.top+scrollY+r.height/2-vh/2}
-}
+function placeStops(){measureScene();for(const st of stops)stopRange(st)}
 /* Si la tipografía u otra cosa cambia la altura, recalcula dónde aparece cada forma */
 new ResizeObserver(placeStops).observe($('main'));
 let rto;
 addEventListener('resize',()=>{clearTimeout(rto);rto=setTimeout(()=>{layout();warp();sizePortal()},150)});
-addEventListener('scroll',()=>{applyTone();updateTeam()},{passive:true});
+addEventListener('scroll',()=>{scrollT=performance.now();applyTone();updateTeam()},{passive:true});
 
 async function boot(){
   for(let i=0;i<60&&(!innerWidth||!innerHeight);i++)await pause(100);
   vw=innerWidth;vh=innerHeight;
-  try{await Promise.race([Promise.all([document.fonts.load('900 100px "Big Shoulders Display"'),document.fonts.load('600 11px "Martian Mono"')]),pause(1400)])}catch(e){}
+  try{await Promise.race([Promise.all([document.fonts.load('900 100px "Big Shoulders Display"'),document.fonts.load('600 11px "Martian Mono"'),portraitLoad]),pause(1400)])}catch(e){}
   // Si algo falla o el visor frena la animación, la web se abre igualmente
   const guard=setTimeout(rescue,11000);
   try{
@@ -746,6 +886,8 @@ async function boot(){
   }catch(e){console.error(e);clearTimeout(guard);rescue();return}
   // Google Fonts puede llegar tarde: recoloca si cambia la medida
   document.fonts.ready.then(()=>{layout();warp();sizePortal()});
+  // Si los puntos del retrato llegan tarde, se recalculan las dianas; si no llegan, se queda la forma scatter
+  portraitLoad.then(d=>{if(d&&!stops.find(st=>st.flat)?.z)layout()});
   if(rm){introDone=true;skipped=true;$('#loader').remove();$('#skip').remove();return}
   surEl.textContent='';
   $('#skip').onclick=()=>{track('intro-saltada');finish()};

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="240" height="240" viewBox="0 0 240 240">
+  <!-- Máscara de tinta de los sellos: casi todo cubierto, con poros pequeños donde el tampón no apretó -->
+  <filter id="t" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB">
+    <feTurbulence type="fractalNoise" baseFrequency=".42" numOctaves="2" seed="4" stitchTiles="stitch"/>
+    <feColorMatrix type="matrix" values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  -16 0 0 0 12.2"/>
+  </filter>
+  <rect width="240" height="240" filter="url(#t)"/>
+</svg>

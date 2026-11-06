@@ -85,8 +85,40 @@ main{position:relative;z-index:2}
 .wrap{max-width:1200px;margin-inline:auto;padding-left:var(--gutter-l);padding-right:var(--gutter-r)}
 .eyebrow{font:600 11px/1.5 var(--mono);text-transform:uppercase;letter-spacing:.08em;color:var(--accent)}
 .big{font:900 clamp(38px,10.5vw,128px)/.92 var(--display);text-transform:uppercase;text-wrap:balance;overflow-wrap:break-word}
-.open{padding-block:18vh 10vh}
-.open p{max-width:34rem;font-size:20px;margin-top:20px}
+/* Escena «Ese equipo soy yo»: el retrato lo dibuja el canvas #dust en el hueco .portrait-slot.
+   Con JavaScript es una escena alta con un contenedor sticky; el progreso del scroll mueve los sellos. */
+.open{position:relative}
+.open-stick{padding-block:18vh 10vh}
+.js .open{height:320vh}
+.js .open-stick{position:sticky;top:0;height:100vh;height:100svh;box-sizing:border-box;padding-block:64px 40px;display:flex;overflow-x:clip}
+.open-grid{width:100%;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(24px,5vw,72px);align-items:center}
+.portrait-slot{align-self:stretch;min-height:0}
+.open-copy{display:flex;flex-direction:column;gap:clamp(22px,5vh,48px);min-width:0}
+.open .big{font-size:clamp(38px,7vw,100px)}
+.open-text p:not(.eyebrow){max-width:34rem;font-size:20px;margin-top:20px}
+.stamps{display:grid;grid-template-columns:repeat(2,minmax(0,15.5rem));gap:clamp(14px,2.6vw,30px);align-items:start}
+.stamp-slot{position:relative;min-width:0}
+.stamp{position:relative;display:block;width:100%;margin:0;padding:0;border:0;background:none;text-align:center;color:color-mix(in srgb,var(--ink) 84%,transparent);transform:rotate(var(--rot));will-change:transform;transition:color .5s}
+#stamp1{--rot:-4deg}
+#stamp2{--rot:3deg}
+.stamp:focus-visible{outline-offset:6px}
+/* El tampón sin tinta que traen los cursores */
+.stamp::before{content:"";position:absolute;inset:0;border:4px double currentColor;border-radius:16px;background:color-mix(in srgb,var(--ink) 7%,transparent);opacity:0;transition:opacity .2s}
+.js .stamp:not(.inked)::before{opacity:.4}
+/* La marca de tinta: textura irregular (public/tinta.svg) y un círculo que se abre al estampar */
+@property --r{syntax:"<percentage>";inherits:false;initial-value:110%}
+.stamp-face{--r:110%;position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;border:4px double currentColor;border-radius:16px;padding:13px 12px 10px;
+  -webkit-mask-image:url(/tinta.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));mask-image:url(/tinta.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));
+  -webkit-mask-size:240px 240px,100% 100%;mask-size:240px 240px,100% 100%;-webkit-mask-repeat:repeat,no-repeat;mask-repeat:repeat,no-repeat;
+  -webkit-mask-composite:source-in;mask-composite:intersect;transition:opacity .3s,--r .55s cubic-bezier(.2,.7,.3,1)}
+.stamp.half .stamp-face{-webkit-mask-image:url(/tinta-media.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));mask-image:url(/tinta-media.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));-webkit-mask-size:320px 320px,100% 100%;mask-size:320px 320px,100% 100%}
+.js .stamp:not(.inked) .stamp-face{opacity:0;--r:-30%;transition:opacity .15s,--r .15s}
+.stamp-title{font:900 clamp(17px,1.8vw,23px)/1 var(--display);text-transform:uppercase;text-wrap:balance}
+.stamp-school,.stamp-foot{font:600 9px/1.45 var(--mono);text-transform:uppercase;letter-spacing:.04em;text-wrap:balance}
+.stamp-foot{align-self:stretch;border-top:1px solid currentColor;padding-top:6px}
+.stamp-info{position:absolute;z-index:6;left:0;top:calc(100% + 14px);width:min(20rem,calc(100vw - 32px));box-sizing:border-box;background:var(--ground);border:1.5px solid var(--ink);padding:12px 14px;display:grid;gap:8px;font-size:15px;line-height:1.45;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.stamp-slot+.stamp-slot .stamp-info{left:auto;right:0}
+.stamp-info.up{top:auto;bottom:calc(100% + 14px)}
 .ch{min-height:100vh;display:flex;align-items:center}
 .ch>.wrap{width:100%}
 .ch-text{max-width:29rem;display:flex;flex-direction:column;gap:12px}
@@ -158,9 +190,21 @@ main{position:relative;z-index:2}
   .proj{padding-block:48px}
   .stick{padding-block:58px 56px}
   #pit{min-height:440px}
+  .js .open{height:300vh}
+  .open-grid{grid-template-columns:minmax(0,1fr)}
+  .js .open-stick{padding-block:50px 16px}
+  .js .open-grid{grid-template-rows:42svh minmax(0,1fr);align-items:start;gap:12px}
+  .open-copy{gap:16px}
+  .open .big{font-size:clamp(34px,9vw,64px)}
+  .open-text p:not(.eyebrow){font-size:16px;margin-top:10px}
+  .stamp-face{padding:9px 7px 8px;gap:5px;border-radius:13px}
+  .stamp::before{border-radius:13px}
+  .stamp-title{font-size:clamp(14px,3.9vw,19px)}
+  .stamp-school,.stamp-foot{font-size:8.5px}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}.c,#crew{display:none}.ring{animation:none}
+  .js .open{height:140vh}
 }
 
 /* Dock, auditoría, jefe de obra, y huelga */
@@ -192,6 +236,10 @@ html:not(.js) :is(#dock,#crew,#you,#dust,#aura,#pins,#skip,#copy,.toy,.lab-grid,
 html:not(.js) .name{font-size:min(calc((100vw - 32px) / 2.95),50vh)}
 html:not(.js) .l{cursor:auto}
 html:not(.js) .ch{min-height:0;padding-block:12vh}
+html:not(.js) .portrait-slot{display:none}
+html:not(.js) .open-grid{grid-template-columns:minmax(0,1fr)}
+html:not(.js) .stamp{cursor:default}
+html:not(.js) .stamp-info{position:static;width:auto;margin-top:16px;background:none;border:0;padding:0;box-shadow:none;font-size:14px}
 .nojs-note{position:fixed;z-index:28;left:var(--gutter-l);bottom:calc(12px + env(safe-area-inset-bottom,0px));max-width:calc(100vw - 32px);box-sizing:border-box;margin:0;background:var(--ground);border:1px solid var(--ink);padding:9px 11px;font:600 10px/1.4 var(--mono)}
 .static{display:flex;flex-direction:column;gap:12px;min-width:0}
 .static-list{display:grid;gap:10px;margin:0;padding:0;list-style:none;font-size:15px}
