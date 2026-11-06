@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Alonso Osuna</title>
+<meta name="description" content="Portfolio of Alonso Osuna Soto, a Marketing and Advertising student in Córdoba, Spain.">
+<meta name="theme-color" content="#0E1014">
+<link rel="canonical" href="https://aosuna.es/en/">
+<link rel="alternate" hreflang="es" href="https://aosuna.es/">
+<link rel="alternate" hreflang="en" href="https://aosuna.es/en/">
+<link rel="alternate" hreflang="x-default" href="https://aosuna.es/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Alonso Osuna">
+<meta property="og:title" content="Alonso Osuna Soto | Portfolio">
+<meta property="og:description" content="Marketing, web and ideas in practice. Projects in content, web design, research and AI, with the process behind each one and what I did myself.">
+<meta property="og:url" content="https://aosuna.es/en/">
+<meta property="og:image" content="https://aosuna.es/og-en.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Alonso Osuna Soto. Marketing, web and ideas in practice.">
+<meta property="og:locale" content="en_GB">
+<meta property="og:locale:alternate" content="es_ES">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Alonso Osuna Soto | Portfolio">
+<meta name="twitter:description" content="Marketing, web and ideas in practice. Projects in content, web design, research and AI, with the process behind each one and what I did myself.">
+<meta name="twitter:image" content="https://aosuna.es/og-en.png">
+<meta name="twitter:image:alt" content="Alonso Osuna Soto. Marketing, web and ideas in practice.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<script defer src="https://stats.aosuna.es/script.js" data-website-id="UMAMI_WEBSITE_ID"></script>
+<script src="/boot.js"></script>
+<script type="module" src="/src/main.js"></script>
+</head>
+<body>
+<div id="aura" aria-hidden="true"></div>
+<canvas id="dust" aria-hidden="true"></canvas>
+<div id="crew" aria-hidden="true"></div>
+<div class="you" id="you" aria-hidden="true">You</div>
+<div id="loader" aria-hidden="true"><div class="ring"></div><div class="pct" id="pct">Loading 0%</div></div>
+<button id="skip" type="button">Skip intro</button>
+
+<div id="pins" aria-hidden="false"></div>
+<div class="dock" id="dock">
+  <button id="bAudit" type="button" aria-pressed="false">Audit this site</button>
+  <button id="bBoss" type="button" aria-pressed="false">Site foreman</button>
+</div>
+<aside class="panel" id="note" hidden aria-live="polite">
+  <p class="eyebrow" id="nNum"></p>
+  <h3 id="nTitle"></h3>
+  <p id="nText"></p>
+  <div class="row"><button class="pill" id="nPrev" type="button">Previous</button><button class="pill" id="nNext" type="button">Next</button><button class="pill" id="nClose" type="button">Close</button></div>
+</aside>
+<form class="panel" id="boss" hidden>
+  <p class="eyebrow">Site foreman</p>
+  <h3>Give an order</h3>
+  <label for="bossIn" class="note">Type what you want the crew to do</label>
+  <input id="bossIn" autocomplete="off" maxlength="60" placeholder="Paint the background red">
+  <p id="bossReply" aria-live="polite"></p>
+  <div class="pills" id="bossChips"></div>
+</form>
+<nav class="top" aria-label="Main">
+  <a href="#inicio">Alonso Osuna</a>
+  <ul>
+    <li><a href="#historia">About</a></li>
+    <li><a href="#herramientas">Toolbox</a></li>
+    <li><a href="#proyectos">Projects</a></li>
+    <li><a href="#contacto">Contact</a></li>
+    <li class="lang"><a href="/" hreflang="es" lang="es" aria-label="Versión en español (ES)" data-lang="es">ES</a><span aria-hidden="true">/</span><span class="on" aria-hidden="true">EN</span></li>
+  </ul>
+</nav>
+
+<main>
+<section class="hero" id="inicio" data-tone="paper" data-shape="hero" data-alpha=".9">
+  <div class="stick">
+    <h1 class="name" id="name" aria-label="Alonso Osuna Soto">
+      <span class="word" id="word" aria-hidden="true">
+        <span class="l"><i>A</i><b>A</b></span><span class="l"><i>L</i><b>L</b></span><span class="l"><i>O</i><b>O</b></span><span class="l"><i>N</i><b>N</b></span><span class="l"><i>S</i><b>S</b></span><span class="l"><i>O</i><b>O</b></span>
+      </span>
+      <span class="sur" id="sur" aria-hidden="true">OSUNA SOTO</span>
+    </h1>
+    <p class="tag reveal">Marketing, web and ideas in practice</p>
+    <p class="lead reveal">I study Marketing and Advertising in Córdoba, Spain. Here you'll find projects in content, web design, research and artificial intelligence, with the process behind each one and what I did myself.</p>
+    <p class="hint reveal" id="hint">Drag a letter and break my name. My crew will fix it.</p>
+  </div>
+</section>
+
+<section id="historia">
+  <div class="wrap open" data-tone="night" id="open">
+    <p class="eyebrow">About me</p>
+    <h2 class="big">That crew is me</h2>
+    <p>Every cursor is something I've done at college or on a work placement. This is how I got here.</p>
+  </div>
+
+  <article class="ch" data-tone="rust" data-shape="bubble" data-alpha="1"><div class="wrap"><div class="ch-text">
+    <p class="eyebrow">2023–2025 · Dual vocational training</p>
+    <h3>Almazaras de la Subbética</h3>
+    <p>On my vocational course in Sales and Commercial Activities, split between the classroom and the company (FP Dual, as it's called in Spain), I served and advised customers, supported sales of agricultural machinery, handled paperwork and invoices, and organised orders and the warehouse.</p>
+    <p class="kept">What I learnt: to listen to what someone needs before offering them anything.</p>
+  </div></div></article>
+
+  <article class="ch" data-tone="cobalt" data-shape="browser" data-alpha="1"><div class="wrap"><div class="ch-text">
+    <p class="eyebrow">March–May 2026 · Work placement</p>
+    <h3>Explora Natura</h3>
+    <p>This is where it all came together: web and content for the boating industry, keyword research, prompts, projection mapping and lead generation. Today I study Marketing and Advertising in Córdoba.</p>
+    <p class="kept">What I learnt: sales, tech and visuals can all be the same job.</p>
+  </div></div></article>
+</section>
+
+<section id="proyectos">
+  <div class="wrap projects-head" data-tone="asphalt">
+    <p class="eyebrow">Projects</p>
+    <h2 class="big">Go on, touch them. They're alive</h2>
+  </div>
+
+  <article class="proj" data-tone="asphalt" data-shape="route" data-alpha=".3"><div class="wrap proj-grid">
+    <div class="proj-copy">
+      <p class="eyebrow">Academic project · 2026–2027 · In progress</p>
+      <h3 data-sel>Zalapp</h3>
+      <p>Where do you stop when you drive a lorry? With two classmates, I researched that decision: parking, facilities, cleanliness, food, rest and up-to-date information.</p>
+      <dl class="facts">
+        <div><dt>My part</dt><dd>Coordinating the work, designing the proposal and connecting the research to the marketing.</dd></div>
+        <div><dt>Done</dt><dd>Survey, competitor analysis, SWOT with its action plan (DAFO/CAME in Spanish), segmentation and an individual marketing plan.</dd></div>
+        <div><dt>Status</dt><dd>Still in progress, with no commercial launch. The call for survey responses went out through CETM, Spain's road haulage confederation, and other industry associations.</dd></div>
+      </dl>
+    </div>
+    <div class="toy">
+      <p class="readout" id="zRead">47 responses</p>
+      <div class="dots" id="dots" role="img" aria-label="47 responses: 36 employed drivers, 5 self-employed drivers, 4 fleet managers and 2 other profiles"></div>
+      <div class="pills" id="zPills"></div>
+      <p class="note gap-top">7.39 out of 10: stated intention to use the app, among the 41 drivers</p>
+      <div class="gauge" aria-hidden="true"><i></i></div>
+    </div>
+  </div></article>
+
+  <article class="proj" data-tone="sea" data-shape="wave" data-alpha=".35"><div class="wrap proj-grid">
+    <div class="proj-copy">
+      <p class="eyebrow">Work placement at Explora Natura · 2026</p>
+      <h3 data-sel>Nautes</h3>
+      <p>A website that helps boat owners find marine professionals and services. I worked on content and design in WordPress, keywords and the way the information is organised.</p>
+      <dl class="facts">
+        <div><dt>My part</dt><dd>I worked on the website, newsletter, briefs and content, as part of the company's project.</dd></div>
+        <div><dt>Feedback</dt><dd>I got reviews on homepage hierarchy, categories, the path to the contact page, readability and internal linking.</dd></div>
+        <div><dt>Tools</dt><dd>WordPress, OceanWP, Directorist, Spectra and Stackable.</dd></div>
+      </dl>
+    </div>
+    <div class="toy">
+      <p class="eyebrow">From question to finished piece</p>
+      <div class="pills" id="nPills"></div>
+      <div class="step-panel" id="nPanel" aria-live="polite"></div>
+    </div>
+  </div></article>
+
+  <article class="proj" data-tone="concrete" data-shape="facade" data-alpha=".22"><div class="wrap proj-grid">
+    <div class="proj-copy">
+      <p class="eyebrow">Analysis and new website · 2026</p>
+      <h3 data-sel>Alcar</h3>
+      <p>I analysed an architecture studio's online presence and I'm building its new website, with project case studies, local SEO and enquiry tracking.</p>
+      <dl class="facts">
+        <div><dt>Finding</dt><dd>In the Instagram posts I analysed, I found no direct invitation to get in touch.</dd></div>
+        <div><dt>Proposal</dt><dd>An eight-week trial content calendar, with indicators to evaluate it.</dd></div>
+        <div><dt>Limits</dt><dd>No access to analytics. No measured results yet.</dd></div>
+      </dl>
+    </div>
+    <div class="toy">
+      <a class="portal" id="portal" href="#" aria-label="Open Alcar's new website">
+        <canvas class="bits" id="bits" aria-hidden="true"></canvas>
+        <span class="enter" id="enter" aria-hidden="true">Enter</span>
+      </a>
+      <p class="note" id="portalNote"></p>
+    </div>
+  </div></article>
+
+  <article class="proj" data-tone="void" data-shape="beam" data-alpha=".28"><div class="wrap proj-grid">
+    <div class="proj-copy">
+      <p class="eyebrow">Work placement at Explora Natura · 2026</p>
+      <h3 data-sel>Video&shy;mapping</h3>
+      <p>I took part in trials for local shops: setting up the equipment, creating visuals with AI and configuring the projections. What interested me most was fitting a digital piece to a real space.</p>
+      <dl class="facts">
+        <div><dt>Tools</dt><dd>Projection equipment and AI generation tools.</dd></div>
+        <div><dt>Try it</dt><dd>Drag the four corners until the light fits the shop window.</dd></div>
+      </dl>
+    </div>
+    <div class="toy">
+      <div class="stage" id="stage">
+        <svg viewBox="0 0 400 300" aria-hidden="true"><rect x="40" y="16" width="320" height="284" fill="#262233"/><rect x="40" y="228" width="320" height="72" fill="#1C1926"/><polygon points="112,66 304,48 312,216 104,198" fill="#0C0B12" stroke="#8C86A8" stroke-width="1.5" stroke-dasharray="6 5"/></svg>
+        <canvas id="map" width="400" height="300"></canvas>
+      </div>
+      <p class="readout" id="mRead" aria-live="polite">Misaligned</p>
+    </div>
+  </div></article>
+
+</section>
+
+<section class="wrap lab" id="herramientas" data-tone="paper" data-shape="scatter" data-alpha=".35">
+  <p class="eyebrow">Toolbox</p>
+  <h2 class="big">The toolbox</h2>
+  <p class="intro-text">Shake them, throw them, and tap any of them to see where I've used it and how well I really know it.</p>
+  <div class="lab-grid">
+    <div id="pit"></div>
+    <aside id="tool" aria-live="polite">
+      <h3 id="tName"></h3>
+      <p class="eyebrow">Where</p><p id="tWhere"></p>
+      <p class="eyebrow">Level</p><p id="tLevel"></p>
+      <button id="dump" type="button">Tip out the box</button>
+    </aside>
+  </div>
+</section>
+
+<section class="contact" id="contacto" data-tone="oil" data-shape="arrow" data-alpha=".55">
+  <div class="wrap">
+    <p class="eyebrow">Contact</p>
+    <h2 class="big">Shall we build something?</h2>
+    <p>I'm looking for an internship in Europe and an entry-level marketing role where I can support content, website management, research and communications, and keep learning as part of a team.</p>
+    <p id="mail" data-sel>alonsoosunasoto@gmail.com</p>
+    <div class="actions">
+      <button class="btn" id="copy" type="button">Copy email</button>
+      <a class="btn alt" id="linkedin" href="https://www.linkedin.com/in/alonso-osuna-soto-23522835b/" target="_blank" rel="noopener">LinkedIn</a>
+    </div>
+  </div>
+</section>
+</main>
+</body>
+</html>

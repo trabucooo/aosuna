@@ -30,6 +30,9 @@ main{position:relative;z-index:2}
 .top a{text-decoration:none}
 .top ul{display:flex;gap:18px}
 .top li a:hover{text-decoration:underline;text-underline-offset:4px}
+.top .lang{display:flex;gap:5px}
+.top .lang span{opacity:.5}
+.top .lang .on{opacity:1;color:var(--accent)}
 .intro .top{opacity:0}
 
 /* Cursores */
@@ -149,6 +152,7 @@ footer{font:400 11px/1.6 var(--mono);margin-top:7vh}
 
 @media (max-width:860px){
   .top ul{gap:12px}.top li:nth-child(2){display:none}
+  .top .lang span{display:none}
   .proj-grid,.lab-grid,.side{grid-template-columns:minmax(0,1fr)}
   .ch{align-items:flex-end;min-height:115vh;padding-bottom:9vh}
   .ch-text{background:color-mix(in srgb,var(--ground) 84%,transparent);padding:14px}

@@ -1,5 +1,6 @@
 import './fonts.js';
 import './style.css';
+import { T, ES } from './i18n.js';
 
 (()=>{
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
@@ -39,7 +40,7 @@ function applyTone(){
   dustTarget=hexRgb(paint?paint[1]:a);inkRgb=hexRgb(i);
   if(paint){root.style.setProperty('--ground',paint[0]);root.style.setProperty('--accent',paint[1])}
  
-  const h=hit.querySelector('h2,h3');layer=(h?h.textContent:'Portada').replace(/\u00AD/g,'');
+  const h=hit.querySelector('h2,h3');layer=(h?h.textContent:T.layerHome).replace(/\u00AD/g,'');
 }
 function hexRgb(h){const n=parseInt(h.slice(1),16);return[n>>16,n>>8&255,n&255]}
 
@@ -60,7 +61,7 @@ function fitName(){
 function paintLetter(L){L.el.style.transform=(L.x||L.y||L.r)?`translate(${L.x}px,${L.y}px) rotate(${L.r}deg)`:''}
 
 /* ---------- Cursores ---------- */
-const LABELS=['WordPress','Redactor SEO','Comercial','Investigador','Videomapping','Coordinador Zalapp','Moderador','Newsletter','Prompts con IA','Diseño web','Captación','Atención al cliente'];
+const LABELS=T.crew;
 const COLORS=['#2A3FF0','#D6264F','#0A8A5C','#B3470F','#7A2BD6','#00788C','#B81F8A','#7A8500','#3A3AD0','#A8341A','#006B4F','#C03030'];
 const crew=$('#crew'),cursors=[];
 function makeCursors(){
@@ -163,8 +164,7 @@ function bindLetters(){
         if(L.mode!=='loose')return;
         const nx=L.cx+L.x,ny=L.cy+L.y;
         const list=freeCursors().sort((a,b)=>Math.hypot(a.x-nx,a.y-ny)-Math.hypot(b.x-nx,b.y-ny)).slice(0,2);
-        fetchLetter(L,list).then(()=>{repairs++;
-          hint.textContent=repairs<3?`Arreglos: ${repairs}. Puedes seguir, cobran por horas.`:repairs<6?`Arreglos: ${repairs}. Ni una queja.`:`Arreglos: ${repairs}. Baja, que te presento al equipo.`});
+        fetchLetter(L,list).then(()=>{repairs++;hint.textContent=T.repairs(repairs)});
       },rm?0:420);
     };
     L.el.addEventListener('pointerup',up);L.el.addEventListener('pointercancel',up);
@@ -178,7 +178,7 @@ const slots=[];
 async function intro(){
   const loader=$('#loader'),pct=$('#pct');
   const t0=performance.now();
-  (function count(){if(skipped)return;const p=clamp((performance.now()-t0)/1050);pct.textContent=`Cargando ${Math.round(p*100)} %`;if(p<1)setTimeout(count,40)})();
+  (function count(){if(skipped)return;const p=clamp((performance.now()-t0)/1050);pct.textContent=T.loading(Math.round(p*100));if(p<1)setTimeout(count,40)})();
   await pause(520);if(skipped)return;
   cursors.forEach((c,i)=>{const a=i/cursors.length*6.283;c.tx=vw/2+Math.cos(a)*rand(46,120);c.ty=vh/2+Math.sin(a)*rand(46,110)});
   await pause(620);if(skipped)return;
@@ -247,7 +247,7 @@ const cv=$('#dust'),ctx=cv.getContext('2d');
 const N=matchMedia('(max-width:860px)').matches?1100:2600;
 const px=new Float32Array(N),py=new Float32Array(N),pvx=new Float32Array(N),pvy=new Float32Array(N),ez=new Float32Array(N),ps=new Float32Array(N);
 for(let i=0;i<N;i++){px[i]=rand(0,vw);py[i]=rand(0,vh);ez[i]=rand(.045,.12);ps[i]=rand(1.7,3.3)}
-let dustNow=[125,139,255],dustTarget=[125,139,255],inkRgb=[238,240,244],layer='Portada';
+let dustNow=[125,139,255],dustTarget=[125,139,255],inkRgb=[238,240,244],layer=T.layerHome;
 const aura=$('#aura');
 const SHAPES={
   bolt(c,w,h){c.beginPath();const p=[[.58,.02],[.2,.56],[.46,.56],[.36,.98],[.82,.38],[.54,.38],[.72,.02]];p.forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]*w,q[1]*h));c.fill()},
@@ -326,7 +326,7 @@ function drawField(now){
     ctx.strokeStyle=`rgba(${r},${g},${b},.16)`;ctx.setLineDash([3,6]);ctx.beginPath();
     ctx.moveTo(mouse.x+.5,0);ctx.lineTo(mouse.x+.5,vh);ctx.moveTo(0,mouse.y+.5);ctx.lineTo(vw,mouse.y+.5);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=`rgba(${r},${g},${b},.6)`;ctx.font='400 10px "Martian Mono",monospace';ctx.textAlign='right';
-    ctx.fillText(`x ${Math.round(mouse.x)}  y ${Math.round(mouse.y+scrollY)}  capa: ${layer}`,vw-14,vh-14);
+    ctx.fillText(`x ${Math.round(mouse.x)}  y ${Math.round(mouse.y+scrollY)}  ${T.layerLabel}: ${layer}`,vw-14,vh-14);
     aura.style.setProperty('--ax',(mouse.x/vw*100)+'%');aura.style.setProperty('--ay',(mouse.y/vh*100)+'%');
   }
 }
@@ -394,21 +394,16 @@ $$('[data-sel]').forEach(e=>selObs.observe(e));
 const dots=$('#dots');
 const groups=[...Array(36).fill('as'),...Array(5).fill('au'),...Array(4).fill('fl'),...Array(2).fill('ot')];
 groups.forEach(g=>{const d=document.createElement('i');d.className='dot on';d.dataset.g=g;dots.appendChild(d)});
-const zOpts=[['47 registros',['as','au','fl','ot']],['41 conductores',['as','au']],['36 asalariados',['as']],['5 autónomos',['au']],['4 de flota',['fl']],['2 con perfil Otro',['ot']]];
+const zOpts=[['as','au','fl','ot'],['as','au'],['as'],['au'],['fl'],['ot']].map((g,i)=>[T.zalapp[i],g]);
 const zPills=$('#zPills'),zRead=$('#zRead');
 zOpts.forEach(([t,g],i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;b.setAttribute('aria-pressed',i==0);
-  b.onclick=()=>{track('zalapp-filtro',{filtro:t});$$('.pill',zPills).forEach(x=>x.setAttribute('aria-pressed',x===b));zRead.textContent=t;$$('.dot').forEach(d=>d.classList.toggle('on',g.includes(d.dataset.g)))};zPills.appendChild(b)});
+  b.onclick=()=>{track('zalapp-filtro',{filtro:ES.zalapp[i]});$$('.pill',zPills).forEach(x=>x.setAttribute('aria-pressed',x===b));zRead.textContent=t;$$('.dot').forEach(d=>d.classList.toggle('on',g.includes(d.dataset.g)))};zPills.appendChild(b)});
 
 /* ---------- Nautes ---------- */
-const nSteps=[
- ['Pregunta','¿Cuánto cuesta mantener un barco?',['Lo que se pregunta quien tiene un barco o piensa en comprarlo.','Primer paso: entender la intención de búsqueda.']],
- ['Brief','Guía de costes reales según eslora y uso (2026)',['Palabra clave principal y secundarias','Audiencia','Objetivo de la pieza']],
- ['Estructura','Un guion antes de escribir',['H1 y bloques H2','Preguntas frecuentes','Enlaces internos propuestos']],
- ['Metadatos','Listo para buscadores',['Metatítulo','Metadescripción','Slug']]
-];
+const nSteps=T.nautes;
 const nPills=$('#nPills'),nPanel=$('#nPanel');
 function showStep(i){const s=nSteps[i];nPanel.innerHTML=`<p class="eyebrow">${s[0]}</p><h4>${s[1]}</h4><ul>${s[2].map(x=>`<li>${x}</li>`).join('')}</ul>`;$$('.pill',nPills).forEach((p,k)=>p.setAttribute('aria-pressed',k===i))}
-nSteps.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=s[0];b.onclick=()=>{track('nautes-paso',{paso:s[0]});showStep(i)};nPills.appendChild(b)});showStep(0);
+nSteps.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=s[0];b.onclick=()=>{track('nautes-paso',{paso:ES.nautes[i][0]});showStep(i)};nPills.appendChild(b)});showStep(0);
 
 /* ---------- Alcar: la captura se deshace en ceros y unos ---------- */
 const PORTAL_URL=''; // Dirección de la web nueva
@@ -423,8 +418,8 @@ function drawBase(c,w,h){
   const g=[['#2B2823',0,.34],['#37332C',.34,.62],['#211F1B',.62,1]];
   g.forEach(([f,a,b])=>{c.fillStyle=f;c.beginPath();c.moveTo(a*w+h*.14,30);c.lineTo(b*w+h*.14,30);c.lineTo(b*w-h*.14,h);c.lineTo(a*w-h*.14,h);c.fill()});
   c.fillStyle='#26231F';c.fillRect(0,0,w,30);c.fillStyle='#5A544B';[16,31,46].forEach(x=>{c.beginPath();c.arc(x,15,4.5,0,6.3);c.fill()});
-  c.fillStyle='#EDE8DC';c.textBaseline='alphabetic';c.font=`900 ${Math.max(28,w*.075)}px "Big Shoulders Display",Impact,sans-serif`;c.fillText('CAPTURA PROVISIONAL',18,h-38);
-  c.font='400 11px "Martian Mono",monospace';c.fillText('Aquí va la web nueva',18,h-18);
+  c.fillStyle='#EDE8DC';c.textBaseline='alphabetic';c.font=`900 ${Math.max(28,w*.075)}px "Big Shoulders Display",Impact,sans-serif`;c.fillText(T.portal.placeholder,18,h-38);
+  c.font='400 11px "Martian Mono",monospace';c.fillText(T.portal.placeholderSub,18,h-18);
 }
 function sizePortal(){
   const r=portal.getBoundingClientRect();if(!r.width)return;
@@ -449,7 +444,7 @@ portal.addEventListener('click',e=>{
   if(!fine&&!P.on){e.preventDefault();aimPortal(e);P.x=P.tx;P.y=P.ty;openP();return}
   track('portal-alcar');
   P.wave=0;P.hold=40;P.wx=P.x;P.wy=P.y;P.dirty=true;
-  if(!PORTAL_URL){e.preventDefault();$('#portalNote').textContent='Enlace pendiente: la web nueva todavía no está publicada.'}
+  if(!PORTAL_URL){e.preventDefault();$('#portalNote').textContent=T.portal.pending}
 });
 if(PORTAL_URL){portal.href=PORTAL_URL;portal.target='_blank';portal.rel='noopener'}
 let portalVis=false;new IntersectionObserver(es=>portalVis=es[0].isIntersecting).observe(portal);
@@ -484,7 +479,7 @@ const stage=$('#stage'),map=$('#map'),mctx=map.getContext('2d'),mRead=$('#mRead'
 const goal=[[.28,.22],[.76,.16],[.78,.72],[.26,.66]];
 const pts=[[.08,.1],[.56,.05],[.66,.58],[.16,.52]];
 let fitted=false;
-const hs=pts.map((p,i)=>{const b=document.createElement('button');b.type='button';b.className='h';b.setAttribute('aria-label',`Esquina ${i+1}. Usa las flechas para moverla`);stage.appendChild(b);return b});
+const hs=pts.map((p,i)=>{const b=document.createElement('button');b.type='button';b.className='h';b.setAttribute('aria-label',T.mapping.corner(i+1));stage.appendChild(b);return b});
 function warp(){
   const W=stage.clientWidth,H=stage.clientHeight;if(!W)return;
   const q=pts.map(p=>[p[0]*W,p[1]*H]);
@@ -498,8 +493,8 @@ function warp(){
   const off=Math.max(...pts.map((p,i)=>Math.hypot(p[0]-goal[i][0],p[1]-goal[i][1])));
   const ok=off<.035;
   stage.classList.toggle('done',ok);
-  if(ok){pts.forEach((p,i)=>{p[0]=goal[i][0];p[1]=goal[i][1]});if(!fitted){fitted=true;track('videomapping-encajado')}mRead.textContent='Encajado. Así se ajusta en un sitio real'}
-  else{const left=pts.filter((p,i)=>Math.hypot(p[0]-goal[i][0],p[1]-goal[i][1])>=.035).length;mRead.textContent=left===1?'Falta 1 esquina':`Faltan ${left} esquinas`}
+  if(ok){pts.forEach((p,i)=>{p[0]=goal[i][0];p[1]=goal[i][1]});if(!fitted){fitted=true;track('videomapping-encajado')}mRead.textContent=T.mapping.done}
+  else{const left=pts.filter((p,i)=>Math.hypot(p[0]-goal[i][0],p[1]-goal[i][1])>=.035).length;mRead.textContent=T.mapping.left(left)}
 }
 hs.forEach((b,i)=>{
   let on=false;
@@ -522,27 +517,11 @@ function drawMap(now){
 }
 
 /* ---------- Caja de herramientas ---------- */
-const TOOLS=[
- ['WordPress','#2A3FF0','Nautes, con OceanWP, Directorist, Spectra y Stackable.','Experiencia práctica en prácticas de empresa.'],
- ['Palabras clave y SEO','#0A8A5C','Briefs y estructura de contenidos náuticos.','Práctico. Sin resultados de posicionamiento medidos.'],
- ['GEO','#00788C','Contenidos pensados para buscadores de IA, en Explora Natura.','Trabajo exploratorio.'],
- ['ChatGPT, Gemini, NotebookLM','#7A2BD6','Investigación, textos y organización de información.','Uso habitual, siempre revisando el resultado.'],
- ['Runway','#B81F8A','Visuales y vídeo generados con IA.','Uso en proyectos visuales.'],
- ['Resolume Arena','#D6264F','Software de vídeo y proyección.','Intermedio, según mi autoevaluación.'],
- ['Canva','#B3470F','Materiales académicos y de proyectos.','Uso habitual.'],
- ['Affinity Designer','#C03030','Diseño vectorial.','Intermedio, según mi autoevaluación.'],
- ['Illustrator','#A8341A','Diseño vectorial.','Intermedio, según mi autoevaluación.'],
- ['Photoshop','#3A3AD0','Edición de imagen.','Conocimientos básicos.'],
- ['HTML, CSS y JS','#3A3F55','Páginas y prototipos en VS Code.','Creo y adapto con apoyo de IA. Sigo aprendiendo.'],
- ['Google Docs y Sheets','#006B4F','Organización diaria de documentos y datos, junto con Drive.','Uso habitual.'],
- ['CRMdelSol','#7A8500','Actividades académicas de gestión comercial.','Uso académico, intermedio según mi autoevaluación.'],
- ['Shopify','#3D6B00','Comercio electrónico.','Conocimientos básicos.'],
- ['Hostinger','#5B2BB5','Alojamiento web.','Intermedio, según mi autoevaluación.'],
- ['Atención al cliente','#B3470F','Almazaras de la Subbética: asesoramiento y venta consultiva.','Experiencia real de trabajo.']
-];
+const TOOL_COLORS=['#2A3FF0','#0A8A5C','#00788C','#7A2BD6','#B81F8A','#D6264F','#B3470F','#C03030','#A8341A','#3A3AD0','#3A3F55','#006B4F','#7A8500','#3D6B00','#5B2BB5','#B3470F'];
+const TOOLS=T.tools.map(([name,where,level],i)=>[name,TOOL_COLORS[i],where,level]);
 const pit=$('#pit'),chips=[];
 function pickTool(i){const t=TOOLS[i];$('#tName').textContent=t[0];$('#tWhere').textContent=t[2];$('#tLevel').textContent=t[3];chips.forEach((c,k)=>c.el.setAttribute('aria-pressed',k===i))}
-TOOLS.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t[0];b.style.setProperty('--f',t[1]);b.onclick=()=>{track('herramienta',{nombre:t[0]});pickTool(i)};pit.appendChild(b);chips.push({el:b})});
+TOOLS.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t[0];b.style.setProperty('--f',t[1]);b.onclick=()=>{track('herramienta',{nombre:ES.tools[i][0]});pickTool(i)};pit.appendChild(b);chips.push({el:b})});
 pickTool(0);
 let pitOn=false,pitBuilt=false,pW=0,pH=0;
 function startPit(){
@@ -608,11 +587,12 @@ const copy=$('#copy');
 copy.onclick=()=>{
   track('email-copiado');
   const mail=$('#mail').textContent;
-  const ok=()=>{copy.textContent='Copiado';setTimeout(()=>copy.textContent='Copiar email',1800)};
-  const fallback=()=>{const s=getSelection(),r=document.createRange();r.selectNodeContents($('#mail'));s.removeAllRanges();s.addRange(r);copy.textContent='Email seleccionado'};
+  const ok=()=>{copy.textContent=T.copy.done;setTimeout(()=>copy.textContent=T.copy.idle,1800)};
+  const fallback=()=>{const s=getSelection(),r=document.createRange();r.selectNodeContents($('#mail'));s.removeAllRanges();s.addRange(r);copy.textContent=T.copy.selected};
   if(navigator.clipboard)navigator.clipboard.writeText(mail).then(ok,fallback);else fallback();
 };
 $('#linkedin').addEventListener('click',()=>track('linkedin'));
+$$('[data-lang]').forEach(a=>a.addEventListener('click',()=>track('idioma',{a:a.dataset.lang})));
 const seenContact=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){track('scroll-contacto');seenContact.disconnect()}},{threshold:.2});
 seenContact.observe($('#contacto'));
 
@@ -632,28 +612,28 @@ async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'sm
 
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
-const PAINT={rojo:['#1E0708','#FF4D4D'],azul:['#080D24','#6C8BFF'],verde:['#07170E','#3DDC84'],rosa:['#1C0713','#FF5FB0'],amarillo:['#161204','#FFD60A'],naranja:['#1B0D04','#FF9234'],morado:['#110822','#B47CFF'],negro:['#050506','#F0F0F0']};
-const PLACES={proyectos:'#proyectos',contacto:'#contacto',herramientas:'#herramientas',inicio:'#inicio',zalapp:'#zRead',nautes:'#nPanel',alcar:'#portal',videomapping:'#stage',mapping:'#stage'};
+const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
+const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zRead',nautes:'#nPanel',alcar:'#portal',mapping:'#stage'};
 function command(raw){
-  const t=strip(raw);if(!t)return'Dime algo, que estamos parados.';
+  const B=T.boss,t=strip(raw);if(!t)return B.empty;
   let m;
-  if((m=t.match(/\b(?:trae|traed|traedme|tira|tirad|lanza|lanzad|quita|quitad)\b.*\b(?:la|el)\s+([alons])\b/))){
+  if((m=t.match(B.reLetter))){
     const i='alonso'.indexOf(m[1]);const list=letters.filter((L,k)=>'alonso'[k]===m[1]);
-    atHero().then(()=>list.forEach(fling));return i<0?'Esa letra no es nuestra.':`Marchando la ${m[1].toUpperCase()}.`}
-  if(/(rompe|romped|derriba|derribad|tira|tirad|destroza|destrozad).*(nombre|todo|letras)/.test(t)){atHero().then(()=>letters.forEach(fling));return'Lo tiramos y lo levantamos en un momento.'}
-  if(/(normal|original|limpia|limpiad|como estaba|quita el color)/.test(t)){paint=null;repaint();return'Pintura retirada.'}
-  for(const c in PAINT)if(t.includes(c)){paint=PAINT[c];repaint();return`Fondo pintado de ${c}.`}
-  if(/\b(pinta|pintad|color)\b/.test(t))return'De ese color no queda bote. Prueba rojo, azul, verde, rosa o morado.';
-  for(const p in PLACES)if(t.includes(p)){$(PLACES[p]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});return`Vamos a ${p}.`}
-  if(/(baila|bailad|fiesta)/.test(t)){setOrder('dance');return'Música, maestro.'}
-  if(/(seguidme|sigueme|siguedme|seguid|detras)/.test(t)){setOrder('follow');return'Te seguimos a todas partes.'}
-  if(/(circulo|corro|formad|forma)/.test(t)){setOrder('circle');return'En círculo, todos.'}
-  if(/(vacaciones|descanso|largo|fuera|iros|marchaos)/.test(t)){setOrder('leave',6000);return'Hasta luego. Volvemos en seis segundos.'}
-  if(/huelga/.test(t)){closeBoss();startStrike();return''}
-  if(/(trabajo|seguid currando|a currar|volved)/.test(t)){setOrder(null);endStrike();return'Vuelta al tajo.'}
-  return'Eso no viene en el convenio. Prueba con una de estas órdenes.';
+    atHero().then(()=>list.forEach(fling));return i<0?B.notOurs:B.letter(m[1].toUpperCase())}
+  if(B.reBreak.test(t)){atHero().then(()=>letters.forEach(fling));return B.broken}
+  if(B.reReset.test(t)){paint=null;repaint();return B.reset}
+  for(const[id,re,name] of B.colors)if(re.test(t)){paint=PAINT[id];repaint();return B.painted(name)}
+  if(B.rePaint.test(t))return B.noColor;
+  for(const[id,re,name] of B.places)if(re.test(t)){$(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});return B.goTo(name)}
+  if(B.reDance.test(t)){setOrder('dance');return B.dance}
+  if(B.reFollow.test(t)){setOrder('follow');return B.follow}
+  if(B.reCircle.test(t)){setOrder('circle');return B.circle}
+  if(B.reLeave.test(t)){setOrder('leave',6000);return B.leave}
+  if(B.reStrike.test(t)){closeBoss();startStrike();return''}
+  if(B.reWork.test(t)){setOrder(null);endStrike();return B.work}
+  return B.unknown;
 }
-['Pinta el fondo de rojo','Traed la O','Rompe el nombre','Bailad','Seguidme','Formad un círculo','Id a Zalapp','Vacaciones','Huelga','Déjalo normal'].forEach(t=>{
+T.boss.chips.forEach(t=>{
   const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;
   b.onclick=()=>giveOrder(t);$('#bossChips').appendChild(b)});
 function giveOrder(raw){const t=strip(raw);if(t)track('jefe-orden',{orden:t.slice(0,40)});bossReply.textContent=command(raw)}
@@ -668,18 +648,18 @@ addEventListener('keydown',e=>{
 });
 
 /* ---------- Huelga ---------- */
-const QUEJAS=['Llevo levantando esta O desde las siete','Aquí nadie hace scroll','Queremos más clics','Sin scroll no hay obra','Mi convenio dice que me muevas','Esto no lo paga ni el hosting'];
+const QUEJAS=T.strike.complaints;
 let banner=null,speech=null,speechC=null,quejaT=0;
 function startStrike(){
   if(strike||rm||!cursors.length)return;strike=true;order=null;
-  banner=document.createElement('div');banner.className='banner';banner.textContent=fine?'Huelga: mueve el ratón':'Huelga: toca la pantalla';document.body.appendChild(banner);
+  banner=document.createElement('div');banner.className='banner';banner.textContent=fine?T.strike.bannerMouse:T.strike.bannerTouch;document.body.appendChild(banner);
   speech=document.createElement('div');speech.className='speech';document.body.appendChild(speech);
   const say=()=>{if(!strike)return;speechC=cursors[1+Math.floor(Math.random()*(cursors.length-1))];speech.textContent=QUEJAS[Math.floor(Math.random()*QUEJAS.length)]};
   say();quejaT=setInterval(say,2300);updateTeam();
 }
 function endStrike(){
   if(!strike)return;strike=false;clearInterval(quejaT);banner?.remove();banner=null;
-  if(speech){speech.textContent='Vale, volvemos al tajo';const e=speech;setTimeout(()=>e.remove(),1300);speech=null}
+  if(speech){speech.textContent=T.strike.end;const e=speech;setTimeout(()=>e.remove(),1300);speech=null}
   cursors.forEach(c=>c.next=0);updateTeam();
 }
 ['pointermove','pointerdown','keydown','wheel','touchstart','scroll'].forEach(n=>addEventListener(n,()=>{lastAct=performance.now();if(strike&&n!=='scroll')endStrike()},{passive:true}));
@@ -706,25 +686,14 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-const NOTES=[
- ['#word','La intro','Un portfolio compite con muchas pestañas abiertas. El nombre se construye delante de ti para ganar los primeros segundos y quedarse en la memoria.'],
- ['.tag','Una frase','Quien solo mire cinco segundos tiene que saber a qué me dedico. Por eso va justo debajo del nombre.'],
- ['#hint','Invitar a tocar','Pido que rompas la web a propósito. Quien interactúa con algo se queda más tiempo y lo recuerda mejor.'],
- ['.top ul','Menú corto','Pocos enlaces y fijos. Puedes irte directo a lo que buscas sin tragarte toda la historia.'],
- ['#open','Trayectoria elegida','Solo cuento lo que conecta con el trabajo que busco. Un portfolio también se hace quitando cosas.'],
- ['#zRead','Enseñar la base','Un dato sin contexto no convence. Enseño de dónde sale cada cifra y puedes filtrar la muestra.'],
- ['.gauge','Decir el límite','El 7,39 solo describe a quienes respondieron. Prefiero aclararlo a que parezca un dato de todo el sector.'],
- ['#portal','Entrar a la web','En vez de describir la web nueva, la dejo a la vista. Al tocarla se deshace en código y dan ganas de entrar.'],
- ['#stage','Probar en vez de leer','Explicar el videomapping cuesta. Encajar tú mismo la luz se entiende en diez segundos.'],
- ['#tool','Nivel real','Cada herramienta dice dónde la usé y con qué nivel. Inflarlo se notaría en la primera entrevista.'],
- ['#mail','Un solo objetivo','Todo el recorrido acaba aquí: un email grande y un botón para copiarlo, sin formularios.']
-];
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#zRead','.gauge','#portal','#stage','#tool','#mail'];
+const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
-const pinEls=NOTES.map((n,i)=>{const b=document.createElement('button');b.type='button';b.className='pin';b.textContent=i+1;b.hidden=true;b.setAttribute('aria-label',`Nota ${i+1}: ${n[1]}`);b.onclick=()=>showNote(i);pinsEl.appendChild(b);return b});
+const pinEls=NOTES.map((n,i)=>{const b=document.createElement('button');b.type='button';b.className='pin';b.textContent=i+1;b.hidden=true;b.setAttribute('aria-label',T.notePin(i+1,n[1]));b.onclick=()=>showNote(i);pinsEl.appendChild(b);return b});
 function showNote(i,go){
   noteI=(i+NOTES.length)%NOTES.length;const n=NOTES[noteI];
-  $('#nNum').textContent=`Nota ${noteI+1} de ${NOTES.length}`;$('#nTitle').textContent=n[1];$('#nText').textContent=n[2];note.hidden=false;
+  $('#nNum').textContent=T.noteCount(noteI+1,NOTES.length);$('#nTitle').textContent=n[1];$('#nText').textContent=n[2];note.hidden=false;
   pinEls.forEach((p,k)=>p.classList.toggle('on',k===noteI));
   track('auditar-nota',{nota:noteI+1});
   if(go){const el=$(n[0]);el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
