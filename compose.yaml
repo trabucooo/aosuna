@@ -1,0 +1,21 @@
+services:
+  portfolio:
+    build: .
+    container_name: portfolio
+    restart: unless-stopped
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:size=16m
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    networks:
+      - web
+
+networks:
+  web:
+    external: true

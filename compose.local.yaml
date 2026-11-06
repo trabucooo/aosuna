@@ -1,0 +1,5 @@
+# Solo para probar en tu ordenador: en el servidor, el único que publica puertos es Caddy
+services:
+  portfolio:
+    ports:
+      - "127.0.0.1:8080:8080"

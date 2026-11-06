@@ -1,0 +1,19 @@
+{
+  "name": "aosuna-portfolio",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/big-shoulders-display": "^5.0.0",
+    "@fontsource/martian-mono": "^5.0.0",
+    "@fontsource/schibsted-grotesk": "^5.0.0"
+  },
+  "devDependencies": {
+    "vite": "^7.0.0"
+  }
+}
