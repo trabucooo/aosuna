@@ -126,8 +126,6 @@ main{position:relative;z-index:2}
 #map{position:absolute;left:0;top:0;width:400px;height:300px;transform-origin:0 0;mix-blend-mode:screen;opacity:.95}
 .h{position:absolute;left:0;top:0;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:2px solid #fff;background:rgba(255,61,154,.55);padding:0;touch-action:none;cursor:grab}
 .stage.done .h{background:#39E08A;border-color:#39E08A}
-.side{padding-block:12vh;display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);gap:clamp(24px,5vw,72px)}
-.side h3{font:900 clamp(38px,5vw,60px)/1 var(--display);text-transform:uppercase;text-wrap:balance}
 
 /* Herramientas */
 .lab{padding-block:14vh}
@@ -150,12 +148,11 @@ main{position:relative;z-index:2}
 .actions{display:flex;flex-wrap:wrap;gap:10px}
 .btn{background:var(--ink);color:var(--ground);border:1.5px solid var(--ink);padding:14px 18px;font:600 12px/1 var(--mono);text-decoration:none}
 .btn.alt{background:transparent;color:var(--ink)}
-footer{font:400 11px/1.6 var(--mono);margin-top:7vh}
 
 @media (max-width:860px){
   .top ul{gap:12px}.top li:nth-child(2){display:none}
   .top .lang span{display:none}
-  .proj-grid,.lab-grid,.side{grid-template-columns:minmax(0,1fr)}
+  .proj-grid,.lab-grid{grid-template-columns:minmax(0,1fr)}
   .ch{align-items:flex-end;min-height:115vh;padding-bottom:9vh}
   .ch-text{background:color-mix(in srgb,var(--ground) 84%,transparent);padding:14px}
   .proj{padding-block:48px}
