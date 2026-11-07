@@ -8,18 +8,19 @@
 <meta name="theme-color" content="#0E1014">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="stylesheet" href="/src/404.css">
+<script type="module" src="/src/404.js"></script>
 </head>
 <body>
 <main class="lost">
   <p class="eyebrow">Error 404</p>
   <p class="code" aria-hidden="true">
-    <span>4</span><span class="slot"><span class="cur"><svg viewBox="0 0 20 24"><path d="M1.5 1.5v18.6l5-4.5 3.4 7.6 3.5-1.6-3.4-7.4 7-.6z"/></svg><b>Jefe de obra</b></span></span><span>4</span>
+    <span>4</span><span class="slot"><span class="cur"><svg viewBox="0 0 20 24"><path d="M1.5 1.5v18.6l5-4.5 3.4 7.6 3.5-1.6-3.4-7.4 7-.6z"/></svg><b id="crewLabel">Jefe de obra</b></span></span><span>4</span>
   </p>
-  <h1>Esta pieza no está en obra</h1>
-  <p class="lead">La página que buscas no existe o ha cambiado de sitio. El equipo ha revisado el plano entero y aquí no hay nada que levantar.</p>
+  <h1 id="title">Esta pieza no está en obra</h1>
+  <p class="lead" id="lead">La página que buscas no existe o ha cambiado de sitio. El equipo ha revisado el plano entero y aquí no hay nada que levantar.</p>
   <p class="actions">
-    <a class="btn" href="/">Volver al inicio</a>
-    <a class="btn alt" href="/en/" hreflang="en" lang="en">English version</a>
+    <a class="btn" id="home" href="/">Volver al inicio</a>
+    <a class="btn alt" id="other" href="/en/" hreflang="en" lang="en">English version</a>
   </p>
 </main>
 </body>

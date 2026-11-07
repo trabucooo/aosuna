@@ -47,7 +47,7 @@ h1{font:900 clamp(38px,8vw,84px)/.95 var(--display);text-transform:uppercase;tex
 .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:8px}
 .btn{background:var(--ink);color:var(--ground);border:1.5px solid var(--ink);padding:14px 18px;font:600 12px/1 var(--mono);text-decoration:none}
 .btn.alt{background:transparent;color:var(--ink)}
-.btn:hover{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+@media (hover:hover){.btn:hover{background:var(--accent);border-color:var(--accent);color:var(--ground)}}
 
 @media (prefers-reduced-motion:reduce){
   .cur{animation:none;translate:.2em .32em}

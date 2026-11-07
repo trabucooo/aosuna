@@ -7,10 +7,17 @@ import alcarShot from './assets/alcar.webp';
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)), rand=(a,b)=>a+Math.random()*(b-a);
 const smooth=t=>t*t*(3-2*t);
+/* Muelle con los dos parámetros que usa Apple: response (segundos, lo que tarda en llegar) y damping
+   (1 = llega sin pasarse; 0,8 = se pasa un poco, solo si el gesto traía impulso). s = {x, v}; dt en segundos.
+   Al no tener duración fija, se puede cambiar el destino a mitad de camino sin saltos */
+function springStep(s,target,dt,response=.35,damping=1){
+  const w=2*Math.PI/response;
+  s.v+=(w*w*(target-s.x)-2*damping*w*s.v)*dt;s.x+=s.v*dt;
+}
 const root=document.documentElement;
 const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const small=()=>innerWidth<=860;
-let vw=innerWidth,vh=innerHeight;
+let vw=innerWidth,vh=innerHeight,SY=scrollY; // SY: scroll del frame actual
 
 /* ---------- Analítica (Umami). Si no carga o está bloqueada, no pasa nada ---------- */
 function track(name,data){try{window.umami?.track(name,data)}catch(e){}}
@@ -29,11 +36,18 @@ const TONES={
   oil:['#141005','#FFF6D6','#F4C20D']
 };
 const toneEls=$$('[data-tone]');
-let tone='';
+let tone='',toneBoxes=null,contactBox=null;
+/* Posiciones de cada sección respecto al documento. Se miden solo cuando cambia la maqueta:
+   leerlas en cada evento de scroll obligaba al navegador a recalcularla a mitad de frame */
+function measureTones(){
+  const y=scrollY,box=el=>{const r=el.getBoundingClientRect();return{el,top:r.top+y,bottom:r.bottom+y}};
+  toneBoxes=toneEls.map(box);contactBox=box($('#contacto'));
+}
 function applyTone(){
-  const mid=vh*.5;
+  if(!toneBoxes)measureTones();
+  const mid=SY+vh*.5;
   let hit=toneEls[0];
-  for(const el of toneEls){const r=el.getBoundingClientRect();if(r.top<=mid&&r.bottom>mid){hit=el;break}}
+  for(const b of toneBoxes)if(b.top<=mid&&b.bottom>mid){hit=b.el;break}
   const t=hit.dataset.tone;
   if(t===tone)return;tone=t;
   const[g,i,a]=TONES[t];
@@ -47,19 +61,21 @@ function hexRgb(h){const n=parseInt(h.slice(1),16);return[n>>16,n>>8&255,n&255]}
 
 /* ---------- Letras del nombre ---------- */
 const word=$('#word'),nameEl=$('#name'),surEl=$('#sur'),hint=$('#hint');
-const letters=$$('.l').map(el=>({el,x:0,y:0,r:0,vx:0,vy:0,vr:0,mode:'rest',cx:0,cy:0,w:0,h:0,box:null,done:null}));
+// sc: muelle de escala (la letra se levanta al cogerla); held: la tiene el dedo; dvx: velocidad horizontal suavizada mientras se arrastra
+const letters=$$('.l').map(el=>({el,x:0,y:0,r:0,vx:0,vy:0,vr:0,mode:'rest',cx:0,cy:0,w:0,h:0,box:null,done:null,sc:{x:1,v:0},held:false,dvx:0,hist:[]}));
 function fitName(){
-  letters.forEach(L=>L.el.style.transform='');
+  letters.forEach(L=>{L.el.style.transform='';L.t=''});
   const avail=Math.max(0,nameEl.parentElement.clientWidth-parseFloat(getComputedStyle(nameEl.parentElement).paddingLeft)-parseFloat(getComputedStyle(nameEl.parentElement).paddingRight));
   nameEl.style.fontSize='100px';
   const w=word.scrollWidth||1;
-  const maxH=vh*(small()?.3:.42);
+  // Alto del bloque sticky (100svh): no cambia cuando la barra del navegador móvil aparece o se esconde
+  const maxH=(nameEl.parentElement.clientHeight||vh)*(small()?.3:.42);
   const fs=Math.min(avail/w*100*.98,maxH/.84);
   nameEl.style.fontSize=fs+'px';
   letters.forEach(L=>{const r=L.el.getBoundingClientRect();L.cx=r.left+r.width/2;L.cy=r.top+r.height/2;L.w=r.width;L.h=r.height;L.box={left:r.left,top:r.top,width:r.width,height:r.height}});
   surEl.style.fontSize='';
 }
-function paintLetter(L){L.el.style.transform=(L.x||L.y||L.r)?`translate(${L.x}px,${L.y}px) rotate(${L.r}deg)`:''}
+function paintLetter(L){const s=L.sc.x,t=(L.x||L.y||L.r||s!==1)?`translate(${L.x}px,${L.y}px) rotate(${L.r}deg) scale(${s})`:'';if(t!==L.t){L.t=t;L.el.style.transform=t}}
 
 /* ---------- Cursores ---------- */
 const LABELS=T.crew;
@@ -81,12 +97,16 @@ function makeCursors(){
 }
 function wanderTarget(c){
   const band=Math.random();
-  if(small()){c.tx=rand(.04,.7)*vw;c.ty=(band<.4?rand(.08,.13):rand(.9,.96))*vh}
+  // La franja de abajo queda por encima del dock (Auditar / Jefe de obra) para no taparlo
+  if(small()){c.tx=rand(.04,.7)*vw;c.ty=band<.4?rand(.08,.13)*vh:vh-rand(95,130)}
   else if(band<.34){c.tx=rand(.04,.9)*vw;c.ty=rand(.08,.16)*vh}
-  else if(band<.68){c.tx=rand(.04,.86)*vw;c.ty=rand(.9,.97)*vh}
+  else if(band<.68){c.tx=rand(Math.min(.3,340/vw),.86)*vw;c.ty=rand(.9,.97)*vh}
   else{c.tx=(Math.random()<.5?rand(.01,.09):rand(.84,.93))*vw;c.ty=rand(.15,.85)*vh}
+  // Curvatura del trayecto: una mano no va en línea recta, describe un arco suave
+  c.bend=rand(-.28,.28);
   c.next=performance.now()+rand(1400,4200);
 }
+const MAX_WANDER_V=()=>Math.max(9,Math.min(vw,vh)*.018); // px por frame a 60 Hz (~1000 px/s en un portátil)
 function freeCursors(){return cursors.filter(c=>!c.job&&!c.script&&!c.follow&&!c.task)}
 function fetchLetter(L,list){
   L.mode='wait';
@@ -96,9 +116,16 @@ function fetchLetter(L,list){
   return new Promise(r=>L.done=r);
 }
 function stepLetters(f){
+  const dt=f/60,fr=Math.pow(.93,f); // rozamiento por frame a 60 Hz, igual a cualquier frecuencia de pantalla
   for(const L of letters){
-    if(L.mode==='loose'){
-      L.x+=L.vx*f;L.y+=L.vy*f;L.r+=L.vr*f;L.vx*=.93;L.vy*=.93;L.vr*=.93;
+    // Al cogerla se levanta (escala 1,08, sin rebote); al soltarla vuelve con un pelín de rebote, porque se lanzó
+    if(!rm){springStep(L.sc,L.held?1.08:1,dt,.3,L.held?1:.8);if(!L.held&&Math.abs(L.sc.x-1)<.0005&&Math.abs(L.sc.v)<.01){L.sc.x=1;L.sc.v=0}}
+    if(L.mode==='drag'){
+      // Se inclina hacia donde va, como algo que cuelga de los dedos, y se endereza al parar
+      L.dvx*=Math.pow(.8,f);
+      L.r+=(clamp(L.dvx*1.6,-24,24)-L.r)*(1-Math.pow(.78,f));
+    }else if(L.mode==='loose'){
+      L.x+=L.vx*f;L.y+=L.vy*f;L.r+=L.vr*f;L.vx*=fr;L.vy*=fr;L.vr*=fr;
       const nx=L.cx+L.x,ny=L.cy+L.y;
       if(nx<20||nx>vw-20){L.vx*=-.6;L.x=clamp(nx,20,vw-20)-L.cx}
       if(ny<40||ny>vh-30){L.vy*=-.6;L.y=clamp(ny,40,vh-30)-L.cy}
@@ -114,7 +141,9 @@ function stepLetters(f){
   }
 }
 function stepCursors(f,now){
+  const vmax=MAX_WANDER_V();
   for(const c of cursors){
+    let wander=false;
     if(c.job){
       const L=c.job.L;c.tx=L.cx+L.x+c.job.ox;c.ty=L.cy+L.y+c.job.oy;
       if(L.mode==='wait'&&Math.hypot(c.tx-c.x,c.ty-c.y)<34)L.mode='carry';
@@ -125,17 +154,26 @@ function stepCursors(f,now){
     }else if(c.follow){
       c.box.classList.add('on');
       const r=c.follow.getBoundingClientRect();
-      const pad=8,x=r.left-pad,y=r.top-pad,w=Math.min(r.width+pad*2,vw-x-6),h=r.height+pad*2;
+      const pad=8,x=r.left-pad,y=r.top-pad,w=Math.round(Math.min(r.width+pad*2,vw-x-6)),h=Math.round(r.height+pad*2);
       c.tx=x+w-6;c.ty=y+h-6;
-      c.box.style.transform=`translate(${x}px,${y}px)`;c.box.style.width=w+'px';c.box.style.height=h+'px';
+      c.box.style.transform=`translate(${x}px,${y}px)`;
+      // El tamaño es layout: solo se escribe cuando cambia (casi nunca), la posición va por transform
+      if(c.bw!==w||c.bh!==h){c.bw=w;c.bh=h;c.box.style.width=w+'px';c.box.style.height=h+'px'}
     }else if(!c.script){
       if(gather){const i=cursors.indexOf(c),a=i/cursors.length*6.283+now*.00018;
-        if(small()){c.tx=(i/cursors.length)*vw*.8+6;c.ty=vh*.95+Math.sin(a*3)*10}
+        if(small()){c.tx=(i/cursors.length)*vw*.8+6;c.ty=vh-110+Math.sin(a*3)*10}
         else{c.tx=vw*.82+Math.cos(a)*vw*.1;c.ty=vh*.34+Math.sin(a)*vh*.2}}
-      else if(now>c.next)wanderTarget(c);
+      else{if(now>c.next)wanderTarget(c);wander=true}
     }
-    c.vx+=(c.tx-c.x)*c.k*f;c.vy+=(c.ty-c.y)*c.k*f;
-    const d=Math.pow(.74,f);c.vx*=d;c.vy*=d;c.x+=c.vx*f;c.y+=c.vy*f;
+    // Paseo libre: apunta a un lado del destino en proporción a lo que falta (el desvío se anula al llegar),
+    // así el trayecto sale en arco. La intro, los encargos y las órdenes van directos porque llevan tiempos medidos
+    let ax=c.tx,ay=c.ty;
+    if(wander&&c.bend){const dx=c.tx-c.x,dy=c.ty-c.y;ax-=dy*c.bend;ay+=dx*c.bend}
+    c.vx+=(ax-c.x)*c.k*f;c.vy+=(ay-c.y)*c.k*f;
+    const d=Math.pow(.74,f);c.vx*=d;c.vy*=d;
+    // Tope de velocidad en el paseo: un trayecto largo se ve como un viaje, no como un latigazo
+    if(wander){const s=Math.hypot(c.vx,c.vy);if(s>vmax){c.vx*=vmax/s;c.vy*=vmax/s}}
+    c.x+=c.vx*f;c.y+=c.vy*f;
     c.el.style.transform=`translate3d(${c.x}px,${c.y}px,0)`;
     c.trail.push(c.x,c.y);if(c.trail.length>180)c.trail.splice(0,2);
     if(c.slot){const w=Math.max(0,c.x-c.sx),h=Math.max(0,c.y-c.sy);c.slot.style.width=w+'px';c.slot.style.height=h+'px'}
@@ -147,21 +185,32 @@ let gather=false;
 let repairs=0;
 function bindLetters(){
   letters.forEach((L,i)=>{
-    let px=0,py=0,lt=0,drag=false;
+    let px=0,py=0,lt=0,drag=false,id=null;
     L.el.addEventListener('pointerdown',e=>{
-      if(root.classList.contains('intro'))return;
-      drag=true;L.mode='drag';cursors.forEach(c=>{if(c.job&&c.job.L===L)c.job=null});
-      L.el.setPointerCapture(e.pointerId);px=e.clientX;py=e.clientY;lt=performance.now();L.vx=L.vy=0;L.done=null;
+      // Un segundo dedo sobre la misma letra no la hace saltar
+      if(root.classList.contains('intro')||drag)return;
+      drag=true;id=e.pointerId;L.mode='drag';L.held=true;L.el.classList.add('held');cursors.forEach(c=>{if(c.job&&c.job.L===L)c.job=null});
+      // Se agarra donde está, aunque vuele o la estén trayendo: sin saltos (interrumpible en cualquier momento)
+      L.el.setPointerCapture(e.pointerId);px=e.clientX;py=e.clientY;lt=e.timeStamp;L.vx=L.vy=L.vr=0;L.dvx=0;L.done=null;
+      L.hist=[[L.x,L.y,lt]];
     });
     L.el.addEventListener('pointermove',e=>{
-      if(!drag)return;
-      const dx=e.clientX-px,dy=e.clientY-py,t=performance.now(),dt=Math.max(8,t-lt);
-      L.x+=dx;L.y+=dy;L.r=clamp(L.r+dx*.12,-34,34);L.vx=dx/dt*16;L.vy=dy/dt*16;L.vr=dx*.05;
+      if(!drag||e.pointerId!==id)return;
+      const dx=e.clientX-px,dy=e.clientY-py,t=e.timeStamp,dt=Math.max(4,t-lt);
+      L.x+=dx;L.y+=dy;L.dvx+=(dx/dt*16.67-L.dvx)*.5;
+      // Historial de los últimos 100 ms para medir la velocidad al soltar (un solo evento es demasiado ruidoso)
+      L.hist.push([L.x,L.y,t]);while(L.hist.length>2&&t-L.hist[0][2]>100)L.hist.shift();
       px=e.clientX;py=e.clientY;lt=t;
     });
-    const up=()=>{
-      if(!drag)return;drag=false;
+    const up=e=>{
+      if(!drag||e.pointerId!==id)return;drag=false;L.held=false;L.el.classList.remove('held');
       if(Math.abs(L.x)+Math.abs(L.y)<3){L.x=L.y=L.r=0;L.mode='rest';return}
+      // La velocidad del dedo pasa tal cual a la letra (px por frame a 60 Hz): sin costura entre arrastre y vuelo.
+      // Si el dedo llevaba parado más de 100 ms, la letra se queda donde la dejaste
+      const h=L.hist,a=h[0],b=h[h.length-1],span=b[2]-a[2],still=e.timeStamp-b[2]>100;
+      L.vx=still||span<1?0:(b[0]-a[0])/span*16.67;L.vy=still||span<1?0:(b[1]-a[1])/span*16.67;
+      const vmax=60;L.vx=clamp(L.vx,-vmax,vmax);L.vy=clamp(L.vy,-vmax,vmax);
+      L.vr=L.vx*.25;
       L.mode='loose';track('letra-rota',{letra:'ALONSO'[i]});
       setTimeout(()=>{
         if(L.mode!=='loose')return;
@@ -251,11 +300,14 @@ const N=matchMedia('(max-width:860px)').matches?1800:4000;
 const px=new Float32Array(N),py=new Float32Array(N),pvx=new Float32Array(N),pvy=new Float32Array(N),ez=new Float32Array(N),ps=new Float32Array(N);
 // Ruido de reposo: cada punto oscila con su propia fase y frecuencia
 const nph=new Float32Array(N),nfq=new Float32Array(N);
-for(let i=0;i<N;i++){px[i]=rand(0,vw);py[i]=rand(0,vh);ez[i]=rand(.045,.12);ps[i]=rand(1.7,3.3);nph[i]=rand(0,6.283);nfq[i]=rand(.0006,.0014)}
+// Azar fijo de cada punto (qué parte de la forma le toca y su desvío). Así, si se recoloca la web
+// (giro, barra del navegador en móvil, fuentes que llegan tarde) cada punto va al mismo sitio de antes
+const pick=new Float32Array(N),jx=new Float32Array(N),jy=new Float32Array(N);
+for(let i=0;i<N;i++){px[i]=rand(0,vw);py[i]=rand(0,vh);ez[i]=rand(.045,.12);ps[i]=rand(1.7,3.3);nph[i]=rand(0,6.283);nfq[i]=rand(.0006,.0014);pick[i]=Math.random();jx[i]=Math.random();jy[i]=Math.random()}
 const NOISE=.4; // px por eje: en diagonal no pasa de 0,57 px
 let scrollT=0;
 let dustNow=[125,139,255],dustTarget=[125,139,255],inkRgb=[238,240,244],layer=T.layerHome;
-const aura=$('#aura');
+const aura=$('#aura');let auraX=-1,auraY=-1;
 const SHAPES={
   bolt(c,w,h){c.beginPath();const p=[[.58,.02],[.2,.56],[.46,.56],[.36,.98],[.82,.38],[.54,.38],[.72,.02]];p.forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]*w,q[1]*h));c.fill()},
   olive(c,w,h){c.save();c.translate(w*.5,h*.54);c.rotate(-.5);c.beginPath();c.ellipse(0,0,w*.3,h*.38,0,0,6.3);c.fill();c.globalCompositeOperation='destination-out';c.beginPath();c.ellipse(-w*.1,-h*.14,w*.05,h*.09,.4,0,6.3);c.fill();c.restore();c.globalCompositeOperation='source-over';c.save();c.translate(w*.72,h*.13);c.rotate(.55);c.beginPath();c.ellipse(0,0,w*.2,h*.07,0,0,6.3);c.fill();c.restore()},
@@ -279,7 +331,7 @@ function sample(w,h,draw){
 }
 function toTargets(pts,x0,y0,sx,sy){
   const t=new Float32Array(N*2),n=pts.length/2||1;
-  for(let i=0;i<N;i++){const k=Math.floor(Math.random()*n)*2;t[i*2]=x0+(pts[k]+Math.random()*2)*sx;t[i*2+1]=y0+(pts[k+1]+Math.random()*2)*sy}
+  for(let i=0;i<N;i++){const k=Math.min(n-1,Math.floor(pick[i]*n))*2;t[i*2]=x0+(pts[k]+jx[i]*2)*sx;t[i*2+1]=y0+(pts[k+1]+jy[i]*2)*sy}
   return t;
 }
 function heroPts(){
@@ -307,13 +359,18 @@ function portraitTargets(){
   const x0=sr.left+(sr.width-W)/2,y0=sr.top-kr.top+(sr.height-H)/2; // con el sticky ya pegado arriba
   const t=new Float32Array(N*2),z=new Float32Array(N),[z0,zk]=sm?[1.3,2.4]:[1.1,2.6];
   // Si hay más partículas que puntos, se repiten con un desplazamiento mínimo; si hay menos, se recortan
-  for(let i=0;i<N;i++){const k=(i%M)*3,j=i>=M?.8:0;t[i*2]=x0+pts[k]*W+rand(-j,j);t[i*2+1]=y0+pts[k+1]*H+rand(-j,j);z[i]=z0+pts[k+2]*zk}
+  for(let i=0;i<N;i++){const k=(i%M)*3,j=i>=M?.8:0;t[i*2]=x0+pts[k]*W+(jx[i]*2-1)*j;t[i*2+1]=y0+pts[k+1]*H+(jy[i]*2-1)*j;z[i]=z0+pts[k+2]*zk}
   return{t,z};
 }
+function sizeCanvas(){
+  vw=innerWidth;vh=innerHeight;SY=scrollY;
+  const d=Math.min(devicePixelRatio||1,1.6),w=Math.round(vw*d),h=Math.round(vh*d);
+  if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
+  ctx.setTransform(d,0,0,d,0,0);
+}
 function layout(){
-  vw=innerWidth;vh=innerHeight;
-  const d=Math.min(devicePixelRatio||1,1.6);cv.width=vw*d;cv.height=vh*d;ctx.setTransform(d,0,0,d,0,0);
-  fitName();measureScene();
+  sizeCanvas();
+  fitName();measureScene();measureTones();
   const sm=small();
   for(const st of stops){
     stopRange(st);st.z=null;
@@ -330,10 +387,11 @@ function layout(){
   applyTone();
 }
 const mouse={x:-999,y:-999,hit:0};
-let hp=0;
+let hp=0,heroFade=-1;
+const heroReveal=$$('.stick .reveal');
 /* Fondo: plano de obra con rejilla, rastro de los cursores y mira con coordenadas */
 function drawField(now){
-  const[r,g,b]=inkRgb,step=72,off=-(scrollY*.35)%step;
+  const[r,g,b]=inkRgb,step=72,off=-(SY*.35)%step;
   ctx.globalAlpha=1;ctx.lineWidth=1;
   ctx.strokeStyle=`rgba(${r},${g},${b},.055)`;ctx.beginPath();
   for(let x=(vw%step)/2;x<vw;x+=step){ctx.moveTo(x+.5,0);ctx.lineTo(x+.5,vh)}
@@ -344,7 +402,7 @@ function drawField(now){
   ctx.lineWidth=1;
   for(const c of cursors){
     const t=c.trail;if(t.length<8||c.el.classList.contains('off'))continue;
-    ctx.strokeStyle=c.col;ctx.globalAlpha=scrollY>vh*.3?.2:.42;ctx.beginPath();ctx.moveTo(t[0],t[1]);
+    ctx.strokeStyle=c.col;ctx.globalAlpha=SY>vh*.3?.2:.42;ctx.beginPath();ctx.moveTo(t[0],t[1]);
     for(let i=2;i<t.length;i+=2)ctx.lineTo(t[i],t[i+1]);ctx.stroke();
   }
   ctx.globalAlpha=.16;ctx.strokeStyle=`rgb(${dustNow[0]|0},${dustNow[1]|0},${dustNow[2]|0})`;ctx.lineWidth=1.4;
@@ -358,18 +416,19 @@ function drawField(now){
     ctx.strokeStyle=`rgba(${r},${g},${b},.16)`;ctx.setLineDash([3,6]);ctx.beginPath();
     ctx.moveTo(mouse.x+.5,0);ctx.lineTo(mouse.x+.5,vh);ctx.moveTo(0,mouse.y+.5);ctx.lineTo(vw,mouse.y+.5);ctx.stroke();ctx.setLineDash([]);
     ctx.fillStyle=`rgba(${r},${g},${b},.6)`;ctx.font='400 10px "Martian Mono",monospace';ctx.textAlign='right';
-    ctx.fillText(`x ${Math.round(mouse.x)}  y ${Math.round(mouse.y+scrollY)}  ${T.layerLabel}: ${layer}`,vw-14,vh-14);
-    aura.style.setProperty('--ax',(mouse.x/vw*100)+'%');aura.style.setProperty('--ay',(mouse.y/vh*100)+'%');
+    ctx.fillText(`x ${Math.round(mouse.x)}  y ${Math.round(mouse.y+SY)}  ${T.layerLabel}: ${layer}`,vw-14,vh-14);
+    // Solo se escribe si el ratón se ha movido; es un transform, sin repintado
+    if(mouse.x!==auraX||mouse.y!==auraY){auraX=mouse.x;auraY=mouse.y;aura.style.transform=`translate(${auraX}px,${auraY}px)`}
   }
 }
 function stepDust(f,now){
-  const y=scrollY;
+  const y=SY;
   hp=clamp(y/(vh*.3));
-  const fade=1-smooth(clamp(y/(vh*.42)));
-  if(!root.classList.contains('intro')){
-    nameEl.style.opacity=fade;$$('.stick .reveal').forEach(e=>e.style.opacity=fade);
+  // Redondeado y solo si cambia: con la portada fuera de pantalla no se toca el DOM en cada frame
+  const fade=Math.round((1-smooth(clamp(y/(vh*.42))))*500)/500;
+  if(fade!==heroFade&&!root.classList.contains('intro')){
+    heroFade=fade;nameEl.style.opacity=fade;heroReveal.forEach(e=>e.style.opacity=fade);
   }
-  crew.style.opacity=1;
   let i=0;while(i<stops.length-2&&y>=stops[i+1].s)i++;
   const a=stops[i],b=stops[i+1];
   const raw=clamp((y-a.e)/Math.max(1,b.s-a.e));
@@ -385,17 +444,18 @@ function stepDust(f,now){
   const mr=small()?70:110,mr2=mr*mr;
   // Ruido solo cuando no se hace scroll: entra en medio segundo
   const amp=rm?0:NOISE*smooth(clamp((now-scrollT-150)/500));
+  const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y,wt=now*.0016;
   for(let n=0;n<N;n++){
     const k=n*2;
     let gx=ta[k]+(tb[k]-ta[k])*t,gy=ta[k+1]+(tb[k+1]-ta[k+1])*t;
-    if(wa)gy+=Math.sin(gx*.012+now*.0016)*16*wa;
+    if(wa)gy+=Math.sin(gx*.012+wt)*16*wa;
     if(rm){px[n]=gx;py[n]=gy;continue}
     if(amp){const w=now*nfq[n]+nph[n];gx+=Math.sin(w)*amp;gy+=Math.cos(w*1.31+nph[n])*amp}
     const e=ez[n]*f;
     pvx[n]+=(gx-px[n])*e*.55;pvy[n]+=(gy-py[n])*e*.55;
-    const dx=px[n]-mouse.x,dy=py[n]-mouse.y,d2=dx*dx+dy*dy;
+    const dx=px[n]-mx,dy=py[n]-my,d2=dx*dx+dy*dy;
     if(d2<mr2&&d2>1){const q=(1-d2/mr2)*3.2/Math.sqrt(d2);pvx[n]+=dx*q*f;pvy[n]+=dy*q*f}
-    const dm=Math.pow(.8,f);pvx[n]*=dm;pvy[n]*=dm;px[n]+=pvx[n]*f;py[n]+=pvy[n]*f;
+    pvx[n]*=dm;pvy[n]*=dm;px[n]+=pvx[n]*f;py[n]+=pvy[n]*f;
   }
   for(let c=0;c<3;c++)dustNow[c]+=(dustTarget[c]-dustNow[c])*.06;
   ctx.clearRect(0,0,vw,vh);
@@ -412,9 +472,10 @@ function stepDust(f,now){
 
 /* ---------- El equipo acompaña el scroll ---------- */
 function updateTeam(){
-  const heroOut=scrollY>vh*.42;
-  const con=$('#contacto').getBoundingClientRect();
-  gather=con.top<vh*.45&&con.bottom>0;
+  const heroOut=SY>vh*.42;
+  if(!contactBox)measureTones();
+  const top=contactBox.top-SY,bottom=contactBox.bottom-SY;
+  gather=top<vh*.45&&bottom>0;
   cursors.forEach((c,i)=>{
     const guide=i<3;
     c.el.classList.toggle('off',introDone&&heroOut&&!gather&&!strike&&!order&&!c.task&&!(guide&&(c.follow||!small())));
@@ -436,8 +497,12 @@ $$('[data-sel]').forEach(e=>selObs.observe(e));
 const PORTRAIT_IN=.3,PORTRAIT_OUT=.92;  // el retrato está completo entre estos dos puntos (meseta)
 // Cada sello: a (los cursores lo traen desde la derecha), hover (encima de su sitio), drop (estampa), end (fin del tramo)
 const STAMP_T=[{a:.5,hover:.64,drop:.66,end:.7},{a:.7,hover:.84,drop:.86,end:.92}];
-const LIFT=40,DROP_MS=90,BOUNCE_MS=240,SHAKE_MS=180,SHAKE_PX=2;
-const scene={el:$('#open'),stick:$('#open .open-stick'),grid:$('#open .open-grid'),slot:$('#portraitSlot'),text:$('#openText'),top:0,len:1,on:false,shake:-1e9};
+/* El golpe del sello. En el aire está más cerca de ti: se ve un 6 % más grande (UP). Al caer acelera
+   (como la gravedad) y en el impacto queda aplastado (SQUASH); luego vuelve a 1 con un muelle amortiguado
+   (bounce 0,2 en unos 300 ms: casi sin rebote, solo asienta). La escena da un golpe seco hacia abajo */
+const LIFT=40,DROP_MS=90,UP=1.06,SQUASH=.965,SETTLE_MS=420,SETTLE_DECAY=16.8,SETTLE_W=12.6,SHAKE_MS=200,SHAKE_PX=3;
+const settle=t=>t>=SETTLE_MS?1:1-(1-SQUASH)*Math.exp(-SETTLE_DECAY*t/1000)*Math.cos(SETTLE_W*t/1000);
+const scene={el:$('#open'),stick:$('#open .open-stick'),grid:$('#open .open-grid'),slot:$('#portraitSlot'),text:$('#openText'),top:0,len:1,on:false,shake:-1e9,op:-1};
 const stamps=T.stamps.map((d,i)=>{
   const el=$('#stamp'+(i+1)),info=$('#stamp'+(i+1)+'Info');
   // Textos desde i18n.js; el HTML lleva la misma copia para quien navega sin JavaScript
@@ -494,12 +559,16 @@ function aimTask(c,now){
   else{const k=clamp(1-(R.t-now)/560);c.tx=R.x+Math.sin(k*Math.PI*3)*12;c.ty=R.y+k*6;if(now>R.t){R.ph=0;R.t=now+rand(2200,4200)}}
 }
 function stepScene(now){
-  const y=scrollY,p=(y-scene.top)/scene.len,wasOn=scene.on;
+  const y=SY,p=(y-scene.top)/scene.len,wasOn=scene.on;
   scene.on=y>scene.top-vh&&y<scene.top+scene.len+vh;
   if(!scene.on){if(wasOn){stamps.forEach(st=>crewFor(st,0));closeStamps()}return}
-  scene.text.style.opacity=rm?1:smooth(clamp(p/PORTRAIT_IN));
-  stamps.forEach(st=>{
-    const c=st.cfg,r=st.slot.getBoundingClientRect();
+  const op=rm?1:Math.round(smooth(clamp(p/PORTRAIT_IN))*500)/500;
+  if(op!==scene.op){scene.op=op;scene.text.style.opacity=op}
+  // Primero se leen todas las medidas y después se escribe: leer tras mover un sello obligaría
+  // al navegador a recalcular la maqueta a mitad de frame
+  const rects=stamps.map(st=>st.slot.getBoundingClientRect());
+  stamps.forEach((st,si)=>{
+    const c=st.cfg,r=rects[si];
     const mode=rm?'landed':p<c.a?'out':p<c.drop?'carry':'landed';
     if(mode!==st.mode){
       // Solo se ve el golpe si se llega desde el tramo anterior; si la escena acaba de entrar en pantalla, ya está puesto
@@ -509,21 +578,24 @@ function stepScene(now){
     }
     let dx=0,dy=0,rot=st.rot,sc=1;
     const off=vw-r.left+40;
-    if(mode==='out'){dx=off;dy=-LIFT}
+    if(mode==='out'){dx=off;dy=-LIFT;sc=UP}
     else if(mode==='carry'){
       const q=clamp((p-c.a)/(c.hover-c.a)),e=1-Math.pow(1-q,3);
-      dx=off*(1-e);dy=-LIFT+(q>=1?Math.sin(now*.006)*2:0);rot+=7*(1-e);
+      dx=off*(1-e);dy=-LIFT+(q>=1?Math.sin(now*.006)*2:0);rot+=7*(1-e);sc=UP;
     }else{
       const t=now-st.dropT;
-      if(t<DROP_MS){const k=t/DROP_MS;dy=-LIFT*(1-k*k)}
-      else{if(!st.inked){setInk(st,true);if(t<DROP_MS+120)scene.shake=now}sc=1+.06*(1-smooth(clamp((t-DROP_MS)/BOUNCE_MS)))}
+      // Caída: misma curva acelerada para la altura y para la escala (de UP a SQUASH justo en el impacto)
+      if(t<DROP_MS){const k=t/DROP_MS,g=k*k;dy=-LIFT*(1-g);sc=UP+(SQUASH-UP)*g}
+      else{if(!st.inked){setInk(st,true);if(t<DROP_MS+120)scene.shake=now}sc=settle(t-DROP_MS)}
     }
-    st.el.style.transform=`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(${sc})`;
+    const tf=`translate(${dx}px,${dy}px) rotate(${rot}deg) scale(${sc})`;
+    if(tf!==st.tf){st.tf=tf;st.el.style.transform=tf}
     st.box.x=r.left+dx;st.box.y=r.top+dy;st.box.w=st.w;st.box.h=st.h;
     st.role=rm?null:mode==='carry'?'carry':mode==='landed'&&st.open?'point':mode==='landed'&&st.n===2&&p<c.end?'touch':null;
     crewFor(st,st.role==='carry'?2:st.role?1:0);
   });
-  if(!rm&&now-scene.shake<SHAKE_MS)scene.grid.style.transform=`translate(${rand(-SHAKE_PX,SHAKE_PX)}px,${rand(-SHAKE_PX,SHAKE_PX)}px)`;
+  // Golpe seco: hacia abajo, un rebote y se apaga (antes era ruido aleatorio en cada frame, que se leía como vibración)
+  if(!rm&&now-scene.shake<SHAKE_MS){const k=(now-scene.shake)/SHAKE_MS;scene.grid.style.transform=`translateY(${(SHAKE_PX*(1-k)*(1-k)*Math.sin(k*Math.PI*3)).toFixed(2)}px)`}
   else if(scene.grid.style.transform)scene.grid.style.transform='';
 }
 
@@ -627,18 +699,58 @@ function warp(){
   const w=400,hh=300;
   map.style.transform=`matrix3d(${a/w},${d/w},0,${g/w},${b/hh},${e/hh},0,${h/hh},0,0,1,0,${x0},${y0},0,1)`;
   hs.forEach((el,i)=>el.style.transform=`translate(${q[i][0]}px,${q[i][1]}px)`);
-  const off=Math.max(...pts.map((p,i)=>Math.hypot(p[0]-goal[i][0],p[1]-goal[i][1])));
-  const ok=off<.035;
+  // Cada esquina en su sitio se pone verde por separado: se ve el progreso, no solo el final
+  const seated=pts.map((p,i)=>p[0]===goal[i][0]&&p[1]===goal[i][1]);
+  hs.forEach((el,i)=>el.classList.toggle('ok',seated[i]));
+  const ok=seated.every(Boolean);
   stage.classList.toggle('done',ok);
-  if(ok){pts.forEach((p,i)=>{p[0]=goal[i][0];p[1]=goal[i][1]});if(!fitted){fitted=true;track('videomapping-encajado')}mRead.textContent=T.mapping.done}
-  else{const left=pts.filter((p,i)=>Math.hypot(p[0]-goal[i][0],p[1]-goal[i][1])>=.035).length;mRead.textContent=T.mapping.left(left)}
+  if(ok){if(!fitted){fitted=true;track('videomapping-encajado')}mRead.textContent=T.mapping.done}
+  else mRead.textContent=T.mapping.left(seated.filter(s=>!s).length);
+}
+/* Esquinas con imán. Cerca de su sitio (MAG) tiran de la esquina hacia él; muy cerca (SEAT) encaja de golpe
+   y no se suelta hasta alejarla un poco más (UNSEAT): se nota el «clic». Al soltar cerca, llega sola con un muelle */
+const MAG=.07,SEAT=.03,UNSEAT=.05;
+const corners=pts.map(()=>({grab:null,sx:{x:0,v:0},sy:{x:0,v:0},anim:false}));
+function placeCorner(i,x,y,kb){
+  const g=goal[i],d=Math.hypot(x-g[0],y-g[1]),was=pts[i][0]===g[0]&&pts[i][1]===g[1];
+  // Con teclado no hay imán (atraparía la esquina con pasos de 0,01): encaja solo al caer justo en su sitio
+  if(d<(kb?.006:was?UNSEAT:SEAT)){pts[i][0]=g[0];pts[i][1]=g[1];return}
+  const pull=!kb&&d<MAG?Math.pow(1-d/MAG,2)*.6:0;
+  pts[i][0]=clamp(x+(g[0]-x)*pull);pts[i][1]=clamp(y+(g[1]-y)*pull);
+}
+function stepMapSprings(f){
+  let moved=false;
+  corners.forEach((c,i)=>{
+    if(!c.anim)return;
+    springStep(c.sx,goal[i][0],f/60,.25);springStep(c.sy,goal[i][1],f/60,.25);
+    pts[i][0]=c.sx.x;pts[i][1]=c.sy.x;moved=true;
+    if(Math.hypot(c.sx.x-goal[i][0],c.sy.x-goal[i][1])<.002&&Math.hypot(c.sx.v,c.sy.v)<.01){c.anim=false;pts[i][0]=goal[i][0];pts[i][1]=goal[i][1]}
+  });
+  if(moved)warp();
 }
 hs.forEach((b,i)=>{
-  let on=false;
-  b.addEventListener('pointerdown',e=>{on=true;b.setPointerCapture(e.pointerId)});
-  b.addEventListener('pointermove',e=>{if(!on)return;const r=stage.getBoundingClientRect();pts[i][0]=clamp((e.clientX-r.left)/r.width);pts[i][1]=clamp((e.clientY-r.top)/r.height);warp()});
-  const up=()=>on=false;b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);
-  b.addEventListener('keydown',e=>{const k={ArrowLeft:[-.01,0],ArrowRight:[.01,0],ArrowUp:[0,-.01],ArrowDown:[0,.01]}[e.key];if(!k)return;e.preventDefault();pts[i][0]=clamp(pts[i][0]+k[0]);pts[i][1]=clamp(pts[i][1]+k[1]);warp()});
+  const c=corners[i];
+  const at=e=>{const r=stage.getBoundingClientRect();return[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]};
+  b.addEventListener('pointerdown',e=>{
+    if(c.grab)return;
+    // Se guarda dónde se ha cogido el asa: la esquina no salta al centro del dedo
+    const[x,y]=at(e);c.grab={id:e.pointerId,ox:x-pts[i][0],oy:y-pts[i][1]};c.anim=false;
+    b.setPointerCapture(e.pointerId);b.classList.add('grab');
+  });
+  b.addEventListener('pointermove',e=>{
+    if(!c.grab||e.pointerId!==c.grab.id)return;
+    const[x,y]=at(e);placeCorner(i,x-c.grab.ox,y-c.grab.oy);warp();
+  });
+  const up=e=>{
+    if(!c.grab||e.pointerId!==c.grab.id)return;c.grab=null;b.classList.remove('grab');
+    // Suelta cerca de su sitio: termina el camino sola, desde donde está y sin rebote
+    const g=goal[i],d=Math.hypot(pts[i][0]-g[0],pts[i][1]-g[1]);
+    if(d>0&&d<MAG){if(rm){pts[i][0]=g[0];pts[i][1]=g[1];warp()}else{c.sx={x:pts[i][0],v:0};c.sy={x:pts[i][1],v:0};c.anim=true}}
+  };
+  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);
+  // Flechas: un paso pequeño; con Mayúsculas, uno grande. El imán también funciona con teclado
+  b.addEventListener('keydown',e=>{const k={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!k)return;e.preventDefault();
+    const s=e.shiftKey?.05:.01;c.anim=false;placeCorner(i,pts[i][0]+k[0]*s,pts[i][1]+k[1]*s,true);warp()});
 });
 let mapOn=false;new IntersectionObserver(es=>mapOn=es[0].isIntersecting).observe(stage);
 function drawMap(now){
@@ -677,7 +789,6 @@ function startPit(){
 /* Física de ladrillos: gravedad, choques y agarre con muelle */
 function stepPit(){
   if(!pitBuilt||!pitOn)return;
-  pW=pit.clientWidth;pH=pit.clientHeight;
   for(const c of chips){
     if(c.hold){c.vx+=(c.hold.x-c.x)*.16;c.vy+=(c.hold.y-c.y)*.16;c.vx*=.72;c.vy*=.72}
     else{c.vy+=.55;c.vx*=.992}
@@ -713,6 +824,8 @@ function stepPit(){
   }
 }
 new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn)startPit()},{threshold:.15}).observe(pit);
+// El tamaño de la caja se lee solo cuando cambia, no en cada frame
+new ResizeObserver(()=>{if(pitBuilt){pW=pit.clientWidth;pH=pit.clientHeight}}).observe(pit);
 $('#dump').onclick=()=>{
   track('caja-volcada');
   if(!pitBuilt)return;
@@ -779,7 +892,8 @@ T.boss.chips.forEach(t=>{
   b.onclick=()=>giveOrder(t);$('#bossChips').appendChild(b)});
 function giveOrder(raw){const t=strip(raw);if(t)track('jefe-orden',{orden:t.slice(0,40)});bossReply.textContent=command(raw)}
 function openBoss(){track('jefe-abierto');closeNote();setAudit(false);boss.hidden=false;bBoss.setAttribute('aria-pressed',true);bossReply.textContent='';if(fine)bossIn.focus()}
-function closeBoss(){boss.hidden=true;bBoss.setAttribute('aria-pressed',false)}
+// Al cerrar un panel con el foco dentro, el foco vuelve al botón que lo abrió (si no, se pierde en <body>)
+function closeBoss(){const had=boss.contains(document.activeElement);boss.hidden=true;bBoss.setAttribute('aria-pressed',false);if(had)bBoss.focus()}
 bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
@@ -808,7 +922,7 @@ function stepStrike(now){
   const busy=!boss.hidden||auditOn||document.activeElement?.tagName==='INPUT'||document.hidden;
   if(!strike&&introDone&&!busy&&now-lastAct>16000)startStrike();
   if(strike){
-    const c0=cursors[0];banner.style.transform=`translate(${clamp(c0.x-banner.offsetWidth/2,8,vw-banner.offsetWidth-8)}px,${c0.y-58}px)`;
+    const c0=cursors[0],bw=banner.bw||(banner.bw=banner.offsetWidth);banner.style.transform=`translate(${clamp(c0.x-bw/2,8,vw-bw-8)}px,${c0.y-58}px)`;
     if(speech&&speechC)speech.style.transform=`translate(${clamp(speechC.x-40,8,vw-200)}px,${speechC.y-36}px)`;
   }
 }
@@ -831,6 +945,7 @@ const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zRead',
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
+const noteEls=new Map();
 const pinEls=NOTES.map((n,i)=>{const b=document.createElement('button');b.type='button';b.className='pin';b.textContent=i+1;b.hidden=true;b.setAttribute('aria-label',T.notePin(i+1,n[1]));b.onclick=()=>showNote(i);pinsEl.appendChild(b);return b});
 function showNote(i,go){
   noteI=(i+NOTES.length)%NOTES.length;const n=NOTES[noteI];
@@ -842,13 +957,15 @@ function showNote(i,go){
     if(scene.el.contains(el)){goScene(el===scene.el?.4:.9);return}
     el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
 }
-function closeNote(){note.hidden=true}
+function closeNote(){const had=note.contains(document.activeElement);note.hidden=true;if(had)bAudit.focus()}
 function setAudit(on){auditOn=on;bAudit.setAttribute('aria-pressed',on);pinEls.forEach(p=>p.hidden=!on);if(!on)closeNote()}
 bAudit.onclick=()=>{if(auditOn){setAudit(false);return}track('auditar-abierto');closeBoss();setAudit(true);showNote(0,true)};
 $('#nPrev').onclick=()=>showNote(noteI-1,true);$('#nNext').onclick=()=>showNote(noteI+1,true);$('#nClose').onclick=()=>setAudit(false);
 function stepPins(){
   if(!auditOn)return;
-  NOTES.forEach((n,i)=>{const r=$(n[0]).getBoundingClientRect(),b=pinEls[i];const vis=r.bottom>40&&r.top<vh&&getComputedStyle($(n[0])).opacity!=='0';
+  // Primero todas las lecturas, luego todas las escrituras: intercalarlas recalculaba la maqueta doce veces por frame
+  const reads=NOTES.map(n=>{const el=noteEls.get(n[0])||noteEls.set(n[0],$(n[0])).get(n[0]);const r=el.getBoundingClientRect();return{r,vis:r.bottom>40&&r.top<vh&&getComputedStyle(el).opacity!=='0'}});
+  reads.forEach(({r,vis},i)=>{const b=pinEls[i];
     b.style.display=vis?'':'none';if(vis)b.style.transform=`translate(${clamp(r.left+Math.min(r.width,vw)*.02,16,vw-16)}px,${clamp(r.top,52,vh-20)}px)`});
 }
 
@@ -861,17 +978,34 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;
   if(fine&&introDone){you.style.opacity=1;you.style.transform=`translate(${e.clientX+15}px,${e.clientY+20}px)`}},{passive:true});
 document.addEventListener('pointerleave',()=>{mouse.x=mouse.y=-999;you.style.opacity=0});
 let last=performance.now();
+// Lista fija de pasos: no se crean funciones nuevas en cada frame (menos trabajo para el recolector)
+const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
+let scrolled=false;
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;
   requestAnimationFrame(loop);
-  for(const step of [()=>stepScene(now),()=>stepLetters(f),()=>stepCursors(f,now),()=>stepDust(f,now),stepPit,stepPortal,()=>stepStrike(now),stepPins,()=>{if(mapOn)drawMap(now)}]){try{step()}catch(e){console.error(e)}}
+  // scrollY se lee una vez, al principio del frame y antes de escribir nada
+  SY=scrollY;
+  if(scrolled){scrolled=false;try{applyTone();updateTeam()}catch(e){console.error(e)}}
+  for(let i=0;i<STEPS.length;i++){try{STEPS[i](f,now)}catch(e){console.error(e)}}
 }
-function placeStops(){measureScene();for(const st of stops)stopRange(st)}
+function placeStops(){measureScene();measureTones();for(const st of stops)stopRange(st)}
 /* Si la tipografía u otra cosa cambia la altura, recalcula dónde aparece cada forma */
 new ResizeObserver(placeStops).observe($('main'));
 let rto;
-addEventListener('resize',()=>{clearTimeout(rto);rto=setTimeout(()=>{layout();warp();sizePortal()},150)});
-addEventListener('scroll',()=>{scrollT=performance.now();applyTone();updateTeam()},{passive:true});
+function relayout(){
+  // En móvil, la barra del navegador cambia el alto mientras se hace scroll. El lienzo se ajusta
+  // al momento (es barato); el recálculo de formas espera a que el scroll se pare para no dar un tirón
+  if(performance.now()-scrollT<250){rto=setTimeout(relayout,200);return}
+  layout();warp();sizePortal();
+}
+addEventListener('resize',()=>{
+  clearTimeout(rto);
+  if(innerWidth===vw){sizeCanvas();placeStops();rto=setTimeout(relayout,300)}
+  else rto=setTimeout(relayout,150);
+});
+// El scroll solo apunta que ha pasado; el tono y el equipo se actualizan en el siguiente frame
+addEventListener('scroll',()=>{scrollT=performance.now();scrolled=true},{passive:true});
 
 async function boot(){
   for(let i=0;i<60&&(!innerWidth||!innerHeight);i++)await pause(100);

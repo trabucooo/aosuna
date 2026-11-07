@@ -27,11 +27,13 @@
 <meta name="twitter:image" content="https://aosuna.es/og.png">
 <meta name="twitter:image:alt" content="Alonso Osuna Soto. Marketing, web e ideas en práctica.">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://stats.aosuna.es">
 <script defer src="https://stats.aosuna.es/script.js" data-website-id="UMAMI_WEBSITE_ID"></script>
 <script src="/boot.js"></script>
 <script type="module" src="/src/main.js"></script>
 </head>
 <body>
+<a class="skip-link" href="#contenido">Ir al contenido</a>
 <noscript><p class="nojs-note">Esta web es interactiva. Con JavaScript activado la verás como está pensada.</p></noscript>
 <div id="aura" aria-hidden="true"></div>
 <canvas id="dust" aria-hidden="true"></canvas>
@@ -40,22 +42,22 @@
 <div id="loader" aria-hidden="true"><div class="ring"></div><div class="pct" id="pct">Cargando 0 %</div></div>
 <button id="skip" type="button">Saltar intro</button>
 
-<div id="pins" aria-hidden="false"></div>
+<div id="pins"></div>
 <div class="dock" id="dock">
   <button id="bAudit" type="button" aria-pressed="false">Auditar esta web</button>
   <button id="bBoss" type="button" aria-pressed="false">Jefe de obra</button>
 </div>
 <aside class="panel" id="note" hidden aria-live="polite">
   <p class="eyebrow" id="nNum"></p>
-  <h3 id="nTitle"></h3>
+  <h2 id="nTitle"></h2>
   <p id="nText"></p>
   <div class="row"><button class="pill" id="nPrev" type="button">Anterior</button><button class="pill" id="nNext" type="button">Siguiente</button><button class="pill" id="nClose" type="button">Cerrar</button></div>
 </aside>
 <form class="panel" id="boss" hidden>
   <p class="eyebrow">Jefe de obra</p>
-  <h3>Da una orden</h3>
+  <h2>Da una orden</h2>
   <label for="bossIn" class="note">Escribe lo que quieres que haga el equipo</label>
-  <input id="bossIn" autocomplete="off" maxlength="60" placeholder="Pinta el fondo de rojo">
+  <input id="bossIn" type="text" name="orden" autocomplete="off" enterkeyhint="send" maxlength="60" placeholder="Pinta el fondo de rojo…">
   <p id="bossReply" aria-live="polite"></p>
   <div class="pills" id="bossChips"></div>
 </form>
@@ -70,10 +72,10 @@
   </ul>
 </nav>
 
-<main>
+<main id="contenido" tabindex="-1">
 <section class="hero" id="inicio" data-tone="paper" data-shape="hero" data-alpha=".9">
   <div class="stick">
-    <h1 class="name" id="name" aria-label="Alonso Osuna Soto">
+    <h1 class="name" id="name" translate="no" aria-label="Alonso Osuna Soto">
       <span class="word" id="word" aria-hidden="true">
         <span class="l"><i>A</i><b>A</b></span><span class="l"><i>L</i><b>L</b></span><span class="l"><i>O</i><b>O</b></span><span class="l"><i>N</i><b>N</b></span><span class="l"><i>S</i><b>S</b></span><span class="l"><i>O</i><b>O</b></span>
       </span>
@@ -132,15 +134,15 @@
   <article class="ch" data-tone="rust" data-shape="bubble" data-alpha="1"><div class="wrap"><div class="ch-text">
     <p class="eyebrow">2023–2025 · FP Dual</p>
     <h3>Almazaras de la Subbética</h3>
-    <p>Durante el ciclo de Actividades Comerciales atendí y asesoré a clientes, apoyé la venta de maquinaria agrícola, llevé documentación y facturas y organicé pedidos y almacén.</p>
-    <p class="kept">Aprendí: escuchar qué necesita una persona antes de ofrecerle nada.</p>
+    <p>Durante el ciclo de Actividades Comerciales atendí y asesoré a clientes, apoyé la venta de maquinaria agrícola, llevé la documentación y las facturas, y organicé pedidos y almacén.</p>
+    <p class="kept">Aprendí a escuchar qué necesita una persona antes de ofrecerle nada.</p>
   </div></div></article>
 
   <article class="ch" data-tone="cobalt" data-shape="browser" data-alpha="1"><div class="wrap"><div class="ch-text">
     <p class="eyebrow">Marzo–mayo de 2026 · Prácticas</p>
     <h3>Explora Natura</h3>
     <p>Ahí se juntó todo: web y contenidos para el sector náutico, investigación de palabras clave, prompts, proyecciones y captación. Hoy estudio Marketing y Publicidad en Córdoba.</p>
-    <p class="kept">Aprendí: que lo comercial, lo técnico y lo visual pueden ser el mismo trabajo.</p>
+    <p class="kept">Aprendí que lo comercial, lo técnico y lo visual pueden ser el mismo trabajo.</p>
   </div></div></article>
 </section>
 
@@ -153,16 +155,16 @@
   <article class="proj" data-tone="asphalt" data-shape="route" data-alpha=".3"><div class="wrap proj-grid">
     <div class="proj-copy">
       <p class="eyebrow">Proyecto académico · 2026–2027 · En desarrollo</p>
-      <h3 data-sel>Zalapp</h3>
+      <h3 data-sel translate="no">Zalapp</h3>
       <p>¿Dónde paras cuando conduces un camión? Con dos compañeros investigamos esa decisión: aparcamiento, servicios, limpieza, comida, descanso e información reciente.</p>
       <dl class="facts">
         <div><dt>Mi parte</dt><dd>Coordinar el trabajo, diseñar la propuesta y conectar la investigación con el marketing.</dd></div>
         <div><dt>Hecho</dt><dd>Encuesta, competencia, DAFO/CAME, segmentación y plan de marketing individual.</dd></div>
-        <div><dt>Estado</dt><dd>Sigue en desarrollo. Sin lanzamiento comercial. El llamamiento a la encuesta se difundió por CETM y asociaciones del sector.</dd></div>
+        <div><dt>Estado</dt><dd>Sigue en desarrollo, sin lanzamiento comercial. La invitación a responder la encuesta se difundió a través de CETM y de asociaciones del sector.</dd></div>
       </dl>
     </div>
     <div class="toy">
-      <p class="readout" id="zRead">47 registros</p>
+      <p class="readout" id="zRead" aria-live="polite">47 registros</p>
       <div class="dots" id="dots" role="img" aria-label="47 registros: 36 conductores asalariados, 5 autónomos, 4 responsables de flota y 2 con perfil Otro"></div>
       <div class="pills" id="zPills"></div>
       <p class="note gap-top">7,39 sobre 10: intención de uso declarada por los 41 conductores</p>
@@ -179,11 +181,11 @@
   <article class="proj" data-tone="sea" data-shape="wave" data-alpha=".35"><div class="wrap proj-grid">
     <div class="proj-copy">
       <p class="eyebrow">Prácticas en Explora Natura · 2026</p>
-      <h3 data-sel>Nautes</h3>
-      <p>Una web para que quien tiene un barco encuentre profesionales y servicios náuticos. Trabajé en contenidos y diseño con WordPress, palabras clave y organización de la información.</p>
+      <h3 data-sel translate="no">Nautes</h3>
+      <p>Una web para que quien tiene un barco encuentre profesionales y servicios náuticos. Trabajé en los contenidos y el diseño con WordPress, en las palabras clave y en cómo se organiza la información.</p>
       <dl class="facts">
-        <div><dt>Mi parte</dt><dd>Participé en web, newsletter, briefs y contenidos, dentro del proyecto de la empresa.</dd></div>
-        <div><dt>Feedback</dt><dd>Recibí revisión sobre jerarquía de portada, categorías, recorrido al contacto, legibilidad y enlazado interno.</dd></div>
+        <div><dt>Mi parte</dt><dd>Participé en la web, la newsletter, los briefs y los contenidos, dentro del proyecto de la empresa.</dd></div>
+        <div><dt>Feedback</dt><dd>Recibí comentarios sobre la jerarquía de la portada, las categorías, el recorrido hasta el contacto, la legibilidad y el enlazado interno.</dd></div>
         <div><dt>Con qué</dt><dd>WordPress, OceanWP, Directorist, Spectra y Stackable.</dd></div>
       </dl>
     </div>
@@ -205,7 +207,7 @@
   <article class="proj" data-tone="concrete" data-shape="facade" data-alpha=".22"><div class="wrap proj-grid">
     <div class="proj-copy">
       <p class="eyebrow">Análisis y web nueva · 2026</p>
-      <h3 data-sel>Alcar</h3>
+      <h3 data-sel translate="no">Alcar</h3>
       <p>Analicé la presencia digital de un estudio de arquitectura y estoy preparando su web nueva, con casos de proyectos, SEO local y seguimiento de consultas.</p>
       <dl class="facts">
         <div><dt>Hallazgo</dt><dd>En las publicaciones de Instagram que analicé no encontré una invitación directa a pedir información.</dd></div>
@@ -236,7 +238,7 @@
     <div class="toy">
       <div class="stage" id="stage">
         <svg viewBox="0 0 400 300" aria-hidden="true"><rect x="40" y="16" width="320" height="284" fill="#262233"/><rect x="40" y="228" width="320" height="72" fill="#1C1926"/><polygon points="112,66 304,48 312,216 104,198" fill="#0C0B12" stroke="#8C86A8" stroke-width="1.5" stroke-dasharray="6 5"/></svg>
-        <canvas id="map" width="400" height="300"></canvas>
+        <canvas id="map" aria-hidden="true" width="400" height="300"></canvas>
       </div>
       <p class="readout" id="mRead" aria-live="polite">Desajustado</p>
     </div>
@@ -262,7 +264,7 @@
     </aside>
   </div>
   <noscript><ul class="static-list tool-list">
-    <li><b>WordPress</b>Nautes, con OceanWP, Directorist, Spectra y Stackable.<span class="sub">Nivel: Experiencia práctica en prácticas de empresa.</span></li>
+    <li><b>WordPress</b>Nautes, con OceanWP, Directorist, Spectra y Stackable.<span class="sub">Nivel: Experiencia en prácticas de empresa.</span></li>
     <li><b>Palabras clave y SEO</b>Briefs y estructura de contenidos náuticos.<span class="sub">Nivel: Práctico. Sin resultados de posicionamiento medidos.</span></li>
     <li><b>GEO</b>Contenidos pensados para buscadores de IA, en Explora Natura.<span class="sub">Nivel: Trabajo exploratorio.</span></li>
     <li><b>ChatGPT, Gemini, NotebookLM</b>Investigación, textos y organización de información.<span class="sub">Nivel: Uso habitual, siempre revisando el resultado.</span></li>
@@ -286,7 +288,7 @@
     <p class="eyebrow">Contacto</p>
     <h2 class="big">¿Construimos algo?</h2>
     <p>Ya has visto cómo trabaja mi equipo. Si buscas a alguien en prácticas o en su primer puesto de marketing, solo falta una orden: escríbeme.</p>
-    <p id="mail" data-sel><a href="mailto:alonsoosunasoto@gmail.com">alonsoosunasoto@gmail.com</a></p>
+    <p id="mail" data-sel translate="no"><a href="mailto:alonsoosunasoto@gmail.com">alonsoosunasoto@gmail.com</a></p>
     <div class="actions">
       <button class="btn" id="copy" type="button">Copiar email</button>
       <a class="btn alt" id="linkedin" href="https://www.linkedin.com/in/alonso-osuna-soto-23522835b/" target="_blank" rel="noopener">LinkedIn</a>

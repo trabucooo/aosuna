@@ -11,10 +11,14 @@ img{max-width:100%}
   --display:"Big Shoulders Display",Impact,"Arial Narrow",sans-serif;
   --body:"Schibsted Grotesk","Helvetica Neue",Arial,sans-serif;
   --mono:"Martian Mono",ui-monospace,Menlo,monospace;
+  --ease-out:cubic-bezier(.23,1,.32,1); /* salida fuerte: para lo que entra o aparece */
   --gutter-l:max(16px,env(safe-area-inset-left,0px));
   --gutter-r:max(16px,env(safe-area-inset-right,0px));
 }
-html{scroll-behavior:smooth;background:var(--ground)}
+html{scroll-behavior:smooth;background:var(--ground);-webkit-tap-highlight-color:color-mix(in srgb,var(--accent) 25%,transparent);
+  /* La barra de arriba y el dock de abajo son fijos: al saltar a un ancla o tabular, nada queda tapado */
+  scroll-padding:56px 0 64px}
+:where(a,button,input){touch-action:manipulation}
 .js.locked{overflow:hidden}
 body{background:var(--ground);color:var(--ink);font:400 17px/1.55 var(--body);transition:background-color .7s ease,color .5s ease;overflow-x:clip}
 h1,h2,h3,p,dl,dd,ul{margin:0;padding:0}
@@ -22,12 +26,17 @@ ul{list-style:none}
 a{color:inherit}
 button{font:inherit;color:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+/* Enlace para saltar al contenido: fuera de la vista hasta que recibe el foco */
+.skip-link{position:fixed;z-index:40;left:var(--gutter-l);top:8px;background:var(--ink);color:var(--ground);font:600 11px/1 var(--mono);padding:10px 12px;text-decoration:none;translate:0 calc(-100% - 16px)}
+.skip-link:focus-visible{translate:0 0}
+main:focus{outline:none}
 main{position:relative;z-index:2}
-#aura{position:fixed;inset:0;z-index:0;pointer-events:none;background:radial-gradient(46vmax 46vmax at var(--ax,72%) var(--ay,28%),color-mix(in srgb,var(--accent) 20%,transparent),transparent 72%)}
+/* El halo es una capa fija que se mueve con transform: seguir al ratón no repinta la pantalla */
+#aura{position:fixed;left:0;top:0;z-index:0;width:92vmax;height:92vmax;margin:-46vmax 0 0 -46vmax;pointer-events:none;background:radial-gradient(closest-side,color-mix(in srgb,var(--accent) 20%,transparent),transparent 72%);transform:translate(72vw,28vh);will-change:transform}
 #dust{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
 #crew{position:fixed;inset:0;z-index:30;pointer-events:none;overflow:hidden}
 .top{position:fixed;z-index:20;top:0;left:0;right:0;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:calc(12px + env(safe-area-inset-top,0px)) var(--gutter-r) 12px var(--gutter-l);font:600 11px/1 var(--mono);letter-spacing:.04em;transition:opacity .4s,background-color .7s;background:color-mix(in srgb,var(--ground) 86%,transparent)}
-.top a{text-decoration:none}
+.top a{text-decoration:none;display:inline-block;padding-block:7px;margin-block:-7px} /* zona táctil más alta sin cambiar la barra */
 .top ul{display:flex;gap:18px}
 .top li a:hover{text-decoration:underline;text-underline-offset:4px}
 .top .lang{display:flex;gap:5px}
@@ -53,7 +62,7 @@ main{position:relative;z-index:2}
 #loader.pop{background:transparent;pointer-events:none}
 .ring{width:64px;height:64px;border-radius:50%;border:5px solid color-mix(in srgb,var(--ink) 15%,transparent);border-top-color:var(--ink);animation:spin .7s linear infinite;transition:transform .25s cubic-bezier(.5,-.6,.8,.4),opacity .25s}
 #loader.pop .ring{transform:scale(2.6);opacity:0}
-.pct{position:absolute;top:calc(50% + 54px);left:0;right:0;text-align:center;font:600 11px var(--mono);transition:opacity .2s}
+.pct{position:absolute;top:calc(50% + 54px);left:0;right:0;text-align:center;font:600 11px var(--mono);font-variant-numeric:tabular-nums;transition:opacity .2s}
 #loader.pop .pct{opacity:0}
 @keyframes spin{to{rotate:360deg}}
 #skip{position:fixed;z-index:32;right:var(--gutter-r);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:none;background:var(--ink);color:var(--ground);border:0;font:600 11px var(--mono);padding:10px 12px}
@@ -67,6 +76,7 @@ main{position:relative;z-index:2}
 .word{display:flex;justify-content:center;white-space:nowrap}
 .l{position:relative;display:inline-block;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
 .l:active{cursor:grabbing}
+.l.held{z-index:2} /* la letra que tienes en la mano pasa por encima de las demás */
 .l i{font-style:normal;color:transparent;-webkit-text-stroke:2px var(--ink);display:block}
 .l b{position:absolute;inset:0;font-weight:inherit;color:var(--accent);clip-path:inset(0);transition:clip-path .38s ease-in-out}
 .js.intro .l{opacity:0}
@@ -110,9 +120,11 @@ main{position:relative;z-index:2}
 .stamp-face{--r:110%;position:relative;display:flex;flex-direction:column;align-items:center;gap:7px;border:4px double currentColor;border-radius:16px;padding:13px 12px 10px;
   -webkit-mask-image:url(/tinta.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));mask-image:url(/tinta.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));
   -webkit-mask-size:240px 240px,100% 100%;mask-size:240px 240px,100% 100%;-webkit-mask-repeat:repeat,no-repeat;mask-repeat:repeat,no-repeat;
-  -webkit-mask-composite:source-in;mask-composite:intersect;transition:opacity .3s,--r .55s cubic-bezier(.2,.7,.3,1)}
+  -webkit-mask-composite:source-in;mask-composite:intersect;transition:opacity .3s,--r .55s var(--ease-out)}
 .stamp.half .stamp-face{-webkit-mask-image:url(/tinta-media.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));mask-image:url(/tinta-media.svg),radial-gradient(circle,#000 var(--r),transparent calc(var(--r) + 30%));-webkit-mask-size:320px 320px,100% 100%;mask-size:320px 320px,100% 100%}
-.js .stamp:not(.inked) .stamp-face{opacity:0;--r:-30%;transition:opacity .15s,--r .15s}
+/* Casi 0 en vez de 0: así el navegador ya tiene pintada la máscara de tinta y el impacto no espera a rasterizarla.
+   No se ve: con --r negativo la máscara oculta la cara entera */
+.js .stamp:not(.inked) .stamp-face{opacity:.002;--r:-30%;transition:opacity .15s,--r .15s}
 .stamp-title{font:900 clamp(17px,1.8vw,23px)/1 var(--display);text-transform:uppercase;text-wrap:balance}
 .stamp-school,.stamp-foot{font:600 9px/1.45 var(--mono);text-transform:uppercase;letter-spacing:.04em;text-wrap:balance}
 .stamp-foot{align-self:stretch;border-top:1px solid currentColor;padding-top:6px}
@@ -142,7 +154,7 @@ main{position:relative;z-index:2}
 .dots{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:clamp(4px,1vw,9px)}
 .dot{aspect-ratio:1;border-radius:50%;background:currentColor;opacity:.16;transition:opacity .3s,scale .3s,background-color .3s}
 .dot.on{opacity:1;background:var(--accent);scale:1.08}
-.readout{font:900 clamp(38px,5vw,60px)/1 var(--display);text-transform:uppercase}
+.readout{font:900 clamp(38px,5vw,60px)/1 var(--display);text-transform:uppercase;font-variant-numeric:tabular-nums}
 .gauge{height:14px;border:1px solid currentColor;position:relative}
 .gauge i{position:absolute;inset:0 auto 0 0;width:73.9%;background:var(--accent)}
 .steps{display:grid;gap:0;background:color-mix(in srgb,var(--ground) 80%,transparent)}
@@ -157,13 +169,20 @@ main{position:relative;z-index:2}
 .stage svg{position:absolute;inset:0;width:100%;height:100%}
 #map{position:absolute;left:0;top:0;width:400px;height:300px;transform-origin:0 0;mix-blend-mode:screen;opacity:.95}
 .h{position:absolute;left:0;top:0;width:28px;height:28px;margin:-14px 0 0 -14px;border-radius:50%;border:2px solid #fff;background:rgba(255,61,154,.55);padding:0;touch-action:none;cursor:grab}
-.stage.done .h{background:#39E08A;border-color:#39E08A}
+/* El asa crece en cuanto la tocas (respuesta inmediata) y cada esquina se pone verde al encajar, con un latido corto */
+.h{transition:scale 150ms var(--ease-out),background-color 150ms ease,border-color 150ms ease}
+.h.grab{scale:1.25;cursor:grabbing}
+.h.ok{background:#39E08A;border-color:#39E08A;animation:seat 320ms var(--ease-out)}
+@keyframes seat{from{scale:1.45}}
+@media (prefers-reduced-motion:reduce){.h{transition:background-color 150ms ease,border-color 150ms ease}.h.grab{scale:1}.h.ok{animation:none}}
 
 /* Herramientas */
 .lab{padding-block:14vh}
 .lab-grid{display:grid;grid-template-columns:minmax(0,7fr) minmax(0,4fr);gap:24px;margin-top:28px;align-items:stretch}
 #pit{position:relative;min-height:470px;border:1.5px solid var(--ink);display:flex;flex-wrap:wrap;gap:6px;align-content:flex-start;padding:10px;overflow:hidden;touch-action:pan-y;background:color-mix(in srgb,var(--ground) 86%,transparent)}
 .chip{background:var(--f);color:#fff;border:0;outline:1px solid rgba(255,255,255,.22);outline-offset:-1px;font:600 12px/1 var(--body);padding:13px 15px;white-space:nowrap;user-select:none;-webkit-user-select:none;touch-action:none;cursor:grab}
+/* El contorno decorativo de la ficha pisaba el anillo de foco: sin esto, el foco no se veía */
+.chip:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
 #pit.phys .chip{position:absolute;left:0;top:0;will-change:transform}
 .chip[aria-pressed="true"]{box-shadow:0 0 0 3px var(--ink)}
 #tool{display:flex;flex-direction:column;gap:10px;background:color-mix(in srgb,var(--ink) 8%,var(--ground));border:1.5px solid var(--ink);padding:20px;min-width:0}
@@ -180,6 +199,12 @@ main{position:relative;z-index:2}
 .actions{display:flex;flex-wrap:wrap;gap:10px}
 .btn{background:var(--ink);color:var(--ground);border:1.5px solid var(--ink);padding:14px 18px;font:600 12px/1 var(--mono);text-decoration:none}
 .btn.alt{background:transparent;color:var(--ink)}
+@media (hover:hover){
+  .btn:hover,#dump:hover,#skip:hover{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+  .pill:hover{border-color:var(--accent);color:var(--accent)}
+  .pill[aria-pressed="true"]:hover{color:var(--ground)}
+  .chip:hover{filter:brightness(1.15)}
+}
 
 @media (max-width:860px){
   .top ul{gap:12px}.top li:nth-child(2){display:none}
@@ -203,7 +228,7 @@ main{position:relative;z-index:2}
   .stamp-school,.stamp-foot{font-size:8.5px}
 }
 @media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}.c,#crew{display:none}.ring{animation:none}
+  html{scroll-behavior:auto}.c,#crew{display:none}.ring,.pin{animation:none}
   .js .open{height:140vh}
 }
 
@@ -218,7 +243,7 @@ main{position:relative;z-index:2}
 .pin.on{outline:2px solid var(--ink);outline-offset:2px}
 @keyframes ping{70%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 0 transparent}}
 .panel{box-sizing:border-box;position:fixed;z-index:34;left:var(--gutter-l);bottom:calc(52px + env(safe-area-inset-bottom,0px));width:min(25rem,calc(100vw - 32px));background:var(--ground);border:1.5px solid var(--ink);padding:16px;display:flex;flex-direction:column;gap:9px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
-.panel h3{margin:0;font:900 28px/1.05 var(--display);text-transform:uppercase;text-wrap:balance}
+.panel h2{margin:0;font:900 28px/1.05 var(--display);text-transform:uppercase;text-wrap:balance}
 .panel p{margin:0;font-size:15px}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 #boss input{width:100%;box-sizing:border-box;background:transparent;border:1px solid var(--ink);color:var(--ink);padding:11px;font:400 15px var(--body)}
