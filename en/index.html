@@ -158,24 +158,173 @@
       <h3 data-sel translate="no">Zalapp</h3>
       <p>Where do you stop when you drive a lorry? With two classmates, I researched that decision: parking, facilities, cleanliness, food, rest and up-to-date information.</p>
       <dl class="facts">
-        <div><dt>My part</dt><dd>Coordinating the work, designing the proposal and connecting the research to the marketing.</dd></div>
-        <div><dt>Done</dt><dd>Survey, competitor analysis, SWOT with its action plan (DAFO/CAME in Spanish), segmentation and an individual marketing plan.</dd></div>
-        <div><dt>Status</dt><dd>Still in progress, with no commercial launch. The call for survey responses went out through CETM, Spain’s road haulage confederation, and other industry associations.</dd></div>
+        <div><dt>Also</dt><dd>Segmentation and an individual marketing plan.</dd></div>
+        <div><dt>Status</dt><dd>Still in progress, with no commercial launch.</dd></div>
       </dl>
     </div>
-    <div class="toy">
-      <p class="readout" id="zRead" aria-live="polite">47 responses</p>
-      <div class="dots" id="dots" role="img" aria-label="47 responses: 36 employed drivers, 5 self-employed drivers, 4 fleet managers and 2 other profiles"></div>
-      <div class="pills" id="zPills"></div>
-      <p class="note gap-top">7.39 out of 10: stated intention to use the app, among the 41 drivers</p>
-      <div class="gauge" aria-hidden="true"><i></i></div>
+    <div class="logbook needs-js">
+      <div class="log-stage">
+        <button class="log-book" id="zCover" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="zMenu">
+          <span class="log-pages" aria-hidden="true"></span>
+          <span class="log-lid">
+            <span class="log-sticker"><img src="/zalapp/z.svg" alt="" width="56" height="56"></span>
+            <span class="log-title">Route logbook · Zalapp · 2026–2027</span>
+            <span class="log-band" aria-hidden="true"></span>
+          </span>
+        </button>
+        <div class="log-menu" id="zMenu" role="menu" aria-labelledby="zCover" hidden>
+          <button type="button" role="menuitem" id="zOpen">Open the route logbook</button>
+          <button type="button" role="menuitem" id="zWeb">See the website</button>
+        </div>
+      </div>
+      <p class="log-msg" id="zMsg" role="status"></p>
     </div>
-    <noscript><div class="static">
-      <p class="readout">47 responses</p>
-      <p>36 employed drivers, 5 self-employed drivers, 4 fleet managers and 2 other profiles.</p>
-      <p class="note gap-top">7.39 out of 10: stated intention to use the app, among the 41 drivers</p>
-      <div class="gauge" aria-hidden="true"><i></i></div>
-    </div></noscript>
+    <dialog class="logdlg" id="zDialog" aria-labelledby="zDlgTitle">
+      <div class="log-shell">
+        <div class="log-head">
+          <h2 class="log-title-d" id="zDlgTitle">Route logbook · Zalapp</h2>
+          <button type="button" class="log-btn needs-js" id="zClose">Close logbook</button>
+        </div>
+        <div class="log-sheet" id="zSheet">
+        <section class="log-page" id="zEt0" data-etapa="El problema" aria-labelledby="zEt0h">
+          <p class="log-km">KM 0 · 06:40</p>
+          <h3 class="log-h" id="zEt0h">The problem</h3>
+          <p class="log-lead">You pull into a stop you spotted on a generic map and there are no spaces left, the showers are out of order or the place just doesn’t feel right. Zalapp wants that doubt settled before you get there, not after.</p>
+          <div class="log-counters">
+            <div class="log-count"><p class="log-num" data-count="283818">283,818</p><p>heavy goods vehicles licensed for hire and reward in Spain (1 January 2026)</p><p class="log-src">Source: Spain’s Road Haulage Observatory (Observatorio del Transporte de Mercancías por Carretera)</p></div>
+            <div class="log-count"><p class="log-num" data-count="390057">390,057</p><p>secure lorry parking spaces missing across the EU</p><p class="log-src">Source: European Commission, 2025</p></div>
+          </div>
+          <p class="log-note">These are industry benchmarks, not potential users.</p>
+        </section>
+        <section class="log-page" id="zEt1" data-etapa="La encuesta" aria-labelledby="zEt1h">
+          <p class="log-km">KM 47 · 09:15</p>
+          <h3 class="log-h" id="zEt1h">The survey</h3>
+          <p class="log-lead">We shared it through CETM, Spain’s road haulage confederation, and other industry associations.</p>
+          <div class="log-survey">
+            <p class="readout" id="zRead" aria-live="polite">47 responses</p>
+            <div class="dots needs-js" id="dots" role="img" aria-label="47 responses: 36 employed drivers, 5 self-employed drivers, 4 fleet managers and 2 other profiles"></div>
+            <div class="pills needs-js" id="zPills"></div>
+            <p class="nojs-only">36 employed drivers, 5 self-employed drivers, 4 fleet managers and 2 other profiles.</p>
+            <p class="note gap-top">7.39 out of 10: stated intention to use the app, among the 41 drivers</p>
+            <div class="gauge" aria-hidden="true"><i></i></div>
+          </div>
+          <p class="log-note">Cut-off date: 16/10/2026. A non-probability, self-selected sample: it describes the people who responded, not the whole industry.</p>
+        </section>
+        <section class="log-page" id="zEt2" data-etapa="La competencia" aria-labelledby="zEt2h">
+          <p class="log-km">KM 120 · 11:30</p>
+          <h3 class="log-h" id="zEt2h">The competition</h3>
+          <p class="log-hint needs-js">Each exit is an alternative: press one to see where it leads.</p>
+          <div class="cross">
+            <svg class="cross-road" viewBox="0 0 160 160" aria-hidden="true"><rect x="58" y="0" width="44" height="160" fill="#3B4A52"/><rect x="0" y="58" width="160" height="44" fill="#3B4A52"/><path d="M80 4v44M80 112v44M4 80h44M112 80h44" stroke="#F26B2C" stroke-width="3" stroke-dasharray="8 7"/><circle cx="80" cy="80" r="14" fill="#FFF6EE" stroke="#102D3C" stroke-width="3"/></svg>
+            <ul class="exits">
+            <li class="exit exit-0"><button type="button" class="exit-btn" aria-expanded="false" aria-controls="zX0">MICHELIN Truckfly</button><p class="exit-line" id="zX0">An app for lorry drivers with a Premium plan at €6.99 a month or €74.99 a year.</p></li>
+            <li class="exit exit-1"><button type="button" class="exit-btn" aria-expanded="false" aria-controls="zX1">Google Maps and Waze</button><p class="exit-line" id="zX1">General-purpose maps: they get you to the stop, but don’t tell you what it’s like.</p></li>
+            <li class="exit exit-2"><button type="button" class="exit-btn" aria-expanded="false" aria-controls="zX2">Lorry sat-nav apps</button><p class="exit-line" id="zX2">Routes suited to your vehicle, not to the experience of stopping.</p></li>
+            <li class="exit exit-3"><button type="button" class="exit-btn" aria-expanded="false" aria-controls="zX3">WhatsApp and Facebook groups</button><p class="exit-line" id="zX3">Up-to-date information, but scattered and hard to find.</p></li>
+            </ul>
+          </div>
+          <p class="log-lead">Zalapp wants to explore how good a stop is and how current that information is. It’s a positioning hypothesis, not an exclusive.</p>
+        </section>
+        <section class="log-page" id="zEt3" data-etapa="DAFO y CAME" aria-labelledby="zEt3h">
+          <p class="log-km">KM 180 · 13:00</p>
+          <h3 class="log-h" id="zEt3h">SWOT and action plan</h3>
+          <p class="log-hint needs-js">Press each sign to turn it over.</p>
+          <div class="signs">
+            <button type="button" class="sign sign-0" aria-pressed="false" aria-label="Weaknesses" aria-describedby="zS0"><span class="sign-in"><span class="sign-front" aria-hidden="true"><span class="sign-shape"><b>W</b></span><span class="sign-word">Weaknesses</span></span><span class="sign-back" id="zS0">No data of our own and no users yet, a beta that still needs stabilising, a small team and reliance on licensed data sources.</span></span></button>
+            <button type="button" class="sign sign-1" aria-pressed="false" aria-label="Threats" aria-describedby="zS1"><span class="sign-in"><span class="sign-front" aria-hidden="true"><span class="sign-shape"><b>T</b></span><span class="sign-word">Threats</span></span><span class="sign-back" id="zS1">Competitors with established communities, wrong information that affects someone’s decision, and the difficulty of building critical mass.</span></span></button>
+            <button type="button" class="sign sign-2" aria-pressed="false" aria-label="Strengths" aria-describedby="zS2"><span class="sign-in"><span class="sign-front" aria-hidden="true"><span class="sign-shape"><b>S</b></span><span class="sign-word">Strengths</span></span><span class="sign-back" id="zS2">A focus on professional drivers, ratings broken down by aspect, alerts with a date and an expiry, and a dashboard for businesses.</span></span></button>
+            <button type="button" class="sign sign-3" aria-pressed="false" aria-label="Opportunities" aria-describedby="zS3"><span class="sign-in"><span class="sign-front" aria-hidden="true"><span class="sign-shape"><b>O</b></span><span class="sign-word">Opportunities</span></span><span class="sign-back" id="zS3">A real need for information on the road, a shortage of secure parking in Europe and possible partnerships with associations, fleets and businesses.</span></span></button>
+          </div>
+          <p class="log-sub">Action plan (CAME in Spanish)</p>
+          <ul class="came">
+            <li><b>Correct</b> Test the beta and build data with a source and a date.</li>
+            <li><b>Face</b> Don’t promise safety or free spaces.</li>
+            <li><b>Maintain</b> No payment alters ratings or alerts.</li>
+            <li><b>Exploit</b> Validate with drivers and businesses before talking about partnerships.</li>
+          </ul>
+        </section>
+        <section class="log-page" id="zEt4" data-etapa="La marca" aria-labelledby="zEt4h">
+          <p class="log-km">KM 230 · 15:20</p>
+          <h3 class="log-h" id="zEt4h">The brand</h3>
+          <div class="brand">
+            <img class="brand-z" src="/zalapp/z.svg" alt="Zalapp’s Z" width="180" height="180">
+            <div class="brand-copy">
+              <ul class="zchips">
+                <li class="zchip zchip-petrol"><i aria-hidden="true"></i>Petrol blue <code>#102D3C</code></li>
+                <li class="zchip zchip-orange"><i aria-hidden="true"></i>Orange <code>#F26B2C</code></li>
+              </ul>
+              <p>A compact petrol-blue Z with a diagonal orange cut. Brand identity manual v1.0, September 2026.</p>
+              <p class="log-sub">Core message</p>
+              <p class="brand-claim">“Less uncertainty on the road”</p>
+            </div>
+          </div>
+        </section>
+        <section class="log-page" id="zEt5" data-etapa="La beta" aria-labelledby="zEt5h">
+          <p class="log-km">KM 300 · 17:45</p>
+          <h3 class="log-h" id="zEt5h">The beta</h3>
+          <div class="phones">
+            <figure class="phone phone-ios"><img src="/zalapp/beta-mapa-iphone.webp" alt="Map screen from the Zalapp beta" width="445" height="900" loading="lazy" decoding="async"></figure>
+            <figure class="phone phone-android"><img src="/zalapp/beta-mapa-android.webp" alt="Map screen from the Zalapp beta" width="480" height="1000" loading="lazy" decoding="async"></figure>
+          </div>
+          <ul class="rules">
+            <li>You can only rate a stop if you’re within 2 km of it.</li>
+            <li>Road alerts expire after 24 hours unless someone confirms them.</li>
+            <li>A free dashboard so businesses can reply to ratings.</li>
+            <li>The catalogue starts empty: we don’t copy data from Google Maps.</li>
+          </ul>
+        </section>
+        <section class="log-page" id="zEt6" data-etapa="Lo que no prometemos" aria-labelledby="zEt6h">
+          <p class="log-km">Rest area · 19:30</p>
+          <h3 class="log-h" id="zEt6h">What we don’t promise</h3>
+          <div class="stamp inked log-stamp"><span class="stamp-face"><span class="stamp-title">Zalapp’s word</span></span></div>
+          <ul class="promises">
+            <li>We don’t say a place is safe.</li>
+            <li>We don’t guarantee free spaces.</li>
+            <li>No payment changes a rating, an alert or a ranking.</li>
+          </ul>
+        </section>
+        <section class="log-page" id="zEt7" data-etapa="Próxima salida" aria-labelledby="zEt7h">
+          <p class="log-km">21:00</p>
+          <h3 class="log-h" id="zEt7h">Next exit</h3>
+          <p class="exit-sign"><span class="exit-sign-k">Next exit</span> <span class="exit-sign-t">Pilot with real drivers</span></p>
+          <ul class="goals">
+            <li>Proposed target: 150 survey responses.</li>
+            <li>A beta trial with a pilot group of 30 drivers over two weeks.</li>
+          </ul>
+          <p class="log-note">These are proposed targets for the project, not achieved yet.</p>
+        </section>
+        <section class="log-page" id="zEt8" data-etapa="El equipo" aria-labelledby="zEt8h">
+          <p class="log-km">End of the day</p>
+          <h3 class="log-h" id="zEt8h">The team</h3>
+          <div class="team">
+            <div class="stamp inked team-stamp"><span class="stamp-face"><span class="stamp-title">Alonso</span><span class="stamp-school">Coordination, code and design.</span></span></div>
+            <div class="stamp inked team-stamp"><span class="stamp-face"><span class="stamp-title">Víctor</span><span class="stamp-school">Documentation, social media and finances.</span></span></div>
+            <div class="stamp inked team-stamp"><span class="stamp-face"><span class="stamp-title">Roberto</span><span class="stamp-school">Communication and marketing strategy.</span></span></div>
+          </div>
+          <p class="log-note">Integrated Project · Higher Vocational Diploma in Marketing and Advertising · IES Luis de Góngora · 2026–2027.</p>
+        </section>
+        </div>
+        <p class="sr-only" id="zLive" aria-live="polite"></p>
+        <div class="log-foot needs-js">
+          <button type="button" class="log-btn" id="zPrev">Previous stage</button>
+          <div class="tacho" role="group" aria-label="Tachograph: stages of the journey">
+            <div class="tacho-band" aria-hidden="true"><svg class="tacho-trace" viewBox="0 0 1000 40" preserveAspectRatio="none"><path d="M0 30 L0 34 L6 30 L25 10 L44 13 L62 7 L81 11 L100 8 L119 30 L125 34 L131 30 L150 11 L169 14 L188 8 L206 12 L225 9 L244 30 L250 34 L256 30 L275 12 L294 15 L312 9 L331 13 L350 10 L369 30 L375 34 L381 30 L400 10 L419 13 L438 7 L456 11 L475 8 L494 30 L500 34 L506 30 L525 11 L544 14 L562 8 L581 12 L600 9 L619 30 L625 34 L631 30 L650 12 L669 15 L688 9 L706 13 L725 10 L744 30 L750 34 L756 30 L775 10 L794 13 L812 7 L831 11 L850 8 L869 30 L875 34 L881 30 L900 11 L919 14 L938 8 L956 12 L975 9 L994 30 L1000 34 L1000 30" fill="none" stroke="#F26B2C" stroke-width="2" vector-effect="non-scaling-stroke"/></svg></div>
+            <div class="tacho-marks">
+            <button type="button" class="tacho-mark" data-go="0"><span class="sr-only">1</span></button>
+            <button type="button" class="tacho-mark" data-go="1"><span class="sr-only">2</span></button>
+            <button type="button" class="tacho-mark" data-go="2"><span class="sr-only">3</span></button>
+            <button type="button" class="tacho-mark" data-go="3"><span class="sr-only">4</span></button>
+            <button type="button" class="tacho-mark" data-go="4"><span class="sr-only">5</span></button>
+            <button type="button" class="tacho-mark" data-go="5"><span class="sr-only">6</span></button>
+            <button type="button" class="tacho-mark" data-go="6"><span class="sr-only">7</span></button>
+            <button type="button" class="tacho-mark" data-go="7"><span class="sr-only">8</span></button>
+            <button type="button" class="tacho-mark" data-go="8"><span class="sr-only">9</span></button>
+            </div>
+          </div>
+          <button type="button" class="log-btn log-btn-main" id="zNext">Next stage</button>
+        </div>
+      </div>
+    </dialog>
   </div></article>
 
   <article class="proj" data-tone="sea" data-shape="morph" data-points="/nautes-puntos.json" data-shot="/nautes-captura.webp" data-fallback="wave" data-alpha=".35" data-alpha-points=".9"><div class="wrap proj-grid">

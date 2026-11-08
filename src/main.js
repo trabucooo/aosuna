@@ -435,7 +435,7 @@ function sizeCanvas(){
 }
 function layout(){
   sizeCanvas();
-  fitName();measureScene();measureTones();
+  fitName();measureScene();measureTones();measureLog();
   const sm=small();
   for(const st of stops){
     stopRange(st);st.z=null;st.shot=null;st.anchor=false;st.alpha=st.baseAlpha;st.form=st.shape;
@@ -578,7 +578,7 @@ const BOAT_ROCK_DEG=1.5,BOAT_BOB_PX=2,BOAT_ROCK_MS=4000,BOAT_NEAR=140,BOAT_PULL=
 const boat={st:stops.find(s=>s.shape==='morph')||null,w:0,want:0,m:0,v:0,mb:new Float32Array(MB),moving:false,
   hT:new Float64Array(64),hM:new Float32Array(64),hN:0,shown:false,holdT:0,closeAt:0,openY:0,done:false,cx:0,cy:0,arc:0,rect:'',btn:null,veil:null,img:null,
   // Invitación: atracción (pull), sonar, cursor aparcado (park) o, sin animaciones, uno fijo (cue). seen: ya se completó
-  pull:0,seen:false,used:false,sonar:null,sonarOn:false,sonarT:'',park:null,parkLabel:'',parkW:0,cue:null,cueW:0,cueT:''};
+  pull:0,seen:false,used:false,sonar:null,sonarOn:false,sonarT:'',park:null};
 // Cuando alguien completa la transformación, el sonar y el cursor de la proa dejan de salir en esta sesión
 const SEEN_KEY='nautes-velero-visto';
 try{boat.seen=sessionStorage.getItem(SEEN_KEY)==='1'}catch(e){}
@@ -587,9 +587,7 @@ if(boat.st){
   // Sonar: un anillo que sale de la base del barco (el aro interior lo anima el CSS; este solo se coloca)
   boat.sonar=document.createElement('div');boat.sonar.className='sonar';boat.sonar.setAttribute('aria-hidden','true');boat.sonar.appendChild(document.createElement('i'));
   document.body.appendChild(boat.sonar);
-  // Sin animaciones no hay equipo de cursores: un cursor fijo hace de invitación
-  if(rm){const q=boat.cue=document.createElement('div');q.className='c boat-cue';q.hidden=true;q.setAttribute('aria-hidden','true');
-    q.style.setProperty('--c','#00788C');q.innerHTML=CURSOR_SVG+'<span></span>';q.querySelector('span').textContent=CUE;document.body.appendChild(q)}
+  boat.park=parker(CUE,'#00788C');
   const b=boat.btn=document.createElement('button');
   b.type='button';b.id='nautesBoat';b.className='boat-hit';b.hidden=true;b.setAttribute('aria-label',T.nautesBoat.label);
   boat.st.el.querySelector('.proj-copy').after(b); // en el orden del teclado, entre el texto y las boyas
@@ -695,26 +693,34 @@ function stepInvite(f,now,live){
   const son=inv&&!rm;
   if(son!==boat.sonarOn){boat.sonarOn=son;boat.sonar.classList.toggle('on',son)}
   if(son){const t=`translate(${Math.round(x+w/2)}px,${Math.round(y+h*.97)}px)`;if(t!==boat.sonarT){boat.sonarT=t;boat.sonar.style.transform=t}}
-  // La punta del cursor, junto a la proa (a la derecha del casco). Si la etiqueta no cabe, va a la izquierda del cursor
-  const tipX=x+w*.95+4,tipY=y+h*.93+4;
+  // La punta del cursor, junto a la proa (a la derecha del casco)
+  stepPark(boat.park,inv,x+w*.95+4,y+h*.93+4,now);
+}
+
+/* Cursor aparcado: uno del equipo (script = true mientras dura) espera con la punta en (x, y) y otra etiqueta.
+   Si la etiqueta no cabe a la derecha, va a la izquierda del cursor. Sin animaciones no hay equipo: un cursor
+   fijo con el mismo aspecto (cue) hace de invitación. Lo usan el velero de Nautes y el cuaderno de Zalapp */
+function parker(label,color){return{label,color,c:null,keep:'',w:0,cue:null,t:''}}
+function stepPark(P,on,x,y,now){
   if(rm){
-    const q=boat.cue;if(q.hidden===inv)q.hidden=!inv;
-    if(inv){boat.cueW||=q.querySelector('span').offsetWidth;q.classList.toggle('flip',tipX+15+boat.cueW+12>vw);
-      const t=`translate(${Math.round(tipX)}px,${Math.round(tipY)}px)`;if(t!==boat.cueT){boat.cueT=t;q.style.transform=t}}
+    if(on&&!P.cue){
+      const q=P.cue=document.createElement('div');q.className='c park-cue';q.setAttribute('aria-hidden','true');q.style.setProperty('--c',P.color);
+      q.innerHTML=CURSOR_SVG+'<span></span>';q.querySelector('span').textContent=P.label;document.body.appendChild(q);P.w=q.querySelector('span').offsetWidth;
+    }
+    if(!P.cue)return;
+    if(P.cue.hidden===on)P.cue.hidden=!on;
+    if(on){P.cue.classList.toggle('flip',x+15+P.w+12>vw);const t=`translate(${Math.round(x)}px,${Math.round(y)}px)`;if(t!==P.t){P.t=t;P.cue.style.transform=t}}
     return;
   }
-  if(inv&&!boat.park){
+  if(on&&!P.c){
     const pool=cursors.slice(3,LABELS.length).filter(c=>!c.job&&!c.script&&!c.follow&&!c.task&&!c.park);
     if(pool.length){
-      const c=pool.sort((p,q)=>Math.hypot(p.x-tipX,p.y-tipY)-Math.hypot(q.x-tipX,q.y-tipY))[0],sp=c.el.querySelector('span');
-      c.script=true;c.park={x:tipX,y:tipY};boat.parkLabel=sp.textContent;sp.textContent=CUE;boat.parkW=sp.offsetWidth;
-      c.el.classList.remove('off');boat.park=c;
+      const c=pool.sort((p,q)=>Math.hypot(p.x-x,p.y-y)-Math.hypot(q.x-x,q.y-y))[0],sp=c.el.querySelector('span');
+      c.script=true;c.park={x,y};P.keep=sp.textContent;sp.textContent=P.label;P.w=sp.offsetWidth;c.el.classList.remove('off');P.c=c;
     }
   }
-  if(!inv&&boat.park){
-    const c=boat.park;c.park=null;c.script=false;c.next=now+500;c.el.classList.remove('flip');c.el.querySelector('span').textContent=boat.parkLabel;boat.park=null;
-  }
-  if(boat.park){const c=boat.park;c.park.x=tipX;c.park.y=tipY;c.el.classList.toggle('flip',tipX+15+boat.parkW+12>vw)}
+  if(!on&&P.c){const c=P.c;c.park=null;c.script=false;c.next=now+500;c.el.classList.remove('flip');c.el.querySelector('span').textContent=P.keep;P.c=null}
+  if(P.c){P.c.park.x=x;P.c.park.y=y;P.c.el.classList.toggle('flip',x+15+P.w+12>vw)}
 }
 
 /* ---------- El equipo acompaña el scroll ---------- */
@@ -847,6 +853,7 @@ function stepScene(now){
 }
 
 /* ---------- Zalapp ---------- */
+// La encuesta, en la etapa «KM 47» del cuaderno: 47 puntos, uno por registro, y filtros por perfil
 const dots=$('#dots');
 const groups=[...Array(36).fill('as'),...Array(5).fill('au'),...Array(4).fill('fl'),...Array(2).fill('ot')];
 groups.forEach(g=>{const d=document.createElement('i');d.className='dot on';d.dataset.g=g;dots.appendChild(d)});
@@ -854,6 +861,102 @@ const zOpts=[['as','au','fl','ot'],['as','au'],['as'],['au'],['fl'],['ot']].map(
 const zPills=$('#zPills'),zRead=$('#zRead');
 zOpts.forEach(([t,g],i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;b.setAttribute('aria-pressed',i==0);
   b.onclick=()=>{track('zalapp-filtro',{filtro:ES.zalapp[i]});$$('.pill',zPills).forEach(x=>x.setAttribute('aria-pressed',x===b));zRead.textContent=t;$$('.dot').forEach(d=>d.classList.toggle('on',g.includes(d.dataset.g)))};zPills.appendChild(b)});
+
+/* Cuaderno de ruta. La invitación es un cuaderno cerrado (un botón): al pulsarlo se entreabre y ofrece dos
+   opciones. El cuaderno es un <dialog> a pantalla completa con una página por etapa y un tacógrafo abajo */
+// Si tiene valor, «Ver la web» abre la web de Zalapp en otra pestaña; vacía, avisa de que está en obra
+const ZALAPP_URL='';
+const zCover=$('#zCover'),zMenu=$('#zMenu'),zMsg=$('#zMsg'),zDlg=$('#zDialog'),zSheet=$('#zSheet'),zLive=$('#zLive');
+const zPages=$$('.log-page',zDlg),zMarks=$$('.tacho-mark',zDlg),zPrev=$('#zPrev'),zNext=$('#zNext'),zTacho=$('.tacho',zDlg);
+const zItems=$$('[role="menuitem"]',zMenu);
+const zLog={cur:-1,used:false,box:null,park:parker(T.zalappLog.cue,'#B3470F'),msgT:0,swipe:null};
+const NF=new Intl.NumberFormat(LANG==='en'?'en-GB':'es-ES');
+function openLogMenu(){
+  if(!zMenu.hidden)return;
+  zMenu.hidden=false;zCover.setAttribute('aria-expanded','true');zLog.used=true;zItems[0].focus();
+}
+function closeLogMenu(back){
+  if(zMenu.hidden)return;
+  zMenu.hidden=true;zCover.setAttribute('aria-expanded','false');if(back)zCover.focus();
+}
+zCover.addEventListener('click',()=>zMenu.hidden?openLogMenu():closeLogMenu());
+zCover.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();openLogMenu()}});
+// Menú: flechas para moverse entre las dos opciones, Escape vuelve al cuaderno y Tab lo cierra
+zMenu.addEventListener('keydown',e=>{
+  const i=zItems.indexOf(document.activeElement),n=zItems.length;
+  if(e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();zItems[(i+1)%n].focus()}
+  else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();zItems[(i+n-1)%n].focus()}
+  else if(e.key==='Home'){e.preventDefault();zItems[0].focus()}
+  else if(e.key==='End'){e.preventDefault();zItems[n-1].focus()}
+  else if(e.key==='Escape'){e.stopPropagation();closeLogMenu(true)}
+  else if(e.key==='Tab')closeLogMenu();
+});
+document.addEventListener('pointerdown',e=>{if(!zMenu.hidden&&!e.target.closest?.('.log-stage'))closeLogMenu()});
+$('#zOpen').addEventListener('click',()=>{track('zalapp-cuaderno',{accion:'abrir'});closeLogMenu();openLog()});
+$('#zWeb').addEventListener('click',()=>{
+  track('zalapp-cuaderno',{accion:'web'});
+  if(ZALAPP_URL){closeLogMenu();window.open(ZALAPP_URL,'_blank','noopener');return}
+  closeLogMenu(true);zMsg.textContent=T.zalappLog.pending;
+  clearTimeout(zLog.msgT);zLog.msgT=setTimeout(()=>{zMsg.textContent=''},6000);
+});
+function openLog(){root.classList.add('log-open');zDlg.showModal();zGo(0,0,true)}
+// Al cerrar (botón o Escape), el foco vuelve al cuaderno
+zDlg.addEventListener('close',()=>{root.classList.remove('log-open');zCover.focus()});
+$('#zClose').addEventListener('click',()=>zDlg.close());
+function zGo(i,dir,first){
+  const n=zPages.length;i=Math.max(0,Math.min(n-1,i));
+  if(i===zLog.cur&&!first)return;
+  zPages.forEach((p,k)=>{p.hidden=k!==i;p.classList.remove('turn-fwd','turn-back')});
+  const p=zPages[i];
+  // La hoja gira un poco al pasar (con movimiento reducido, el CSS lo cambia por un fundido)
+  if(dir){void p.offsetWidth;p.classList.add(dir>0?'turn-fwd':'turn-back')}
+  zLog.cur=i;p.scrollTop=0;
+  // aria-disabled en vez de disabled: si el botón con el foco se desactivara, el foco se perdería
+  zPrev.setAttribute('aria-disabled',i===0);zNext.setAttribute('aria-disabled',i===n-1);
+  zMarks.forEach((m,k)=>{m.classList.toggle('on',k===i);m.classList.toggle('past',k<i);if(k===i)m.setAttribute('aria-current','step');else m.removeAttribute('aria-current')});
+  zTacho.style.setProperty('--p',i/(n-1));
+  // El lector de pantalla anuncia el título de cada etapa
+  zLive.textContent=T.zalappLog.stage(i+1,n,p.querySelector('.log-km').textContent,p.querySelector('.log-h').textContent);
+  track('zalapp-etapa',{etapa:p.dataset.etapa});
+  $$('[data-count]',p).forEach(countUp);
+}
+zPrev.addEventListener('click',()=>zGo(zLog.cur-1,-1));
+zNext.addEventListener('click',()=>zGo(zLog.cur+1,1));
+zMarks.forEach((m,i)=>{m.setAttribute('aria-label',T.zalappLog.mark(i+1,zPages[i].querySelector('.log-h').textContent));m.addEventListener('click',()=>zGo(i,i>zLog.cur?1:-1))});
+zDlg.addEventListener('keydown',e=>{
+  if(e.key==='ArrowRight'){e.preventDefault();zGo(zLog.cur+1,1)}
+  else if(e.key==='ArrowLeft'){e.preventDefault();zGo(zLog.cur-1,-1)}
+});
+// Deslizar en táctil: horizontal y claro (no un scroll vertical torcido)
+zSheet.addEventListener('pointerdown',e=>{zLog.swipe=e.pointerType==='mouse'?null:{x:e.clientX,y:e.clientY}});
+zSheet.addEventListener('pointerup',e=>{
+  const w=zLog.swipe;zLog.swipe=null;if(!w)return;
+  const dx=e.clientX-w.x,dy=e.clientY-w.y;
+  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.4)zGo(zLog.cur+(dx<0?1:-1),dx<0?1:-1);
+});
+zSheet.addEventListener('pointercancel',()=>{zLog.swipe=null});
+// Contadores: suben desde 0 al abrir la página; sin animaciones, la cifra directa
+function countUp(el){
+  const to=+el.dataset.count;cancelAnimationFrame(el.zRaf);
+  if(rm){el.textContent=NF.format(to);return}
+  const t0=performance.now(),D=1400;
+  const tick=now=>{const k=Math.min(1,(now-t0)/D);el.textContent=NF.format(Math.round(to*(1-Math.pow(1-k,3))));if(k<1)el.zRaf=requestAnimationFrame(tick)};
+  el.zRaf=requestAnimationFrame(tick);
+}
+// Cruce de caminos: cada salida enseña su línea al pulsarla. Señales del DAFO: se giran
+$$('.exit-btn',zDlg).forEach(b=>{
+  const line=$('#'+b.getAttribute('aria-controls'));line.hidden=true;
+  b.addEventListener('click',()=>{const on=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',on);line.hidden=!on});
+});
+$$('.sign',zDlg).forEach(b=>b.addEventListener('click',()=>b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')));
+// Cursor «Ábreme» junto al cuaderno mientras está en pantalla, hasta que se usa (o se sale del proyecto)
+function measureLog(){const r=zCover.getBoundingClientRect();zLog.box=r.width?[r.left,r.top+scrollY,r.width,r.height]:null}
+function stepLog(f,now){
+  if(!zLog.box)return;
+  const[x,y0,w,h]=zLog.box,y=y0-SY,vis=y+h>60&&y<vh-60;
+  if(!vis)zLog.used=false;
+  stepPark(zLog.park,vis&&introDone&&!zLog.used&&zMenu.hidden&&!zDlg.open,x+w+6,y+h*.62,now);
+}
 
 /* ---------- Nautes ---------- */
 /* Nautes: el método como rumbo. Cuatro boyas en una línea; cada una abre encima su etiqueta (título y lista).
@@ -1132,7 +1235,7 @@ async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'sm
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
-const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zRead',nautes:'#nRoute',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
+const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zCover',nautes:'#nRoute',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
 function command(raw){
   const B=T.boss,t=strip(raw);if(!t)return B.empty;
   let m;
@@ -1169,7 +1272,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys()}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();closeLogMenu()}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -1212,7 +1315,7 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zRead','.gauge','#nautesBoat','#nRoute','#portal','#stage','#tool','#mail'];
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zCover','#nautesBoat','#nRoute','#portal','#stage','#tool','#mail'];
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
@@ -1252,7 +1355,7 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;
 document.addEventListener('pointerleave',()=>{mouse.x=mouse.y=-999;you.style.opacity=0});
 let last=performance.now();
 // Lista fija de pasos: no se crean funciones nuevas en cada frame (menos trabajo para el recolector)
-const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
+const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepLog,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
 let scrolled=false;
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;
@@ -1262,7 +1365,7 @@ function loop(now){
   if(scrolled){scrolled=false;try{applyTone();updateTeam()}catch(e){console.error(e)}}
   for(let i=0;i<STEPS.length;i++){try{STEPS[i](f,now)}catch(e){console.error(e)}}
 }
-function placeStops(){measureScene();measureTones();for(const st of stops)stopRange(st)}
+function placeStops(){measureScene();measureTones();measureLog();for(const st of stops)stopRange(st)}
 /* Si la tipografía u otra cosa cambia la altura, recalcula dónde aparece cada forma */
 new ResizeObserver(placeStops).observe($('main'));
 let rto;
