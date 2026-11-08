@@ -16,6 +16,8 @@ const es = {
     ['Estructura', 'Un guion antes de escribir', ['H1 y bloques H2', 'Preguntas frecuentes', 'Enlaces internos propuestos']],
     ['Metadatos', 'Listo para buscadores', ['Metatítulo', 'Metadescripción', 'Slug']],
   ],
+  // Velero del proyecto Nautes: botón que lo transforma en la web y texto alternativo de la captura
+  nautesBoat: { label: 'Ver la web de Nautes', alt: 'Portada de la web de Nautes' },
   portal: {
     placeholder: 'CAPTURA PROVISIONAL',
     placeholderSub: 'Aquí va la web nueva',
@@ -115,6 +117,7 @@ const es = {
     ['Formación con sello', 'La formación no va en una lista: la traen los mismos cursores que construyen la web. El segundo sello está a medias porque todavía estoy cursando ese ciclo.'],
     ['Enseñar la base', 'Un dato sin contexto no convence. Enseño de dónde sale cada cifra y puedes filtrar la muestra.'],
     ['Decir el límite', 'El 7,39 solo describe a quienes respondieron. Prefiero aclararlo a que parezca un dato de todo el sector.'],
+    ['Del barco a la web', 'Los mismos puntos que forman el velero construyen el esqueleto de la web, y después aparece la página real. El sector y el trabajo se ven en el mismo gesto.'],
     ['Entrar a la web', 'En vez de describir la web nueva, la dejo a la vista. Al tocarla se deshace en código y dan ganas de entrar.'],
     ['Probar en vez de leer', 'Explicar el videomapping cuesta. Encajar tú mismo la luz se entiende en diez segundos.'],
     ['Nivel real', 'Cada herramienta dice dónde la usé y con qué nivel. Inflarlo se notaría en la primera entrevista.'],
@@ -137,6 +140,7 @@ const en = {
     ['Structure', 'An outline before writing a word', ['H1 and H2 sections', 'FAQs', 'Suggested internal links']],
     ['Metadata', 'Ready for search engines', ['Meta title', 'Meta description', 'Slug']],
   ],
+  nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage' },
   portal: {
     placeholder: 'PLACEHOLDER SCREENSHOT',
     placeholderSub: 'The new website goes here',
@@ -226,6 +230,7 @@ const en = {
     ['Stamped, not listed', "My education isn’t a bullet list: the same cursors that build this site bring it in. The second stamp is only half-inked because I haven’t finished that course yet."],
     ['Show the base', "A figure without context convinces no one. I show where each number comes from, and you can filter the sample."],
     ['State the limits', "The 7.39 only describes the people who responded. I’d rather say so than let it pass as a figure for the whole industry."],
+    ['From boat to website', 'The same dots that form the sailboat build the skeleton of the website, and then the real page appears. The industry and the work show up in a single gesture.'],
     ['Step inside', 'Rather than describe the new website, I put it on show. Touch it and it dissolves into code, which makes you want to go in.'],
     ["Try it, don’t read it", 'Videomapping is hard to explain. Lining up the light yourself makes sense in ten seconds.'],
     ['Honest levels', 'Every tool says where I used it and how well I know it. Overstating it would show in the first interview.'],

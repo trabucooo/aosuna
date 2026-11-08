@@ -155,6 +155,22 @@ main{position:relative;z-index:2}
 .dot{aspect-ratio:1;border-radius:50%;background:currentColor;opacity:.16;transition:opacity .3s,scale .3s,background-color .3s}
 .dot.on{opacity:1;background:var(--accent);scale:1.08}
 .readout{font:900 clamp(38px,5vw,60px)/1 var(--display);text-transform:uppercase;font-variant-numeric:tabular-nums}
+/* Nautes: el velero de puntos lo dibuja #dust. Encima va un botón transparente con su rectángulo (main.js lo coloca);
+   al transformarse, el velo oscurece la página, los puntos pasan por encima y al final se funde la captura real */
+.boat-hit{position:fixed;left:0;top:0;z-index:27;margin:0;padding:0;border:0;border-radius:6px;background:transparent;cursor:default}
+.boat-hit.link{cursor:pointer}
+.boat-hit:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.nautes-veil{position:fixed;inset:0;z-index:24;background:rgba(3,9,15,.86);opacity:0;pointer-events:none;transition:opacity .45s}
+.nautes-veil.on{opacity:1;pointer-events:auto}
+/* Mientras dura, main deja de ser un contexto de apilado (z-index:2) para que el botón, que vive dentro de main,
+   quede por encima del velo: si no, el velo lo tapa y el puntero «sale» del botón nada más empezar */
+.nautes-on main{z-index:auto}
+/* Los puntos viajan por encima del velo. Sin animaciones no viajan: el velero se queda debajo y se funde la captura */
+@media (prefers-reduced-motion:no-preference){.nautes-on #dust{z-index:25}}
+/* El equipo (cursores y sus marcos de selección) se queda debajo del velo: la web se ve sin nada cruzándola */
+.nautes-on #crew{z-index:23}
+.nautes-shot{position:fixed;z-index:26;box-sizing:border-box;border-radius:6px;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .35s;box-shadow:0 20px 60px rgba(0,0,0,.55)}
+.nautes-shot.on{opacity:1}
 .gauge{height:14px;border:1px solid currentColor;position:relative}
 .gauge i{position:absolute;inset:0 auto 0 0;width:73.9%;background:var(--accent)}
 .steps{display:grid;gap:0;background:color-mix(in srgb,var(--ground) 80%,transparent)}
@@ -213,6 +229,8 @@ main{position:relative;z-index:2}
   .ch{align-items:flex-end;min-height:115vh;padding-bottom:9vh}
   .ch-text{background:color-mix(in srgb,var(--ground) 84%,transparent);padding:14px}
   .proj{padding-block:48px}
+  /* Hueco para el velero encima del texto (solo si su JSON llegó) */
+  .js .proj.has-boat{padding-top:calc(48px + clamp(150px,34svh,300px))}
   .stick{padding-block:58px 56px}
   #pit{min-height:440px}
   .js .open{height:300vh}

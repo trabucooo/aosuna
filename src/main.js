@@ -341,21 +341,43 @@ function heroPts(){
 }
 /* Cada parada tiene s (la forma queda completa) y e (empieza a deshacerse). Casi todas son un punto
    (e = s); el retrato tiene meseta. Entre dos paradas a y b, los puntos viajan de a.e a b.s. */
-// data-points="/archivo.json": la parada dibuja esa imagen en puntos; si el archivo no llega, usa data-fallback
-const stops=$$('[data-shape]').map(el=>({el,shape:el.dataset.shape,alpha:+el.dataset.alpha,src:el.dataset.points||'',fallback:el.dataset.fallback||'scatter',data:null,s:0,e:0,t:null,z:null,flat:el.dataset.shape==='portrait'}));
+// data-points="/archivo.json": la parada dibuja esa imagen en puntos; si el archivo no llega, usa data-fallback.
+// data-alpha-points: opacidad cuando la imagen sí llega (si no, data-alpha). form: la forma que se dibuja al final.
+// anchor: los puntos se mueven con el contenido (scroll) en vez de quedarse fijos en la pantalla
+const stops=$$('[data-shape]').map(el=>{const d=el.dataset,alpha=+d.alpha;
+  return{el,shape:d.shape,form:d.shape,alpha,baseAlpha:alpha,imgAlpha:d.alphaPoints?+d.alphaPoints:alpha,src:d.points||'',fallback:d.fallback||'scatter',
+    data:null,s:0,e:0,t:null,z:null,anchor:false,box:null,shot:null,flat:d.shape==='portrait'}});
 function stopRange(st){
   if(st.shape==='hero'){st.s=st.e=vh*.32;return}
   if(st.shape==='portrait'){st.s=scene.top+scene.len*PORTRAIT_IN;st.e=scene.top+scene.len*PORTRAIT_OUT;return}
-  const r=st.el.getBoundingClientRect();st.s=st.e=r.top+scrollY+r.height/2-vh/2;
+  const r=st.el.getBoundingClientRect();
+  // En móvil, el velero (encima del texto) queda completo justo debajo de la barra de arriba, no a media pantalla
+  if(st.shape==='morph'&&st.data&&small()){st.s=st.e=r.top+scrollY-24;return}
+  st.s=st.e=r.top+scrollY+r.height/2-vh/2;
 }
 /* Imágenes en puntos (public/retrato-puntos.json, public/apreton-puntos.json…): {ratio, desktop:[x,y,s,...], mobile:[...]}.
-   x e y van de 0 a 1 sobre el recorte; s, la luz de 0 a 1, da el tamaño del punto. Cada archivo se pide una sola vez */
+   x e y van de 0 a 1 sobre el recorte; s, la luz de 0 a 1, da el tamaño del punto. Cada archivo se pide una sola vez.
+   Variante de dos dibujos (public/nautes-puntos.json, data-shape="morph"): {boat_ratio, shot_ratio,
+   desktop:{boat,shot}, mobile:{boat,shot}}. Ya vienen emparejados: el punto i del barco va al punto i de la web */
 const pointFiles={};
+const okPoints=o=>o.ratio>0&&o.desktop?.length>2&&o.mobile?.length>2;
+function readPoints(d){
+  if(!d)return null;
+  if(!d.boat_ratio)return okPoints(d)?d:null;
+  const img={ratio:d.boat_ratio,desktop:d.desktop?.boat,mobile:d.mobile?.boat,
+    shot:{ratio:d.shot_ratio,desktop:d.desktop?.shot,mobile:d.mobile?.shot}};
+  const paired=okPoints(img)&&okPoints(img.shot)&&img.shot.desktop.length===img.desktop.length&&img.shot.mobile.length===img.mobile.length;
+  return paired?img:null;
+}
 const loadPoints=src=>pointFiles[src]||(pointFiles[src]=fetch(import.meta.env.BASE_URL+src.replace(/^\//,''))
-  .then(r=>r.ok?r.json():null).then(d=>d&&d.ratio&&d.desktop?.length&&d.mobile?.length?d:null).catch(()=>null));
-const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>st.data=d)));
+  .then(r=>r.ok?r.json():null).then(readPoints).catch(()=>null));
+const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>{
+  st.data=d;
+  // En móvil, el proyecto se abre por arriba para dejar sitio al velero (ver .has-boat en style.css)
+  if(d&&st.shape==='morph')st.el.classList.add('has-boat');
+})));
 // Tamaño del punto: base + luz × rango, en ordenador (d) y en móvil (m)
-const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]}};
+const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]},morph:{d:[1,2.4],m:[1.2,2.2]}};
 function pointTargets(data,[x0,y0,W,H],dot){
   const sm=small(),pts=sm?data.mobile:data.desktop,M=Math.floor(pts.length/3);
   if(!M||!(W>=1)||!(H>=1))return null;
@@ -385,8 +407,33 @@ function chapterBox(st,ratio){
   const tw=Math.min(vw*.92,vw-2*g,(top-gap-y1)*ratio),th=tw/ratio;
   return sw>tw?side:[(vw-tw)/2,y1+(top-gap-y1-th)/2,tw,th];
 }
+/* Proyecto con velero: en la zona libre, sin tapar .proj-copy ni .toy. En ordenador, en la columna de .toy,
+   encima o debajo de ella (donde haya más alto); en móvil, en el hueco que .has-boat abre encima del texto.
+   Va anclado al contenido, así que se mide en la página y se pasa a la pantalla en la posición de la parada */
+function boatBox(st,ratio){
+  const sm=small(),q=s=>st.el.querySelector(s).getBoundingClientRect();
+  const art=st.el.getBoundingClientRect(),copy=q('.proj-copy'),toy=q('.toy'),off=scrollY-st.s; // + off: pantalla en la parada
+  let L,R,top,bot;
+  if(sm){L=16;R=vw-16;top=art.top+off+40;bot=copy.top+off-16}
+  else{
+    // Entre la barra de arriba (64 px) y la .toy, o entre la .toy y el dock (60 px): el hueco más alto
+    const up=[64,toy.top+off-28],down=[toy.bottom+off+28,vh-60];
+    [top,bot]=up[1]-up[0]>=down[1]-down[0]?up:down;L=toy.left;R=toy.right;
+  }
+  const H=Math.min(bot-top,(R-L)/ratio,420),W=H*ratio;
+  if(!(H>=40))return null;
+  return[L+(R-L-W)/2,top+(bot-top-H)/2,W,H];
+}
+// La web, centrada en la pantalla: ancho min(72vw, 1000px) con su proporción
+function shotRect(ratio){const W=Math.min(vw*.72,1000),H=W/ratio;return[(vw-W)/2,(vh-H)/2,W,H]}
 function imageTargets(st){
   if(!st.data)return null;
+  if(st.shape==='morph'){
+    const box=boatBox(st,st.data.ratio),pt=box&&pointTargets(st.data,box,DOT.morph);
+    if(!pt)return null;
+    st.box=box;st.shotBox=shotRect(st.data.shot.ratio);st.shot=pointTargets(st.data.shot,st.shotBox,DOT.morph);
+    return st.shot&&pt;
+  }
   const box=st.shape==='portrait'?portraitBox(st.data.ratio):chapterBox(st,st.data.ratio);
   return box&&pointTargets(st.data,box,DOT[st.shape]||DOT.points);
 }
@@ -401,17 +448,18 @@ function layout(){
   fitName();measureScene();measureTones();
   const sm=small();
   for(const st of stops){
-    stopRange(st);st.z=null;
+    stopRange(st);st.z=null;st.shot=null;st.anchor=false;st.alpha=st.baseAlpha;st.form=st.shape;
     if(st.shape==='hero'){st.t=toTargets(heroPts(),0,0,2,2);continue}
     const pt=imageTargets(st);
-    if(pt){st.t=pt.t;st.z=pt.z;continue}
+    if(pt){st.t=pt.t;st.z=pt.z;st.alpha=st.imgAlpha;st.anchor=!!st.shot;continue}
     // Sin imagen (no hay data-points o el archivo no llegó): la forma dibujada, o la de reserva
-    const shape=SHAPES[st.shape]?st.shape:SHAPES[st.fallback]?st.fallback:'scatter';
+    const shape=st.form=SHAPES[st.shape]?st.shape:SHAPES[st.fallback]?st.fallback:'scatter';
     if(FULL[shape]){st.t=toTargets(sample(320,180,SHAPES[shape]),0,0,vw/320,vh/180);continue}
     const size=sm?Math.min(vw*.74,vh*.38):Math.min(vw*.4,vh*.62);
     const x0=sm?(vw-size)/2:vw*.72-size/2,y0=sm?vh*.1:(vh-size)/2;
     st.t=toTargets(sample(240,240,SHAPES[shape]),x0,y0,size/240,size/240);
   }
+  placeBoatShot();
   applyTone();
 }
 const mouse={x:-999,y:-999,hit:0};
@@ -467,22 +515,37 @@ function stepDust(f,now){
   // Sin animaciones: las imágenes en puntos (retrato, apretón de manos) aparecen ya formadas (fundido, sin viaje)
   if(rm&&(a.flat||b.flat||a.z||b.z)){t=raw<.5?0:1;al=(t?b.alpha:a.alpha)*smooth(clamp(Math.abs(raw-.5)*4))}
   if(i===0)al*=clamp(hp*1.6);
-  const wa=a.shape==='wave'?1-t:b.shape==='wave'?t:0;
+  const wa=a.form==='wave'?1-t:b.form==='wave'?t:0;
   const ta=a.t,tb=b.t;
+  // Paradas ancladas (el velero): sus dianas suben y bajan con el contenido
+  const oa=a.anchor?a.s-y:0,ob=b.anchor?b.s-y:0;
+  boat.w=a===boat.st?1-t:b===boat.st?t:0;
+  // Del velero a la web: cada punto lleva el progreso de su grupo de retardo (boat.mb) y sale en arco
+  const bm=boat.moving&&!rm&&boat.st.shot?boat:null,MBN=MB/N;
+  if(bm)al+=(1-al)*clamp(boat.m);
+  const repel=bm?1-clamp(boat.m*4):1;
   const mr=small()?70:110,mr2=mr*mr;
   // Ruido solo cuando no se hace scroll: entra en medio segundo
   const amp=rm?0:NOISE*smooth(clamp((now-scrollT-150)/500));
   const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y,wt=now*.0016;
   for(let n=0;n<N;n++){
     const k=n*2;
-    let gx=ta[k]+(tb[k]-ta[k])*t,gy=ta[k+1]+(tb[k+1]-ta[k+1])*t;
+    let gx=ta[k]+(tb[k]-ta[k])*t,gy=ta[k+1]+oa+(tb[k+1]+ob-ta[k+1]-oa)*t;
     if(wa)gy+=Math.sin(gx*.012+wt)*16*wa;
+    if(bm){const p=bm.mb[(n*MBN)|0];
+      if(p>0){
+        // Recto de su sitio en el barco a su sitio en la web, más un empujón hacia fuera desde el centro
+        // de la web que crece y se anula (sin(π·p)): se separa y vuelve, como las letras en la intro
+        const sh=bm.st.shot.t,lx=gx+(sh[k]-gx)*p,ly=gy+(sh[k+1]-gy)*p,ox=lx-bm.cx,oy=ly-bm.cy;
+        const q=Math.sin(Math.PI*clamp(p))*bm.arc*(.5+jx[n])/(Math.hypot(ox,oy)||1);
+        gx=lx+ox*q;gy=ly+oy*q;
+      }}
     if(rm){px[n]=gx;py[n]=gy;continue}
     if(amp){const w=now*nfq[n]+nph[n];gx+=Math.sin(w)*amp;gy+=Math.cos(w*1.31+nph[n])*amp}
     const e=ez[n]*f;
     pvx[n]+=(gx-px[n])*e*.55;pvy[n]+=(gy-py[n])*e*.55;
     const dx=px[n]-mx,dy=py[n]-my,d2=dx*dx+dy*dy;
-    if(d2<mr2&&d2>1){const q=(1-d2/mr2)*3.2/Math.sqrt(d2);pvx[n]+=dx*q*f;pvy[n]+=dy*q*f}
+    if(repel&&d2<mr2&&d2>1){const q=(1-d2/mr2)*3.2*repel/Math.sqrt(d2);pvx[n]+=dx*q*f;pvy[n]+=dy*q*f}
     pvx[n]*=dm;pvy[n]*=dm;px[n]+=pvx[n]*f;py[n]+=pvy[n]*f;
   }
   for(let c=0;c<3;c++)dustNow[c]+=(dustTarget[c]-dustNow[c])*.06;
@@ -492,10 +555,106 @@ function stepDust(f,now){
   ctx.globalAlpha=al;
   const lift=c=>Math.min(255,dustNow[c]*.72+90)|0;
   ctx.fillStyle=`rgb(${lift(0)},${lift(1)},${lift(2)})`;
-  const za=a.z,zb=b.z;
-  if(za||zb){for(let n=0;n<N;n++){const s0=za?za[n]:ps[n],s=s0+((zb?zb[n]:ps[n])-s0)*t;ctx.fillRect(px[n],py[n],s,s)}}
+  const za=a.z,zb=b.z,mz=bm&&bm.st.shot.z;
+  if(za||zb){for(let n=0;n<N;n++){const s0=za?za[n]:ps[n];let s=s0+((zb?zb[n]:ps[n])-s0)*t;
+    if(mz)s+=(mz[n]-s)*clamp(bm.mb[(n*MBN)|0]);
+    ctx.fillRect(px[n],py[n],s,s)}}
   else for(let n=0;n<N;n++)ctx.fillRect(px[n],py[n],ps[n],ps[n]);
   ctx.globalAlpha=1;
+}
+
+/* ---------- Nautes: del velero a la web ---------- */
+// Si tiene valor, el clic sobre la captura abre la web en otra pestaña; vacía, no hay enlace
+const NAUTES_URL='';
+// Retardo según el índice del punto: MB grupos, el grupo g sale g·MB_MS ms más tarde (de 0 a 120 ms)
+const MB=16,MB_MS=8;
+// Muelle del progreso m (rad/s y amortiguación): ni lineal ni con duración fija, y se puede dar la vuelta a medias
+const BOAT_W=9,BOAT_Z=.9,BOAT_HOLD_MS=300,SHOT_FADE_MS=350;
+const boat={st:stops.find(s=>s.shape==='morph')||null,w:0,want:0,m:0,v:0,mb:new Float32Array(MB),moving:false,
+  hT:new Float64Array(64),hM:new Float32Array(64),hN:0,shown:false,holdT:0,closeAt:0,openY:0,done:false,cx:0,cy:0,arc:0,rect:'',btn:null,veil:null,img:null};
+if(boat.st){
+  const b=boat.btn=document.createElement('button');
+  b.type='button';b.id='nautesBoat';b.className='boat-hit';b.hidden=true;b.setAttribute('aria-label',T.nautesBoat.label);
+  boat.st.el.querySelector('.proj-copy').after(b); // en el orden del teclado, entre el texto y la .toy
+  boat.veil=document.createElement('div');boat.veil.className='nautes-veil';
+  boat.img=document.createElement('img');boat.img.className='nautes-shot';boat.img.alt=T.nautesBoat.alt;boat.img.decoding='async';
+  document.body.append(boat.veil,boat.img);
+  // Ratón: entrar o enfocar transforma; salir del área (velero + web) o perder el foco lo deshace.
+  // Justo después de un scroll no: la web aparecería sola al pasar el velero por debajo del puntero
+  const hover=e=>{if(e.pointerType==='mouse'&&performance.now()-scrollT>250)openBoat()};
+  b.addEventListener('pointerenter',hover);b.addEventListener('pointermove',e=>{if(!boat.want)hover(e)});
+  b.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')closeBoat()});
+  b.addEventListener('focus',openBoat);b.addEventListener('blur',closeBoat);
+  // Táctil: tocar transforma (y tocar fuera, más abajo, deshace). Con la captura ya puesta, el clic encima abre la web
+  b.addEventListener('click',e=>{
+    if(!boat.want||boat.closeAt){openBoat();return}
+    const[x,y,w,h]=boat.st.shotBox,kbd=!e.detail;
+    if(boat.shown&&NAUTES_URL&&(kbd||e.clientX>=x&&e.clientX<=x+w&&e.clientY>=y&&e.clientY<=y+h))window.open(NAUTES_URL,'_blank','noopener');
+  });
+  document.addEventListener('pointerdown',e=>{if(boat.want&&e.target!==b)closeBoat()});
+  // Si se hace scroll con la web montada, se deshace sola
+  addEventListener('scroll',()=>{if(boat.want&&!boat.closeAt&&Math.abs(scrollY-boat.openY)>6)closeBoat()},{passive:true});
+}
+function openBoat(){
+  if(!boat.st?.shot||boat.btn.hidden)return;
+  if(boat.want&&!boat.closeAt)return;
+  if(!boat.img.src)boat.img.src=import.meta.env.BASE_URL+(boat.st.el.dataset.shot||'').replace(/^\//,'');
+  boat.closeAt=0;boat.want=1;boat.openY=scrollY;
+  boat.veil.classList.add('on');
+  // Mientras dura, el botón queda por encima del velo y los puntos también (estos, solo con animaciones: ver style.css)
+  root.classList.add('nautes-on');
+}
+// Al deshacer, primero se va la captura y luego vuelan los puntos de vuelta al velero
+function closeBoat(){
+  if(!boat.want||boat.closeAt)return;
+  const fade=boat.shown&&!rm?SHOT_FADE_MS:0;
+  boat.img.classList.remove('on');boat.btn.classList.remove('link');boat.shown=false;boat.holdT=0;
+  boat.closeAt=performance.now()+fade;
+}
+// La captura y el centro de la web se recolocan con la maqueta (layout)
+function placeBoatShot(){
+  const st=boat.st;if(!st?.shot)return;
+  const[x,y,w,h]=st.shotBox,s=boat.img.style;
+  s.left=x+'px';s.top=y+'px';s.width=w+'px';s.height=h+'px';
+  boat.cx=x+w/2;boat.cy=y+h/2;boat.arc=Math.min(w*.1,90);
+}
+// m en el instante now - ms, sacado del historial (interpolado)
+function boatPast(now,ms){
+  const T0=now-ms,H=boat.hT,M=boat.hM,n=Math.min(boat.hN,64);
+  for(let j=1;j<=n;j++){const k=(boat.hN-j)&63;
+    if(H[k]<=T0){if(j===1)return M[k];const k2=(k+1)&63,u=(T0-H[k])/Math.max(1e-3,H[k2]-H[k]);return M[k]+(M[k2]-M[k])*u}}
+  return n?M[(boat.hN-n)&63]:0;
+}
+function stepBoat(f,now){
+  const st=boat.st;if(!st)return;
+  // El botón solo existe con la parada activa (t > 0,9) y si el JSON llegó
+  const live=!!st.shot&&boat.w>.9;
+  if(boat.btn.hidden===live){boat.btn.hidden=!live;if(!live)closeBoat()}
+  if(boat.closeAt&&now>=boat.closeAt){boat.closeAt=0;boat.want=0;boat.veil.classList.remove('on')}
+  if(boat.want||boat.moving){
+    if(rm){boat.m=boat.want;boat.v=0}
+    else{const dt=f/60;boat.v+=(BOAT_W*BOAT_W*(boat.want-boat.m)-2*BOAT_Z*BOAT_W*boat.v)*dt;boat.m+=boat.v*dt}
+    const k=boat.hN&63;boat.hT[k]=now;boat.hM[k]=boat.m;boat.hN++;
+    let any=boat.want>0;
+    for(let g=0;g<MB;g++){const p=g?boatPast(now,g*MB_MS):boat.m;boat.mb[g]=p;if(Math.abs(p)>.001)any=true}
+    // En reposo del todo: se limpia y se deja de calcular hasta la próxima vez
+    if(!any){boat.m=boat.v=0;boat.mb.fill(0);boat.hN=0;root.classList.remove('nautes-on')}
+    boat.moving=any;
+  }
+  // Completo: m en 1 durante 300 ms y la captura cargada, entonces se funde encima
+  if(boat.want&&!boat.closeAt&&boat.m>.995&&Math.abs(boat.v)<.05){
+    boat.holdT||=now;
+    if(!boat.shown&&(rm||now-boat.holdT>=BOAT_HOLD_MS)&&boat.img.complete&&boat.img.naturalWidth){
+      boat.shown=true;boat.img.classList.add('on');if(NAUTES_URL)boat.btn.classList.add('link');
+      if(!boat.done){boat.done=true;track('nautes-velero')}
+    }
+  }else boat.holdT=0;
+  if(!live)return;
+  // El botón tapa el velero (que se mueve con el scroll); abierto, también la web, para que salir de ella lo deshaga
+  let[x,y,w,h]=st.box;y+=st.s-SY;
+  if(boat.want){const[sx,sy,sw,sh]=st.shotBox,x2=Math.max(x+w,sx+sw),y2=Math.max(y+h,sy+sh);x=Math.min(x,sx);y=Math.min(y,sy);w=x2-x;h=y2-y}
+  const r=`${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}`;
+  if(r!==boat.rect){boat.rect=r;const s=boat.btn.style;s.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;s.width=Math.round(w)+'px';s.height=Math.round(h)+'px'}
 }
 
 /* ---------- El equipo acompaña el scroll ---------- */
@@ -926,7 +1085,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps()}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat()}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -969,7 +1128,7 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zRead','.gauge','#portal','#stage','#tool','#mail'];
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zRead','.gauge','#nautesBoat','#portal','#stage','#tool','#mail'];
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
@@ -983,6 +1142,8 @@ function showNote(i,go){
   if(go){const el=$(n[0]);
     // Dentro de la escena alta: el texto se lee con el retrato formado, los sellos cuando ya están los dos
     if(scene.el.contains(el)){goScene(el===scene.el?.4:.9);return}
+    // El botón del velero solo existe con su parada activa: se baja hasta ella
+    if(boat.st&&(!el||el===boat.btn)){scrollTo({top:boat.st.s,behavior:rm?'auto':'smooth'});return}
     el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
 }
 function closeNote(){const had=note.contains(document.activeElement);note.hidden=true;if(had)bAudit.focus()}
@@ -1007,7 +1168,7 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;
 document.addEventListener('pointerleave',()=>{mouse.x=mouse.y=-999;you.style.opacity=0});
 let last=performance.now();
 // Lista fija de pasos: no se crean funciones nuevas en cada frame (menos trabajo para el recolector)
-const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
+const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
 let scrolled=false;
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;
