@@ -34,10 +34,14 @@ const es = {
   // Velero del proyecto Nautes: botón que lo transforma en la web, texto alternativo de la captura
   // y etiqueta del cursor que se queda junto a la proa (con ratón / en táctil)
   nautesBoat: { label: 'Ver la web de Nautes', alt: 'Portada de la web de Nautes', cueMouse: 'Pásame por encima', cueTouch: 'Toca el velero' },
+  // Alcar, del plano a la obra: aviso bajo el marco (con ratón / en táctil), texto con la obra levantada
+  // (con enlace / sin él) y etiqueta del cursor que espera junto al marco
   portal: {
-    placeholder: 'CAPTURA PROVISIONAL',
-    placeholderSub: 'Aquí va la web nueva',
+    hintMouse: 'Pasa el cursor y se levanta',
+    hintTouch: 'Toca y se levanta',
+    enter: 'Entrar en la web ↗',
     pending: 'Enlace pendiente: la web nueva todavía no está publicada.',
+    cue: 'Levántala',
   },
   // Sellos de formación de la escena «Ese equipo soy yo». El HTML lleva una copia para quien
   // navega sin JavaScript: si cambias un texto aquí, cámbialo también en index.html.
@@ -134,7 +138,7 @@ const es = {
     ['La app, por dentro', 'Un móvil hecho de puntos que se enciende con la beta real. Los botones imitan los de la app para que el paso al proyecto sea natural.'],
     ['Del barco a la web', 'Los mismos puntos que forman el velero construyen el esqueleto de la web, y después aparece la página real. El sector y el trabajo se ven en el mismo gesto.'],
     ['El método, en ruta', 'Los cuatro pasos de cada pieza van como boyas en un rumbo, sin pestañas: se leen de un vistazo y el barco sigue siendo el protagonista.'],
-    ['Entrar a la web', 'En vez de describir la web nueva, la dejo a la vista. Al tocarla se deshace en código y dan ganas de entrar.'],
+    ['Del plano a la obra', 'La web nueva de Alcar se explica como se construye una casa: primero el trazado, después la obra. Los mismos cursores que montan esta web dibujan el plano.'],
     ['Probar en vez de leer', 'Explicar el videomapping cuesta. Encajar tú mismo la luz se entiende en diez segundos.'],
     ['Nivel real', 'Cada herramienta dice dónde la usé y con qué nivel. Inflarlo se notaría en la primera entrevista.'],
     ['Un solo objetivo', 'Todo el recorrido acaba aquí: un email grande y un botón para copiarlo, sin formularios.'],
@@ -171,9 +175,11 @@ const en = {
   ],
   nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage', cueMouse: 'Hover over me', cueTouch: 'Tap the boat' },
   portal: {
-    placeholder: 'PLACEHOLDER SCREENSHOT',
-    placeholderSub: 'The new website goes here',
+    hintMouse: 'Hover to build it',
+    hintTouch: 'Tap to build it',
+    enter: 'Enter the website ↗',
     pending: "Link coming soon: the new website isn’t live yet.",
+    cue: 'Build it',
   },
   stamps: [
     {
@@ -260,7 +266,7 @@ const en = {
     ['The app, from the inside', 'A phone made of dots that switches on with the real beta. The buttons mimic the app’s own, so stepping into the project feels natural.'],
     ['From boat to website', 'The same dots that form the sailboat build the skeleton of the website, and then the real page appears. The industry and the work show up in a single gesture.'],
     ['The method, under way', 'The four steps of every piece sit like buoys along a course, with no tabs: you take them in at a glance and the boat stays the star.'],
-    ['Step inside', 'Rather than describe the new website, I put it on show. Touch it and it dissolves into code, which makes you want to go in.'],
+    ['From plan to build', 'The new Alcar website is explained the way a house gets built: first the drawing, then the building. The same cursors that put this site together draw the plan.'],
     ["Try it, don’t read it", 'Videomapping is hard to explain. Lining up the light yourself makes sense in ten seconds.'],
     ['Honest levels', 'Every tool says where I used it and how well I know it. Overstating it would show in the first interview.'],
     ['One goal', 'The whole journey ends here: a big email address and a button to copy it. No forms.'],

@@ -459,9 +459,34 @@ html:not(.js) .brand{grid-template-columns:minmax(0,1fr)}
 .gauge{height:14px;border:1px solid currentColor;position:relative}
 .gauge i{position:absolute;inset:0 auto 0 0;width:73.9%;background:var(--accent)}
 .steps{display:grid;gap:0;background:color-mix(in srgb,var(--ground) 80%,transparent)}
-.portal{position:relative;display:block;aspect-ratio:16/10;width:100%;max-width:100%;overflow:hidden;border:1px solid color-mix(in srgb,var(--ink) 40%,transparent);text-decoration:none;color:var(--ink);cursor:pointer;touch-action:pan-y}
-.bits{position:absolute;inset:0;width:100%;height:100%;display:block}
-.enter{position:absolute;left:0;top:0;opacity:0;pointer-events:none;background:var(--ink);color:var(--ground);font:600 12px/1 var(--mono);padding:9px 12px;transition:opacity .2s}
+/* Alcar, del plano a la obra: un marco con la proporción de la captura, la rejilla de plano del fondo y esquinas de
+   encuadre. Dentro, el plano (canvas) y encima la captura, que se levanta de abajo arriba (main.js pone el clip-path) */
+.plan{--pl:color-mix(in srgb,var(--ink) 7%,transparent);--pc:color-mix(in srgb,var(--ink) 70%,transparent);position:relative;display:block;width:100%;aspect-ratio:1280/695;margin:0;padding:0;border:0;color:var(--ink);font:inherit;text-decoration:none;cursor:pointer;touch-action:pan-y;
+  background-color:transparent;background-image:linear-gradient(var(--pl) 1px,transparent 1px),linear-gradient(90deg,var(--pl) 1px,transparent 1px);background-size:36px 36px;background-position:-1px -1px}
+/* Esquinas de encuadre: ocho trazos finos de 14 px */
+.plan::after{content:"";position:absolute;inset:-6px;pointer-events:none;background:
+  linear-gradient(var(--pc),var(--pc)) 0 0/14px 1px no-repeat,linear-gradient(var(--pc),var(--pc)) 0 0/1px 14px no-repeat,
+  linear-gradient(var(--pc),var(--pc)) 100% 0/14px 1px no-repeat,linear-gradient(var(--pc),var(--pc)) 100% 0/1px 14px no-repeat,
+  linear-gradient(var(--pc),var(--pc)) 0 100%/14px 1px no-repeat,linear-gradient(var(--pc),var(--pc)) 0 100%/1px 14px no-repeat,
+  linear-gradient(var(--pc),var(--pc)) 100% 100%/14px 1px no-repeat,linear-gradient(var(--pc),var(--pc)) 100% 100%/1px 14px no-repeat}
+.plan:focus-visible{outline:2px solid var(--accent);outline-offset:10px}
+.plan-lines{position:absolute;inset:0;width:100%;height:100%;display:block}
+.plan-shot{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover}
+/* Con JavaScript, la captura empieza oculta bajo el plano; sin el plano (no cargó) se ve tal cual */
+.js .plan:not(.no-plan) .plan-shot{clip-path:inset(100% 0 0 0)}
+/* El nivel de obra: una línea fina en el color del tono que sube con el borde de la captura */
+.plan-level{position:absolute;left:0;right:0;top:0;height:1.5px;margin-top:-1px;background:var(--accent);opacity:0;pointer-events:none;box-shadow:0 0 6px var(--accent)}
+.plan-note{min-height:1.6em}
+@media (prefers-reduced-motion:reduce){
+  /* Sin animaciones: sin recorte ni nivel; la captura entra con un fundido */
+  .js .plan:not(.no-plan) .plan-shot{clip-path:none!important;opacity:0;transition:opacity .3s ease}
+  .js .plan.up .plan-shot{opacity:1}
+  .plan-level{display:none}
+}
+html:not(.js) .plan-lines,html:not(.js) .plan-level{display:none}
+/* Sin JavaScript se ocultan los bloques interactivos (.toy), pero la captura de Alcar se ve tal cual */
+html:not(.js) .toy:has(#portal){display:flex}
+html:not(.js) .plan{cursor:default}
 .stage{position:relative;aspect-ratio:4/3;width:100%;max-width:100%;background:#17151F;overflow:hidden;touch-action:none}
 .stage svg{position:absolute;inset:0;width:100%;height:100%}
 #map{position:absolute;left:0;top:0;width:400px;height:300px;transform-origin:0 0;mix-blend-mode:screen;opacity:.95}

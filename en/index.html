@@ -376,11 +376,14 @@
       </dl>
     </div>
     <div class="toy">
-      <a class="portal" id="portal" href="#" aria-label="Open Alcar’s new website">
-        <canvas class="bits" id="bits" aria-hidden="true"></canvas>
-        <span class="enter" id="enter" aria-hidden="true">Enter</span>
+      <!-- Del plano a la obra: los cursores trazan el plano (canvas) y la captura se levanta encima. Sin JavaScript,
+           o si el plano no carga, se ve la captura directamente -->
+      <a class="plan" id="portal" aria-label="See the new Alcar website">
+        <canvas class="plan-lines" aria-hidden="true"></canvas>
+        <img class="plan-shot" src="/src/assets/alcar.webp" alt="Homepage of the new Alcar website" width="1280" height="695" decoding="async">
+        <span class="plan-level" aria-hidden="true"></span>
       </a>
-      <p class="note" id="portalNote"></p>
+      <p class="note plan-note" id="portalNote" aria-live="polite"><span class="needs-js">Hover to build it</span></p>
     </div>
     <noscript><div class="static"><p class="note">Link coming soon: the new website isn’t live yet.</p></div></noscript>
   </div></article>

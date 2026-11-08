@@ -17,7 +17,10 @@ function springStep(s,target,dt,response=.35,damping=1){
 const root=document.documentElement;
 const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
 const small=()=>innerWidth<=860;
-let vw=innerWidth,vh=innerHeight,SY=scrollY; // SY: scroll del frame actual
+// Ancho visible, sin la barra de scroll: #dust (width:100%) mide eso, y getBoundingClientRect y clientX también.
+// Con innerWidth (que la incluye), en Windows todo lo dibujado con puntos quedaba ~15 px corrido a la izquierda
+const viewW=()=>document.documentElement.clientWidth||innerWidth;
+let vw=viewW(),vh=innerHeight,SY=scrollY; // SY: scroll del frame actual
 
 /* ---------- Analítica (Umami). Si no carga o está bloqueada, no pasa nada ---------- */
 function track(name,data){try{window.umami?.track(name,data)}catch(e){}}
@@ -458,7 +461,7 @@ function screenEdges(t,[x0,y0,W,H],[a,b,c,d]){
   return e;
 }
 function sizeCanvas(){
-  vw=innerWidth;vh=innerHeight;SY=scrollY;
+  vw=viewW();vh=innerHeight;SY=scrollY;
   const d=Math.min(devicePixelRatio||1,1.6),w=Math.round(vw*d),h=Math.round(vh*d);
   if(cv.width!==w||cv.height!==h){cv.width=w;cv.height=h}
   ctx.setTransform(d,0,0,d,0,0);
@@ -1374,73 +1377,174 @@ nSteps.forEach((s,i)=>{
 document.addEventListener('pointerdown',e=>{if(buoyOpen>=0&&!e.target.closest?.('#nBuoys'))closeBuoys()});
 
 
-/* ---------- Alcar: la captura se deshace en ceros y unos ---------- */
+/* ---------- Alcar: del plano a la obra ----------
+   Cuando el proyecto entra en pantalla, tres cursores del equipo trazan a regla el plano de la web nueva
+   (public/alcar-plano.json: polilíneas 0-1 sobre la captura, grupos ui / casa / lamas, y cotas). Al pasar el
+   ratón, con foco o con un toque, la captura real se levanta de abajo arriba sobre el plano (clip-path con muelle)
+   y el plano se queda debajo al 30 % */
 const PORTAL_URL=''; // Dirección de la web nueva
 const PORTAL_IMG=alcarShot; // Captura de la web nueva
-const portal=$('#portal'),bitsC=$('#bits'),bc=bitsC.getContext('2d'),enter=$('#enter');
-const CELL=13,base=document.createElement('canvas');
-const P={x:0,y:0,tx:0,ty:0,on:false,w:0,h:0,cols:0,rows:0,d:null,n:null,b:null,rgb:null,dirty:true,wave:-1,wx:0,wy:0,hold:0};
-let shotImg=null;
-function drawBase(c,w,h){
-  if(shotImg){const r=Math.max(w/shotImg.width,h/shotImg.height),iw=shotImg.width*r;c.drawImage(shotImg,(w-iw)/2,0,iw,shotImg.height*r);return}
-  c.fillStyle='#26231F';c.fillRect(0,0,w,h);
-  const g=[['#2B2823',0,.34],['#37332C',.34,.62],['#211F1B',.62,1]];
-  g.forEach(([f,a,b])=>{c.fillStyle=f;c.beginPath();c.moveTo(a*w+h*.14,30);c.lineTo(b*w+h*.14,30);c.lineTo(b*w-h*.14,h);c.lineTo(a*w-h*.14,h);c.fill()});
-  c.fillStyle='#26231F';c.fillRect(0,0,w,30);c.fillStyle='#5A544B';[16,31,46].forEach(x=>{c.beginPath();c.arc(x,15,4.5,0,6.3);c.fill()});
-  c.fillStyle='#EDE8DC';c.textBaseline='alphabetic';c.font=`900 ${Math.max(28,w*.075)}px "Big Shoulders Display",Impact,sans-serif`;c.fillText(T.portal.placeholder,18,h-38);
-  c.font='400 11px "Martian Mono",monospace';c.fillText(T.portal.placeholderSub,18,h-18);
-}
-function sizePortal(){
-  const r=portal.getBoundingClientRect();if(!r.width)return;
-  const d=Math.min(devicePixelRatio||1,1.6);P.w=r.width;P.h=r.height;
-  bitsC.width=r.width*d;bitsC.height=r.height*d;bc.setTransform(d,0,0,d,0,0);
-  base.width=r.width;base.height=r.height;drawBase(base.getContext('2d'),r.width,r.height);
-  P.cols=Math.ceil(r.width/CELL);P.rows=Math.ceil(r.height/CELL);const n=P.cols*P.rows;
-  P.d=new Float32Array(n);P.n=new Float32Array(n).map(()=>Math.random());P.b=new Uint8Array(n).map(()=>Math.random()<.5?48:49);
-  const t=document.createElement('canvas');t.width=P.cols;t.height=P.rows;const tc=t.getContext('2d',{willReadFrequently:true});tc.drawImage(base,0,0,P.cols,P.rows);
-  P.rgb=tc.getImageData(0,0,P.cols,P.rows).data;P.dirty=true;
-}
-if(PORTAL_IMG){const im=new Image();im.onload=()=>{shotImg=im;sizePortal()};im.src=PORTAL_IMG}
-function aimPortal(e){const r=portal.getBoundingClientRect();P.tx=e.clientX-r.left;P.ty=e.clientY-r.top}
-const openP=()=>{P.on=true;P.dirty=true};
-const shutP=()=>{P.on=false};
-portal.addEventListener('pointerenter',e=>{aimPortal(e);P.x=P.tx;P.y=P.ty;if(e.pointerType==='mouse')openP()});
-portal.addEventListener('pointermove',aimPortal);
-portal.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')shutP()});
-portal.addEventListener('focus',()=>{if(!portal.matches(':focus-visible'))return;P.tx=P.w/2;P.ty=P.h/2;openP()});
-portal.addEventListener('blur',shutP);
-portal.addEventListener('click',e=>{
-  if(!fine&&!P.on){e.preventDefault();aimPortal(e);P.x=P.tx;P.y=P.ty;openP();return}
-  track('portal-alcar');
-  P.wave=0;P.hold=40;P.wx=P.x;P.wy=P.y;P.dirty=true;
-  if(!PORTAL_URL){e.preventDefault();$('#portalNote').textContent=T.portal.pending}
-});
+// Velocidad del trazo y de los saltos entre líneas (px/s), muelle de la obra (rad/s y amortiguación)
+const PLAN_SPEED=900,PLAN_JUMP=2700,PLAN_W=9,PLAN_Z=.9,PLAN_TAGS_MS=450,PLAN_SEEN='alcar-obra-vista';
+let portal=$('#portal');
+// Sin dirección, el marco es un botón: un enlace que no lleva a ninguna parte confunde al teclado y al lector
 if(PORTAL_URL){portal.href=PORTAL_URL;portal.target='_blank';portal.rel='noopener'}
-let portalVis=false;new IntersectionObserver(es=>portalVis=es[0].isIntersecting).observe(portal);
-function stepPortal(){
-  if(!portalVis||!P.d||!P.dirty)return;
-  P.x+=(P.tx-P.x)*.2;P.y+=(P.ty-P.y)*.2;
-  if(P.wave>=0){P.wave+=30;if(P.wave>Math.hypot(P.w,P.h)*1.3&&--P.hold<0)P.wave=-1}
-  const R=Math.min(P.w,P.h)*.4;let active=false;
-  bc.drawImage(base,0,0,P.w,P.h);bc.font='600 11px "Martian Mono",monospace';bc.textBaseline='middle';bc.textAlign='center';
-  for(let j=0;j<P.rows;j++)for(let i=0;i<P.cols;i++){
-    const k=j*P.cols+i,cx=i*CELL+CELL/2,cy=j*CELL+CELL/2;
-    let t=0;
-    if(P.on&&Math.hypot(cx-P.x,cy-P.y)<R*(.55+P.n[k]*.6))t=1;
-    if(P.wave>=0&&Math.hypot(cx-P.wx,cy-P.wy)<P.wave)t=1;
-    P.d[k]+=(t-P.d[k])*(rm?1:t?.24:.06);
-    const v=P.d[k];if(v<.02)continue;active=true;
-    bc.globalAlpha=Math.min(1,v*1.3);bc.fillStyle='#0A0A0C';bc.fillRect(i*CELL,j*CELL,CELL,CELL);
-    if(v>.15){
-      if(!rm&&Math.random()<.05)P.b[k]=P.b[k]===48?49:48;
-      const p=k*4,lift=c=>Math.min(255,P.rgb[p+c]*1.3+70)|0;
-      bc.globalAlpha=v;bc.fillStyle=`rgb(${lift(0)},${lift(1)},${lift(2)})`;
-      bc.fillText(String.fromCharCode(P.b[k]),cx,cy+(1-v)*7);
+else{const b=document.createElement('button');b.type='button';[...portal.attributes].forEach(a=>b.setAttribute(a.name,a.value));b.append(...portal.childNodes);portal.replaceWith(b);portal=b}
+const planC=$('.plan-lines',portal),pctx=planC.getContext('2d'),planShot=$('.plan-shot',portal),planLevel=$('.plan-level',portal),planNote=$('#portalNote');
+// El marco ya lleva su nombre (aria-label): la captura, dentro, es decorativa
+planShot.src=PORTAL_IMG;planShot.alt='';
+const plan={data:null,w:0,h:0,left:0,top:0,lines:[],tags:[],vis:false,started:false,traced:false,done:false,tracers:[],tagT:0,tagA:0,
+  speed:PLAN_SPEED,up:false,upAt:0,m:0,v:0,clip:'',lvl:'',op:'',ink:'',dirty:true,seen:false,used:false,park:parker(T.portal.cue,'#B81F8A'),noteK:''};
+try{plan.seen=sessionStorage.getItem(PLAN_SEEN)==='1'}catch(e){}
+fetch(import.meta.env.BASE_URL+'alcar-plano.json').then(r=>r.ok?r.json():null).then(d=>{
+  if(!d||!(d.ratio>0)||!Array.isArray(d.lineas)||!d.lineas.length)throw 0;
+  plan.data=d;portal.classList.add('has-plan');sizePlan();
+}).catch(()=>portal.classList.add('no-plan')); // Sin plano: la captura a la vista, con su texto
+new IntersectionObserver(es=>{plan.vis=es[0].isIntersecting},{threshold:.5}).observe(portal);
+function planMeasure(){const r=portal.getBoundingClientRect();plan.left=r.left;plan.top=r.top+scrollY;return r}
+function sizePlan(){
+  const r=planMeasure();if(!r.width)return;
+  const d=Math.min(devicePixelRatio||1,1.6),W=r.width,H=r.height;plan.w=W;plan.h=H;
+  planC.width=Math.round(W*d);planC.height=Math.round(H*d);pctx.setTransform(d,0,0,d,0,0);
+  if(!plan.data)return;
+  plan.lines=plan.data.lineas.map(l=>{
+    const p=l.p.map(([x,y])=>[x*W,y*H]);let len=0;for(let i=1;i<p.length;i++)len+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);
+    return{g:l.g,p,len,drawn:0};
+  });
+  // Cotas: en inglés, con punto decimal
+  plan.tags=(plan.data.etiquetas||plan.data.cotas||[]).map(t=>({a:[t.p[0][0]*W,t.p[0][1]*H],b:[t.p[1][0]*W,t.p[1][1]*H],
+    t:String(t.t).toUpperCase().replace(/(\d),(\d)/g,LANG==='en'?'$1.$2':'$1,$2')}));
+  // Al redimensionar: lo ya trazado se redibuja entero, sin animar (si estaba a medias, se termina)
+  if(plan.started&&!plan.done)planFinish();
+  if(plan.done){plan.lines.forEach(l=>l.drawn=l.len);plan.tagA=1}
+  plan.dirty=true;
+}
+// Ruta de un cursor: tramos [ax, ay, bx, by, línea (o null si es un salto), distancia en la línea, largo]
+function planRoute(g,x0,y0){
+  const segs=[];let px=x0,py=y0;
+  for(const l of plan.lines){
+    if(l.g!==g)continue;
+    const[a]=l.p;segs.push([px,py,a[0],a[1],null,0,Math.hypot(a[0]-px,a[1]-py)]);
+    let off=0;
+    for(let i=1;i<l.p.length;i++){const[ax,ay]=l.p[i-1],[bx,by]=l.p[i],len=Math.hypot(bx-ax,by-ay);segs.push([ax,ay,bx,by,l,off,len]);off+=len}
+    [px,py]=l.p[l.p.length-1];
+  }
+  return segs;
+}
+function planStart(){
+  plan.started=true;
+  if(rm){planFinish();return} // sin animaciones: el plano aparece entero, sin cursores
+  const pool=cursors.slice(3,LABELS.length).filter(c=>!c.job&&!c.script&&!c.follow&&!c.task&&!c.park);
+  const sy=plan.top-SY;
+  plan.tracers=['ui','casa','lamas'].map((g,k)=>{
+    const c=pool[k]||null;
+    // El cursor sale de donde esté; si no hay cursores libres, la línea se traza igual, sin cursor
+    const x0=c?c.x-plan.left:plan.lines.find(l=>l.g===g)?.p[0][0]||0,y0=c?c.y-sy:plan.lines.find(l=>l.g===g)?.p[0][1]||0;
+    if(c){c.script=true;c.park={x:c.x,y:c.y};c.el.classList.remove('off')}
+    return{c,segs:planRoute(g,x0,y0),i:0,t:0,x:x0,y:y0};
+  });
+  // Unos 900 px/s; si el marco es grande (móvil en horizontal, pantallas anchas), algo más rápido para que el
+  // trazado más largo no pase de unos 3,4 s y, con las cotas, el total ronde los 4 s
+  const longest=Math.max(...plan.tracers.map(tr=>tr.segs.reduce((a,s)=>a+(s[4]?s[6]:0),0)));
+  plan.speed=Math.max(PLAN_SPEED,longest/3.4);
+}
+function planRelease(now){
+  for(const tr of plan.tracers){const c=tr.c;if(c){c.park=null;c.script=false;c.next=now+400}}
+  plan.tracers=[];
+}
+function planFinish(){
+  plan.lines.forEach(l=>l.drawn=l.len);plan.tagA=1;plan.traced=plan.done=true;plan.dirty=true;
+  planRelease(performance.now());
+}
+function planUp(){
+  if(plan.up)return;
+  plan.up=true;plan.upAt=performance.now();plan.used=true;portal.classList.add('up');
+  track('alcar-obra',{accion:'levantar'});
+  if(!plan.seen){plan.seen=true;try{sessionStorage.setItem(PLAN_SEEN,'1')}catch(e){}}
+}
+function planDown(){if(plan.up){plan.up=false;portal.classList.remove('up')}}
+// Ratón: entrar levanta, salir baja. Teclado: el foco. Táctil: el primer toque levanta (y el foco que trae
+// consigo no cuenta como clic de entrada); con la obra levantada, el clic entra en la web
+portal.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')planUp()});
+portal.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')planDown()});
+portal.addEventListener('focus',planUp);portal.addEventListener('blur',planDown);
+portal.addEventListener('click',e=>{
+  if(!plan.up||performance.now()-plan.upAt<450){e.preventDefault();planUp();return}
+  if(PORTAL_URL)track('alcar-obra',{accion:'entrar'});else e.preventDefault();
+});
+document.addEventListener('pointerdown',e=>{if(plan.up&&!portal.contains(e.target))planDown()});
+function planDraw(){
+  const c=pctx,W=plan.w,H=plan.h,ink=`rgb(${inkRgb[0]},${inkRgb[1]},${inkRgb[2]})`;
+  c.clearRect(0,0,W,H);c.strokeStyle=c.fillStyle=ink;c.lineCap='round';c.lineJoin='round';
+  for(const l of plan.lines){
+    if(!l.drawn)continue;
+    const ui=l.g==='ui';c.globalAlpha=ui?.5:1;c.lineWidth=ui?1:1.6;
+    c.beginPath();c.moveTo(l.p[0][0],l.p[0][1]);let left=l.drawn;
+    for(let i=1;i<l.p.length&&left>0;i++){
+      const[ax,ay]=l.p[i-1],[bx,by]=l.p[i],len=Math.hypot(bx-ax,by-ay),k=Math.min(1,left/(len||1));
+      c.lineTo(ax+(bx-ax)*k,ay+(by-ay)*k);left-=len;
+    }
+    c.stroke();
+  }
+  // Cotas: línea guía de p0 a p1, un punto en p0 y el texto junto a p1, con fondo y borde fino
+  if(plan.tagA>0){
+    const bg=root.style.getPropertyValue('--ground')||'#000';
+    c.font='600 9.5px "Martian Mono",monospace';c.textBaseline='middle';
+    for(const t of plan.tags){
+      c.globalAlpha=plan.tagA*.75;c.lineWidth=1;c.beginPath();c.moveTo(t.a[0],t.a[1]);c.lineTo(t.b[0],t.b[1]);c.stroke();
+      c.globalAlpha=plan.tagA;c.beginPath();c.arc(t.a[0],t.a[1],2.5,0,6.283);c.fill();
+      const tw=c.measureText(t.t).width+12,th=19,right=t.b[0]+6+tw<=W-2;
+      const x=Math.max(2,Math.min(W-tw-2,right?t.b[0]+6:t.b[0]-6-tw)),y=Math.max(2,Math.min(H-th-2,t.b[1]-th/2));
+      c.fillStyle=bg;c.fillRect(x,y,tw,th);c.fillStyle=ink;c.strokeRect(x+.5,y+.5,tw-1,th-1);c.fillText(t.t,x+6,y+th/2+.5);
     }
   }
-  bc.globalAlpha=1;
-  enter.style.opacity=P.on?1:0;enter.style.transform=`translate(${P.x}px,${P.y}px) translate(-50%,-50%)`;
-  if(!active&&!P.on&&P.wave<0)P.dirty=false;
+  c.globalAlpha=1;plan.dirty=false;
+}
+function stepPlan(f,now){
+  // El texto de debajo: la invitación, o con la obra levantada, entrar (o el aviso de que aún no hay enlace)
+  const nk=plan.up?(PORTAL_URL?'enter':'pending'):fine?'hintMouse':'hintTouch';
+  if(nk!==plan.noteK){plan.noteK=nk;planNote.textContent=T.portal[nk]}
+  if(!plan.data||!plan.w)return;
+  const dt=f/60;
+  // Trazado: una vez, cuando el proyecto entra en pantalla
+  if(!plan.started&&plan.vis&&introDone)planStart();
+  if(plan.started&&!plan.traced){
+    const sy=plan.top-SY;let left=0;
+    for(const tr of plan.tracers){
+      let time=dt;
+      while(tr.i<tr.segs.length&&time>0){
+        const s=tr.segs[tr.i],sp=(s[4]?1:PLAN_JUMP/PLAN_SPEED)*plan.speed,rem=s[6]-tr.t,need=rem/sp;
+        if(need<=time){time-=need;tr.t=0;tr.i++;if(s[4])s[4].drawn=Math.max(s[4].drawn,s[5]+s[6]);tr.x=s[2];tr.y=s[3]}
+        else{tr.t+=time*sp;time=0;const k=tr.t/(s[6]||1);tr.x=s[0]+(s[2]-s[0])*k;tr.y=s[1]+(s[3]-s[1])*k;if(s[4])s[4].drawn=Math.max(s[4].drawn,s[5]+tr.t)}
+      }
+      if(tr.i<tr.segs.length)left++;
+      // La punta del cursor es la del lápiz: se coloca después de stepCursors, sin muelle
+      const c=tr.c;if(c){c.x=plan.left+tr.x;c.y=sy+tr.y;c.vx=c.vy=0;c.park.x=c.x;c.park.y=c.y;c.el.style.transform=`translate3d(${c.x}px,${c.y}px,0)`}
+    }
+    plan.dirty=true;
+    if(!left){plan.traced=true;plan.tagT=now}
+  }
+  // Al acabar, las cotas aparecen; luego los cursores se liberan
+  if(plan.traced&&!plan.done){plan.tagA=clamp((now-plan.tagT)/PLAN_TAGS_MS);plan.dirty=true;if(plan.tagA>=1){plan.done=true;planRelease(now)}}
+  // Si cambia el tono de la sección, el plano se repinta con su tinta
+  const ink=inkRgb.join();if(ink!==plan.ink){plan.ink=ink;plan.dirty=true}
+  if(plan.dirty&&plan.vis)planDraw();
+  // La obra: muelle de m (0 = plano, 1 = captura); sin animaciones, de golpe (el CSS pone un fundido)
+  const want=plan.up?1:0;
+  if(rm){plan.m=want;plan.v=0}
+  else if(plan.m!==want||plan.v){plan.v+=(PLAN_W*PLAN_W*(want-plan.m)-2*PLAN_Z*PLAN_W*plan.v)*dt;plan.m+=plan.v*dt;if(Math.abs(want-plan.m)<.001&&Math.abs(plan.v)<.01){plan.m=want;plan.v=0}}
+  const m=clamp(plan.m);
+  if(!rm){
+    const clip=`inset(${((1-m)*100).toFixed(2)}% 0 0 0)`;if(clip!==plan.clip){plan.clip=clip;planShot.style.clipPath=clip}
+    // El nivel: una línea fina que sube con el borde de la captura (solo mientras se mueve)
+    const lvl=m>.004&&m<.996?`translateY(${((1-m)*plan.h).toFixed(1)}px)`:'';
+    if(lvl!==plan.lvl){plan.lvl=lvl;planLevel.style.transform=lvl||'translateY(-9999px)';planLevel.style.opacity=lvl?1:0}
+  }
+  const op=(1-.7*m).toFixed(3);if(op!==plan.op){plan.op=op;planC.style.opacity=op}
+  // Cursor «Levántala» junto al marco cuando el plano está hecho, hasta que alguien levanta la obra
+  const y=plan.top-SY,on=plan.done&&introDone&&!plan.seen&&!plan.up&&!plan.used&&y+plan.h>60&&y<vh-60;
+  if(!(y+plan.h>0&&y<vh))plan.used=false;
+  stepPark(plan.park,on,Math.min(plan.left+plan.w+4,vw-28),y+plan.h*.45,now);
 }
 
 /* ---------- Videomapping ---------- */
@@ -1663,7 +1767,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();phoneOff()}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();phoneOff();planDown()}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -1746,7 +1850,7 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;
 document.addEventListener('pointerleave',()=>{mouse.x=mouse.y=-999;you.style.opacity=0});
 let last=performance.now();
 // Lista fija de pasos: no se crean funciones nuevas en cada frame (menos trabajo para el recolector)
-const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepPhone,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
+const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepPhone,stepPit,stepPlan,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
 let scrolled=false;
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;
@@ -1757,19 +1861,21 @@ function loop(now){
   if(scrolled){scrolled=false;try{applyTone();updateTeam()}catch(e){console.error(e)}}
   for(let i=0;i<STEPS.length;i++){try{STEPS[i](f,now)}catch(e){console.error(e)}}
 }
-function placeStops(){measureScene();measureTones();for(const st of stops)stopRange(st)}
+function placeStops(){measureScene();measureTones();planMeasure();for(const st of stops)stopRange(st)}
 /* Si la tipografía u otra cosa cambia la altura, recalcula dónde aparece cada forma */
-new ResizeObserver(placeStops).observe($('main'));
+// Si cambia el ancho visible sin que la ventana cambie (aparece la barra de scroll al acabar la intro, que tenía la
+// página bloqueada), se recoloca todo: si no, los puntos se dibujarían con el ancho de antes, corridos
+new ResizeObserver(()=>{placeStops();if(viewW()!==vw){clearTimeout(rto);rto=setTimeout(relayout,60)}}).observe($('main'));
 let rto;
 function relayout(){
   // En móvil, la barra del navegador cambia el alto mientras se hace scroll. El lienzo se ajusta
   // al momento (es barato); el recálculo de formas espera a que el scroll se pare para no dar un tirón
   if(performance.now()-scrollT<250){rto=setTimeout(relayout,200);return}
-  layout();warp();sizePortal();
+  layout();warp();sizePlan();
 }
 addEventListener('resize',()=>{
   clearTimeout(rto);
-  if(innerWidth===vw){sizeCanvas();placeStops();rto=setTimeout(relayout,300)}
+  if(viewW()===vw){sizeCanvas();placeStops();rto=setTimeout(relayout,300)}
   else rto=setTimeout(relayout,150);
 });
 // El scroll solo apunta que ha pasado; el tono y el equipo se actualizan en el siguiente frame
@@ -1777,17 +1883,17 @@ addEventListener('scroll',()=>{scrollT=performance.now();scrolled=true},{passive
 
 async function boot(){
   for(let i=0;i<60&&(!innerWidth||!innerHeight);i++)await pause(100);
-  vw=innerWidth;vh=innerHeight;
+  vw=viewW();vh=innerHeight;
   try{await Promise.race([Promise.all([document.fonts.load('900 100px "Big Shoulders Display"'),document.fonts.load('600 11px "Martian Mono"'),pointsLoad]),pause(1400)])}catch(e){}
   // Si algo falla o el visor frena la animación, la web se abre igualmente
   const guard=setTimeout(rescue,11000);
   try{
-    makeCursors();layout();warp();sizePortal();bindLetters();updateTeam();
+    makeCursors();layout();warp();sizePlan();bindLetters();updateTeam();
     for(let n=0;n<N;n++){px[n]=stops[0].t[n*2];py[n]=stops[0].t[n*2+1]}
     requestAnimationFrame(loop);
   }catch(e){console.error(e);clearTimeout(guard);rescue();return}
   // Google Fonts puede llegar tarde: recoloca si cambia la medida
-  document.fonts.ready.then(()=>{layout();warp();sizePortal()});
+  document.fonts.ready.then(()=>{layout();warp();sizePlan()});
   // Si las imágenes en puntos llegan tarde, se recalculan las dianas; si no llegan, se queda la forma de reserva
   pointsLoad.then(()=>{if(stops.some(st=>st.data&&!st.z))layout()});
   if(rm){introDone=true;skipped=true;$('#loader').remove();$('#skip').remove();return}
