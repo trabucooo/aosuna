@@ -147,12 +147,12 @@
 </section>
 
 <section id="proyectos">
-  <div class="wrap projects-head" data-tone="asphalt">
+  <div class="wrap projects-head" data-tone="asphalt" data-shape="route" data-alpha=".3">
     <p class="eyebrow">Projects</p>
     <h2 class="big">Go on, touch them. They’re alive</h2>
   </div>
 
-  <article class="proj" data-tone="asphalt" data-shape="route" data-alpha=".3"><div class="wrap proj-grid">
+  <article class="proj" data-tone="asphalt" data-shape="points" data-points="/zalapp/movil-puntos.json" data-fallback="route" data-alpha=".3" data-alpha-points=".9"><div class="wrap proj-grid">
     <div class="proj-copy">
       <p class="eyebrow">Academic project · 2026–2027 · In progress</p>
       <h3 data-sel translate="no">Zalapp</h3>
@@ -162,22 +162,20 @@
         <div><dt>Status</dt><dd>Still in progress, with no commercial launch.</dd></div>
       </dl>
     </div>
-    <div class="logbook needs-js">
-      <div class="log-stage">
-        <button class="log-book" id="zCover" type="button" aria-haspopup="menu" aria-expanded="false" aria-controls="zMenu">
-          <span class="log-pages" aria-hidden="true"></span>
-          <span class="log-lid">
-            <span class="log-sticker"><img src="/zalapp/z.svg" alt="" width="56" height="56"></span>
-            <span class="log-title">Route logbook · Zalapp · 2026–2027</span>
-            <span class="log-band" aria-hidden="true"></span>
-          </span>
-        </button>
-        <div class="log-menu" id="zMenu" role="menu" aria-labelledby="zCover" hidden>
-          <button type="button" role="menuitem" id="zOpen">Open the route logbook</button>
-          <button type="button" role="menuitem" id="zWeb">See the website</button>
-        </div>
+    <div class="phone-col">
+      <!-- El móvil lo dibujan las partículas (public/zalapp/movil-puntos.json) en este hueco. Sin JavaScript, o si
+           el JSON no llega, se ve la captura fija con los dos botones -->
+      <div class="phone-slot" id="zPhone">
+        <figure class="phone-static">
+          <img src="/zalapp/beta-pantalla.webp" alt="Map screen from the Zalapp beta" width="393" height="854" loading="lazy" decoding="async">
+          <figcaption class="phone-links">
+            <a class="app-btn app-btn-main" href="#zDialog" id="zStaticLog">See the route logbook</a>
+            <button type="button" class="app-btn app-btn-ghost needs-js" id="zStaticWeb">See the website</button>
+            <span class="app-pending nojs-only">See the website: under construction, coming soon at zalapp.aosuna.es</span>
+          </figcaption>
+        </figure>
       </div>
-      <p class="log-msg" id="zMsg" role="status"></p>
+      <p class="phone-msg" id="zMsg" role="status"></p>
     </div>
     <dialog class="logdlg" id="zDialog" aria-labelledby="zDlgTitle">
       <div class="log-shell">
@@ -215,7 +213,7 @@
           <h3 class="log-h" id="zEt2h">The competition</h3>
           <p class="log-hint needs-js">Each exit is an alternative: press one to see where it leads.</p>
           <div class="cross">
-            <svg class="cross-road" viewBox="0 0 160 160" aria-hidden="true"><rect x="58" y="0" width="44" height="160" fill="#3B4A52"/><rect x="0" y="58" width="160" height="44" fill="#3B4A52"/><path d="M80 4v44M80 112v44M4 80h44M112 80h44" stroke="#F26B2C" stroke-width="3" stroke-dasharray="8 7"/><circle cx="80" cy="80" r="14" fill="#FFF6EE" stroke="#102D3C" stroke-width="3"/></svg>
+            <svg class="cross-road" viewBox="0 0 160 160" aria-hidden="true"><path d="M58 0v58H0M102 0v58h58M58 160v-58H0M102 160v-58h58" fill="none" stroke-width="1.5"/><path class="cross-mark" d="M80 6v40M80 114v40M6 80h40M114 80h40" fill="none" stroke-width="1.5" stroke-dasharray="6 6"/><circle class="cross-mark" cx="80" cy="80" r="11" fill="none" stroke-width="1.5"/></svg>
             <ul class="exits">
             <li class="exit exit-0"><button type="button" class="exit-btn" aria-expanded="false" aria-controls="zX0">MICHELIN Truckfly</button><p class="exit-line" id="zX0">An app for lorry drivers with a Premium plan at €6.99 a month or €74.99 a year.</p></li>
             <li class="exit exit-1"><button type="button" class="exit-btn" aria-expanded="false" aria-controls="zX1">Google Maps and Waze</button><p class="exit-line" id="zX1">General-purpose maps: they get you to the stop, but don’t tell you what it’s like.</p></li>

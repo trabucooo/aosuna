@@ -354,8 +354,9 @@ function stopRange(st){
   if(st.shape==='hero'){st.s=st.e=vh*.32;return}
   if(st.shape==='portrait'){st.s=scene.top+scene.len*PORTRAIT_IN;st.e=scene.top+scene.len*PORTRAIT_OUT;return}
   const r=st.el.getBoundingClientRect();
-  // En móvil, el velero (encima del texto) queda completo justo debajo de la barra de arriba, no a media pantalla
-  if(st.shape==='morph'&&st.data&&small()){st.s=st.e=st.el.querySelector('.boat-slot').getBoundingClientRect().top+scrollY-58;return}
+  // En móvil, el velero o el móvil de Zalapp (encima del texto) quedan completos justo debajo de la barra de arriba
+  const slot=st.data&&small()&&st.el.querySelector(SLOTS);
+  if(slot){st.s=st.e=slot.getBoundingClientRect().top+scrollY-58;return}
   st.s=st.e=r.top+scrollY+r.height/2-vh/2;
 }
 /* Imágenes en puntos (public/retrato-puntos.json, public/apreton-puntos.json…): {ratio, desktop:[x,y,s,...], mobile:[...]}.
@@ -374,9 +375,13 @@ function readPoints(d){
 }
 const loadPoints=src=>pointFiles[src]||(pointFiles[src]=fetch(import.meta.env.BASE_URL+src.replace(/^\//,''))
   .then(r=>r.ok?r.json():null).then(readPoints).catch(()=>null));
-const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>st.data=d)));
+const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>{
+  st.data=d;
+  // Con el móvil en puntos, la captura fija de reserva se esconde (style.css: .has-phone)
+  if(d&&st.el.querySelector('.phone-slot'))st.el.classList.add('has-phone');
+})));
 // Tamaño del punto: base + luz × rango, en ordenador (d) y en móvil (m)
-const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]},morph:{d:[1,2.4],m:[1.2,2.2]}};
+const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]},morph:{d:[1,2.4],m:[1.2,2.2]},phone:{d:[1,2.4],m:[1,2.4]}};
 function pointTargets(data,[x0,y0,W,H],dot){
   const sm=small(),pts=sm?data.mobile:data.desktop,M=Math.floor(pts.length/3);
   if(!M||!(W>=1)||!(H>=1))return null;
@@ -408,8 +413,9 @@ function chapterBox(st,ratio){
 }
 /* Proyecto con velero: ocupa su hueco (.boat-slot: la columna derecha en ordenador, arriba en móvil) con su
    proporción. Va anclado al contenido, así que se mide en la página y se pasa a la pantalla en la posición de la parada */
+const SLOTS='.boat-slot,.phone-slot';
 function boatBox(st,ratio){
-  const r=st.el.querySelector('.boat-slot').getBoundingClientRect(),off=scrollY-st.s;
+  const r=st.el.querySelector(SLOTS).getBoundingClientRect(),off=scrollY-st.s;
   const H=Math.min(r.height,r.width/ratio),W=H*ratio;
   if(!(H>=40))return null;
   return[r.left+(r.width-W)/2,r.top+off+(r.height-H)/2,W,H];
@@ -424,8 +430,25 @@ function imageTargets(st){
     st.box=box;st.shotBox=shotRect(st.data.shot.ratio);st.shot=pointTargets(st.data.shot,st.shotBox,DOT.morph);
     return st.shot&&pt;
   }
+  // Imagen en su hueco (el móvil de Zalapp): anclada al contenido como el velero
+  if(st.el.querySelector(SLOTS)){
+    const box=boatBox(st,st.data.ratio),pt=box&&pointTargets(st.data,box,DOT.phone);
+    if(!pt)return null;
+    st.box=box;if(st.data.screen)st.edge=screenEdges(pt.t,box,st.data.screen);
+    return pt;
+  }
   const box=st.shape==='portrait'?portraitBox(st.data.ratio):chapterBox(st,st.data.ratio);
   return box&&pointTargets(st.data,box,DOT[st.shape]||DOT.points);
+}
+// Al encender la pantalla, cada punto de dentro se aparta al borde más cercano: aquí, cuánto (x, y) se mueve
+function screenEdges(t,[x0,y0,W,H],[a,b,c,d]){
+  const e=new Float32Array(N*2),L=x0+W*a,T=y0+H*b,R=x0+W*c,B=y0+H*d;
+  for(let i=0;i<N;i++){
+    const k=i*2,x=t[k],y=t[k+1];if(x<L||x>R||y<T||y>B)continue;
+    const dl=x-L,dr=R-x,dt=y-T,db=B-y,m=Math.min(dl,dr,dt,db),j=1+jx[i]*3;
+    if(m===dl)e[k]=-dl-j;else if(m===dr)e[k]=dr+j;else if(m===dt)e[k+1]=-dt-j;else e[k+1]=db+j;
+  }
+  return e;
 }
 function sizeCanvas(){
   vw=innerWidth;vh=innerHeight;SY=scrollY;
@@ -435,13 +458,13 @@ function sizeCanvas(){
 }
 function layout(){
   sizeCanvas();
-  fitName();measureScene();measureTones();measureLog();
+  fitName();measureScene();measureTones();
   const sm=small();
   for(const st of stops){
-    stopRange(st);st.z=null;st.shot=null;st.anchor=false;st.alpha=st.baseAlpha;st.form=st.shape;
+    stopRange(st);st.z=null;st.shot=null;st.box=null;st.edge=null;st.anchor=false;st.alpha=st.baseAlpha;st.form=st.shape;
     if(st.shape==='hero'){st.t=toTargets(heroPts(),0,0,2,2);continue}
     const pt=imageTargets(st);
-    if(pt){st.t=pt.t;st.z=pt.z;st.alpha=st.imgAlpha;st.anchor=!!st.shot;continue}
+    if(pt){st.t=pt.t;st.z=pt.z;st.alpha=st.imgAlpha;st.anchor=!!st.box;continue}
     // Sin imagen (no hay data-points o el archivo no llegó): la forma dibujada, o la de reserva
     const shape=st.form=SHAPES[st.shape]?st.shape:SHAPES[st.fallback]?st.fallback:'scatter';
     if(FULL[shape]){st.t=toTargets(sample(320,180,SHAPES[shape]),0,0,vw/320,vh/180);continue}
@@ -449,7 +472,7 @@ function layout(){
     const x0=sm?(vw-size)/2:vw*.72-size/2,y0=sm?vh*.1:(vh-size)/2;
     st.t=toTargets(sample(240,240,SHAPES[shape]),x0,y0,size/240,size/240);
   }
-  placeBoatShot();
+  placeBoatShot();placePhone();
   applyTone();
 }
 const mouse={x:-999,y:-999,hit:0};
@@ -514,8 +537,12 @@ function stepDust(f,now){
   const bm=boat.moving&&!rm&&boat.st.shot?boat:null,MBN=MB/N;
   if(bm)al+=(1-al)*clamp(boat.m);
   // Junto al velero los puntos no huyen del ratón: se inclinan hacia él (boat.pull, de 0 a 1, lo calcula stepBoat)
-  const atBoat=boat.w>.5&&!!boat.st.shot,pull=atBoat&&!bm?boat.pull:0;
-  const repel=atBoat?0:bm?1-clamp(boat.m*4):1;
+  // Lo mismo junto al móvil de Zalapp (phone.pull)
+  phone.w=a===phone.st?1-t:b===phone.st?t:0;
+  const atBoat=boat.w>.5&&!!boat.st?.shot,atPhone=phone.w>.5&&!!phone.st?.box,pull=atBoat&&!bm?boat.pull:atPhone?phone.pull:0;
+  const repel=atBoat||atPhone?0:bm?1-clamp(boat.m*4):1;
+  // Pantalla encendida: los puntos de dentro se apartan hacia los bordes (phone.p, de 0 a 1, en unos 220 ms)
+  const pp=phone.p?smooth(phone.p):0,peA=pp&&a===phone.st?a.edge:null,peB=pp&&b===phone.st?b.edge:null;
   // El velero se mece en reposo: ±1,5° alrededor de la base y 2 px arriba y abajo, cada 4 s (sobre las dianas)
   let rkA=false,rkB=false,rc=1,rs=0,rdy=0,rpx=0,rpy=0;
   if(!rm&&boat.st?.box&&(a===boat.st||b===boat.st)){
@@ -531,6 +558,8 @@ function stepDust(f,now){
     let ax=ta[k],ay=ta[k+1],bx=tb[k],by=tb[k+1];
     if(rkA){const u=ax-rpx,v=ay-rpy;ax=rpx+u*rc-v*rs;ay=rpy+u*rs+v*rc+rdy}
     if(rkB){const u=bx-rpx,v=by-rpy;bx=rpx+u*rc-v*rs;by=rpy+u*rs+v*rc+rdy}
+    if(peA){ax+=peA[k]*pp;ay+=peA[k+1]*pp}
+    if(peB){bx+=peB[k]*pp;by+=peB[k+1]*pp}
     let gx=ax+(bx-ax)*t,gy=ay+oa+(by+ob-ay-oa)*t;
     if(wa)gy+=Math.sin(gx*.012+wt)*16*wa;
     // Atracción suave: cada punto se acerca un poco al ratón, menos cuanto más lejos está
@@ -862,46 +891,17 @@ const zPills=$('#zPills'),zRead=$('#zRead');
 zOpts.forEach(([t,g],i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;b.setAttribute('aria-pressed',i==0);
   b.onclick=()=>{track('zalapp-filtro',{filtro:ES.zalapp[i]});$$('.pill',zPills).forEach(x=>x.setAttribute('aria-pressed',x===b));zRead.textContent=t;$$('.dot').forEach(d=>d.classList.toggle('on',g.includes(d.dataset.g)))};zPills.appendChild(b)});
 
-/* Cuaderno de ruta. La invitación es un cuaderno cerrado (un botón): al pulsarlo se entreabre y ofrece dos
-   opciones. El cuaderno es un <dialog> a pantalla completa con una página por etapa y un tacógrafo abajo */
+/* Cuaderno de ruta: un <dialog> a pantalla completa con una página por etapa y un tacógrafo abajo.
+   Se abre desde el móvil de puntos (más abajo) o, si este no está, desde la captura fija */
 // Si tiene valor, «Ver la web» abre la web de Zalapp en otra pestaña; vacía, avisa de que está en obra
 const ZALAPP_URL='';
-const zCover=$('#zCover'),zMenu=$('#zMenu'),zMsg=$('#zMsg'),zDlg=$('#zDialog'),zSheet=$('#zSheet'),zLive=$('#zLive');
+const zDlg=$('#zDialog'),zSheet=$('#zSheet'),zLive=$('#zLive');
 const zPages=$$('.log-page',zDlg),zMarks=$$('.tacho-mark',zDlg),zPrev=$('#zPrev'),zNext=$('#zNext'),zTacho=$('.tacho',zDlg);
-const zItems=$$('[role="menuitem"]',zMenu);
-const zLog={cur:-1,used:false,box:null,park:parker(T.zalappLog.cue,'#B3470F'),msgT:0,swipe:null};
+const zLog={cur:-1,swipe:null,from:null};
 const NF=new Intl.NumberFormat(LANG==='en'?'en-GB':'es-ES');
-function openLogMenu(){
-  if(!zMenu.hidden)return;
-  zMenu.hidden=false;zCover.setAttribute('aria-expanded','true');zLog.used=true;zItems[0].focus();
-}
-function closeLogMenu(back){
-  if(zMenu.hidden)return;
-  zMenu.hidden=true;zCover.setAttribute('aria-expanded','false');if(back)zCover.focus();
-}
-zCover.addEventListener('click',()=>zMenu.hidden?openLogMenu():closeLogMenu());
-zCover.addEventListener('keydown',e=>{if(e.key==='ArrowDown'||e.key==='ArrowUp'){e.preventDefault();openLogMenu()}});
-// Menú: flechas para moverse entre las dos opciones, Escape vuelve al cuaderno y Tab lo cierra
-zMenu.addEventListener('keydown',e=>{
-  const i=zItems.indexOf(document.activeElement),n=zItems.length;
-  if(e.key==='ArrowDown'||e.key==='ArrowRight'){e.preventDefault();zItems[(i+1)%n].focus()}
-  else if(e.key==='ArrowUp'||e.key==='ArrowLeft'){e.preventDefault();zItems[(i+n-1)%n].focus()}
-  else if(e.key==='Home'){e.preventDefault();zItems[0].focus()}
-  else if(e.key==='End'){e.preventDefault();zItems[n-1].focus()}
-  else if(e.key==='Escape'){e.stopPropagation();closeLogMenu(true)}
-  else if(e.key==='Tab')closeLogMenu();
-});
-document.addEventListener('pointerdown',e=>{if(!zMenu.hidden&&!e.target.closest?.('.log-stage'))closeLogMenu()});
-$('#zOpen').addEventListener('click',()=>{track('zalapp-cuaderno',{accion:'abrir'});closeLogMenu();openLog()});
-$('#zWeb').addEventListener('click',()=>{
-  track('zalapp-cuaderno',{accion:'web'});
-  if(ZALAPP_URL){closeLogMenu();window.open(ZALAPP_URL,'_blank','noopener');return}
-  closeLogMenu(true);zMsg.textContent=T.zalappLog.pending;
-  clearTimeout(zLog.msgT);zLog.msgT=setTimeout(()=>{zMsg.textContent=''},6000);
-});
-function openLog(){root.classList.add('log-open');zDlg.showModal();zGo(0,0,true)}
-// Al cerrar (botón o Escape), el foco vuelve al cuaderno
-zDlg.addEventListener('close',()=>{root.classList.remove('log-open');zCover.focus()});
+function openLog(from){zLog.from=from||null;root.classList.add('log-open');zDlg.showModal();zGo(0,0,true)}
+// Al cerrar (botón o Escape), el foco vuelve a lo que abrió el cuaderno
+zDlg.addEventListener('close',()=>{root.classList.remove('log-open');const f=zLog.from;if(f&&!f.hidden&&f.getClientRects().length)f.focus()});
 $('#zClose').addEventListener('click',()=>zDlg.close());
 function zGo(i,dir,first){
   const n=zPages.length;i=Math.max(0,Math.min(n-1,i));
@@ -949,13 +949,115 @@ $$('.exit-btn',zDlg).forEach(b=>{
   b.addEventListener('click',()=>{const on=b.getAttribute('aria-expanded')!=='true';b.setAttribute('aria-expanded',on);line.hidden=!on});
 });
 $$('.sign',zDlg).forEach(b=>b.addEventListener('click',()=>b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')));
-// Cursor «Ábreme» junto al cuaderno mientras está en pantalla, hasta que se usa (o se sale del proyecto)
-function measureLog(){const r=zCover.getBoundingClientRect();zLog.box=r.width?[r.left,r.top+scrollY,r.width,r.height]:null}
-function stepLog(f,now){
-  if(!zLog.box)return;
-  const[x,y0,w,h]=zLog.box,y=y0-SY,vis=y+h>60&&y<vh-60;
-  if(!vis)zLog.used=false;
-  stepPark(zLog.park,vis&&introDone&&!zLog.used&&zMenu.hidden&&!zDlg.open,x+w+6,y+h*.62,now);
+// «Ver la web»: con ZALAPP_URL, otra pestaña; si está vacía, el aviso de que está en obra
+function zalappWeb(msg){
+  track('zalapp-movil',{accion:'web'});
+  if(ZALAPP_URL){window.open(ZALAPP_URL,'_blank','noopener');return}
+  msg.textContent=T.zalappLog.pending;clearTimeout(phone.msgT);phone.msgT=setTimeout(()=>{msg.textContent=''},6000);
+}
+// Captura fija (sin el JSON del móvil): el enlace abre el cuaderno y el botón hace lo mismo que en la hoja
+$('#zStaticLog').addEventListener('click',e=>{e.preventDefault();track('zalapp-movil',{accion:'cuaderno'});openLog(e.currentTarget)});
+$('#zStaticWeb').addEventListener('click',()=>zalappWeb($('#zMsg')));
+
+/* Zalapp: el móvil de puntos (public/zalapp/movil-puntos.json; screen = rectángulo de la pantalla dentro del móvil).
+   Al pasar el ratón, con foco o con un toque, la pantalla se enciende: los puntos de dentro se apartan a los bordes
+   (220 ms), se funde la captura real de la beta exactamente encima y sube con muelle una hoja con dos botones
+   como los de la app. Al apagar, al revés: baja la hoja, se va la captura y vuelven los puntos.
+   La invitación es la del velero: cursor aparcado, sonar, atracción suave y un botón invisible encima */
+const PHONE_CLEAR_MS=220,PHONE_FADE_MS=300,PHONE_MARGIN=24,SHEET_W=15,SHEET_Z=.72,PHONE_SEEN='zalapp-movil-visto';
+const phone={st:stops.find(s=>s.src&&s.el.querySelector('.phone-slot'))||null,w:0,live:false,on:false,via:'',p:0,k:0,kv:0,imgOn:false,offAt:-1e9,
+  hit:null,scr:null,sheet:null,msg:null,rect:'',scrT:'',sheetT:'',
+  pull:0,seen:false,used:false,sonar:null,sonarOn:false,sonarT:'',park:parker(fine?T.zalappPhone.cueMouse:T.zalappPhone.cueTouch,'#B3470F'),msgT:0};
+try{phone.seen=sessionStorage.getItem(PHONE_SEEN)==='1'}catch(e){}
+if(phone.st){
+  const b=phone.hit=document.createElement('button');
+  b.type='button';b.id='zalappPhone';b.className='phone-hit';b.hidden=true;b.setAttribute('aria-label',T.zalappPhone.label);
+  // La pantalla: captura + hoja. Va justo detrás del botón para que el Tab pase del móvil a los dos botones de la hoja
+  const scr=phone.scr=document.createElement('div');scr.className='phone-screen';
+  scr.innerHTML='<img decoding="async"><div class="app-sheet"><span class="app-grip" aria-hidden="true"></span><button type="button" class="app-btn app-btn-main"></button><button type="button" class="app-btn app-btn-ghost"></button><p class="app-msg" role="status"></p></div>';
+  scr.querySelector('img').alt=T.zalappPhone.alt;
+  phone.sheet=scr.querySelector('.app-sheet');phone.msg=scr.querySelector('.app-msg');
+  const[bLog,bWeb]=scr.querySelectorAll('.app-btn');bLog.textContent=T.zalappPhone.log;bWeb.textContent=T.zalappPhone.web;
+  phone.st.el.querySelector('.proj-copy').after(b,scr);
+  phone.sonar=document.createElement('div');phone.sonar.className='sonar sonar-phone';phone.sonar.setAttribute('aria-hidden','true');phone.sonar.appendChild(document.createElement('i'));
+  document.body.appendChild(phone.sonar);
+  // Ratón: al entrar (no justo después de un scroll, o se encendería solo al pasar por debajo del puntero).
+  // Se apaga al salir del móvil con 24 px de margen (stepPhone). Teclado: al enfocarlo. Táctil: con un toque
+  const hover=e=>{if(e.pointerType==='mouse'&&!phone.on&&performance.now()-scrollT>250)phoneOn('mouse')};
+  b.addEventListener('pointerenter',hover);b.addEventListener('pointermove',hover);
+  // El foco cuenta como teclado solo si lo último fue una tecla: al volver del cuaderno tras un clic, sigue mandando el ratón
+  b.addEventListener('focus',()=>phoneOn(phone.key?'focus':fine?'mouse':'touch'));
+  addEventListener('keydown',()=>{phone.key=true},true);
+  addEventListener('pointerdown',()=>{phone.key=false},true);
+  // Encendido con teclado y luego se mueve el ratón: manda el ratón (al salir del móvil, se apaga)
+  addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&phone.on&&phone.via==='focus'&&(e.movementX||e.movementY))phone.via='mouse'},{passive:true});
+  b.addEventListener('click',()=>{if(!phone.on)phoneOn('touch')});
+  const inside=el=>el===b||scr.contains(el);
+  document.addEventListener('focusin',e=>{if(phone.on&&!inside(e.target))phoneOff()});
+  document.addEventListener('pointerdown',e=>{if(phone.on&&!inside(e.target))phoneOff()});
+  bLog.addEventListener('click',()=>{track('zalapp-movil',{accion:'cuaderno'});phoneOff();openLog(b)});
+  bWeb.addEventListener('click',()=>zalappWeb(phone.msg));
+}
+function phoneOn(via){
+  if(!phone.live)return;
+  if(!phone.on){
+    track('zalapp-movil',{accion:'encender'});
+    if(!phone.seen){phone.seen=true;try{sessionStorage.setItem(PHONE_SEEN,'1')}catch(e){}}
+  }
+  const img=phone.scr.querySelector('img');if(!img.src)img.src=import.meta.env.BASE_URL+'zalapp/beta-pantalla.webp';
+  phone.on=true;phone.via=via;phone.used=true;
+}
+function phoneOff(){if(phone.on){phone.on=false;phone.msg.textContent=''}}
+// Tamaño de la pantalla (con la maqueta): la captura con un 9 % de su ancho de radio; la letra de la hoja, a escala
+function placePhone(){
+  const st=phone.st;if(!st?.box||!st.data.screen)return;
+  const[,,w,h]=st.box,[a,b,c,d]=st.data.screen,sw=w*(c-a),sh=h*(d-b),s=phone.scr.style,i=phone.sonar.firstChild.style;
+  s.width=sw+'px';s.height=sh+'px';s.borderRadius=(sw*.09)+'px';s.fontSize=clamp(sw*.068,9,15)+'px';
+  i.width=w+'px';i.height=h+'px';i.borderRadius=(w*.16)+'px';
+}
+function stepPhone(f,now){
+  const st=phone.st;if(!st)return;
+  const live=!!(st.box&&st.data?.screen)&&phone.w>.9;phone.live=live;
+  if(phone.hit.hidden===live){phone.hit.hidden=!live;if(!live)phoneOff()}
+  let x=0,y=0,w=0,h=0;if(st.box){[x,y,w,h]=st.box;y+=st.s-SY}
+  // Con el ratón: fuera del móvil (más 24 px de margen) se apaga
+  if(phone.on&&phone.via==='mouse'){const m=PHONE_MARGIN;if(mouse.x<x-m||mouse.x>x+w+m||mouse.y<y-m||mouse.y>y+h+m)phoneOff()}
+  // Encender: 1) los puntos se apartan, 2) se funde la captura, 3) sube la hoja. Apagar: al revés
+  const dt=f/60,imgOn=phone.on||phone.k>.06;
+  if(imgOn!==phone.imgOn){phone.imgOn=imgOn;phone.scr.classList.toggle('on',imgOn);if(!imgOn)phone.offAt=now}
+  const clear=!rm&&(imgOn||now-phone.offAt<PHONE_FADE_MS);
+  phone.p=clamp(phone.p+(clear?1:-1)*dt*1000/PHONE_CLEAR_MS);
+  const kT=phone.on&&(rm||phone.p>=1)?1:0;
+  if(rm){phone.k=kT;phone.kv=0}
+  else{phone.kv+=(SHEET_W*SHEET_W*(kT-phone.k)-2*SHEET_Z*SHEET_W*phone.kv)*dt;phone.k+=phone.kv*dt;if(!kT&&phone.k<.003&&Math.abs(phone.kv)<.02){phone.k=0;phone.kv=0}}
+  if(st.box&&(imgOn||phone.p)){
+    const[a,b]=st.data.screen,t=`translate(${(x+w*a).toFixed(1)}px,${(y+h*b).toFixed(1)}px)`;
+    if(t!==phone.scrT){phone.scrT=t;phone.scr.style.transform=t}
+    const u=`translateY(${((1-clamp(phone.k,-.2,1.2))*100).toFixed(1)}%)`;
+    if(u!==phone.sheetT){phone.sheetT=u;phone.sheet.style.transform=u}
+  }
+  stepPhoneInvite(f,now,live,x,y,w,h);
+  if(!live)return;
+  const r=`${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}`;
+  if(r!==phone.rect){phone.rect=r;const s=phone.hit.style;s.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;s.width=Math.round(w)+'px';s.height=Math.round(h)+'px'}
+}
+// Invitación, como la del velero: mientras el móvil está en pantalla y nadie lo ha encendido en esta sesión
+function stepPhoneInvite(f,now,live,x,y,w,h){
+  const vis=live&&y+h>40&&y<vh-40;
+  if(!vis)phone.used=false;
+  const inv=vis&&introDone&&!phone.seen&&!phone.on&&!phone.used;
+  let tp=0;
+  if(fine&&!rm&&live&&!phone.on&&mouse.x>0){
+    const dx=Math.max(x-mouse.x,0,mouse.x-x-w),dy=Math.max(y-mouse.y,0,mouse.y-y-h),d=Math.hypot(dx,dy);
+    tp=d<BOAT_NEAR?1-d/BOAT_NEAR:0;
+  }
+  phone.pull+=(tp-phone.pull)*(1-Math.pow(.85,f));if(phone.pull<.002)phone.pull=0;
+  // Sonar: un contorno del móvil que se abre y se desvanece cada 2,5 s
+  const son=inv&&!rm;
+  if(son!==phone.sonarOn){phone.sonarOn=son;phone.sonar.classList.toggle('on',son)}
+  if(son){const t=`translate(${Math.round(x+w/2)}px,${Math.round(y+h/2)}px)`;if(t!==phone.sonarT){phone.sonarT=t;phone.sonar.style.transform=t}}
+  // El cursor, a la derecha del móvil, a la altura de los botones laterales
+  stepPark(phone.park,inv,x+w+4,y+h*.36,now);
 }
 
 /* ---------- Nautes ---------- */
@@ -1235,7 +1337,7 @@ async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'sm
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
-const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zCover',nautes:'#nRoute',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
+const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zPhone',nautes:'#nRoute',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
 function command(raw){
   const B=T.boss,t=strip(raw);if(!t)return B.empty;
   let m;
@@ -1251,6 +1353,8 @@ function command(raw){
     if(PLACES[id]==='#open')goScene(.9);
     // Nautes: hasta donde el velero está completo
     else if(id==='nautes'&&boat.st?.shot)scrollTo({top:boat.st.s,behavior:rm?'auto':'smooth'});
+    // Zalapp: hasta donde el móvil está formado
+    else if(id==='zalapp'&&phone.st?.box)scrollTo({top:phone.st.s,behavior:rm?'auto':'smooth'});
     else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});
     return B.goTo(name)}
   if(B.reDance.test(t)){setOrder('dance');return B.dance}
@@ -1272,7 +1376,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();closeLogMenu()}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();phoneOff()}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -1315,7 +1419,7 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zCover','#nautesBoat','#nRoute','#portal','#stage','#tool','#mail'];
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zPhone','#nautesBoat','#nRoute','#portal','#stage','#tool','#mail'];
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
@@ -1355,7 +1459,7 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;
 document.addEventListener('pointerleave',()=>{mouse.x=mouse.y=-999;you.style.opacity=0});
 let last=performance.now();
 // Lista fija de pasos: no se crean funciones nuevas en cada frame (menos trabajo para el recolector)
-const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepLog,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
+const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepPhone,stepPit,stepPortal,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
 let scrolled=false;
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;
@@ -1365,7 +1469,7 @@ function loop(now){
   if(scrolled){scrolled=false;try{applyTone();updateTeam()}catch(e){console.error(e)}}
   for(let i=0;i<STEPS.length;i++){try{STEPS[i](f,now)}catch(e){console.error(e)}}
 }
-function placeStops(){measureScene();measureTones();measureLog();for(const st of stops)stopRange(st)}
+function placeStops(){measureScene();measureTones();for(const st of stops)stopRange(st)}
 /* Si la tipografía u otra cosa cambia la altura, recalcula dónde aparece cada forma */
 new ResizeObserver(placeStops).observe($('main'));
 let rto;

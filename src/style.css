@@ -204,134 +204,153 @@ main{position:relative;z-index:2}
 .c.flip span{left:auto;right:5px}
 /* Sin animaciones no hay equipo: un cursor fijo hace de invitación */
 .c.park-cue{position:fixed;z-index:30;display:block;pointer-events:none}
-/* ---------- Zalapp: cuaderno de ruta ---------- */
-/* Colores de la app: azul petróleo, naranja y crema. El naranja oscuro (#B5481A) es para texto sobre crema */
-:root{--z-petrol:#102D3C;--z-orange:#F26B2C;--z-cream:#FFF6EE;--z-orange-ink:#B5481A}
+/* ---------- Zalapp: el móvil de puntos y el cuaderno de ruta ---------- */
+/* Colores de la app (azul petróleo, naranja). Fuera del cuaderno solo los usan los botones que imitan la app */
+:root{--z-petrol:#102D3C;--z-orange:#F26B2C}
 .sr-only{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
 .js .nojs-only{display:none}
-/* La invitación: un cuaderno cerrado. Respira un poco en reposo; al pasar o con foco, la tapa se levanta por la
-   esquina inferior derecha; con las opciones abiertas, se entreabre */
-.logbook{display:flex;flex-direction:column;align-items:center;gap:14px;min-width:0}
-.log-stage{position:relative;width:min(290px,70vw)}
-.log-book{position:relative;display:block;width:100%;aspect-ratio:5/7;margin:0;padding:0;border:0;background:none;cursor:pointer;animation:log-breathe 5s ease-in-out infinite alternate}
-@keyframes log-breathe{from{transform:scale(1)}to{transform:scale(1.01)}}
-.log-book:focus-visible{outline:2px solid var(--accent);outline-offset:10px}
-.log-pages{position:absolute;inset:7px -6px -6px 7px;border-radius:4px 10px 10px 4px;background:repeating-linear-gradient(var(--z-cream) 0 3px,#E3D5C6 3px 4px);box-shadow:0 18px 40px rgba(0,0,0,.45)}
-.log-lid{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:24px;padding:24px 44px 24px 26px;box-sizing:border-box;
-  border-radius:5px 14px 11px 7px;transform-origin:0 0;transition:transform .45s cubic-bezier(.2,.8,.2,1);
-  /* Esquinas gastadas: un poco más claras y redondeadas de forma desigual */
-  background:radial-gradient(circle at 0 0,rgba(255,246,238,.18),transparent 18%),radial-gradient(circle at 100% 100%,rgba(255,246,238,.16),transparent 16%),radial-gradient(circle at 100% 0,rgba(255,246,238,.1),transparent 13%),radial-gradient(circle at 0 100%,rgba(255,246,238,.1),transparent 13%),linear-gradient(160deg,#18405A,var(--z-petrol) 55%,#0A202C);
-  box-shadow:inset 0 0 0 1px rgba(255,246,238,.08),inset 7px 0 0 rgba(0,0,0,.2)}
-.log-book:hover .log-lid,.log-book:focus-visible .log-lid{transform:perspective(900px) rotate3d(1,-1,0,8deg)}
-.log-book[aria-expanded="true"] .log-lid{transform:perspective(900px) rotateY(-26deg)}
-.log-sticker{display:grid;place-items:center;width:86px;height:86px;border-radius:12px 14px 11px 13px;background:var(--z-cream);box-shadow:0 2px 0 rgba(0,0,0,.25);rotate:-3deg}
-.log-sticker img{display:block;width:62px;height:62px}
-.log-title{font:600 11px/1.8 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--z-cream);text-align:center;text-wrap:balance}
-.log-band{position:absolute;top:-4px;bottom:-4px;right:20px;width:11px;border-radius:3px;background:linear-gradient(90deg,#C4501C,var(--z-orange) 40%,#F7935F 60%,#C4501C);box-shadow:0 0 0 1px rgba(0,0,0,.15),2px 0 4px rgba(0,0,0,.3)}
-.log-menu{position:absolute;z-index:6;left:50%;top:50%;translate:-50% -50%;display:grid;gap:8px;width:max-content;max-width:calc(100vw - 48px)}
-.log-menu button{margin:0;border:0;padding:13px 16px;background:var(--z-cream);color:var(--z-petrol);font:600 12px/1.2 var(--mono);text-transform:uppercase;letter-spacing:.04em;box-shadow:0 10px 26px rgba(0,0,0,.45);cursor:pointer}
-.log-menu button:first-child{background:var(--z-orange);color:#1A0A02}
-.log-menu button:focus-visible{outline:2px solid var(--z-cream);outline-offset:3px}
-.log-msg{min-height:1.6em;margin:0;font:400 12px/1.6 var(--mono);text-align:center}
+/* El móvil: lo dibuja #dust en .phone-slot. Si no hay JavaScript o el JSON no llega, se ve la captura fija */
+.phone-col{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0}
+.phone-slot{position:relative;width:100%}
+.js .phone-slot{height:70vh}
+.phone-static{display:flex;flex-direction:column;align-items:center;gap:12px;margin:0}
+.js .phone-static{position:absolute;inset:0;justify-content:center}
+.js .has-phone .phone-static{display:none}
+.phone-static img{display:block;width:min(240px,70%);height:auto;border:7px solid #14171A;border-radius:34px;box-shadow:0 16px 40px rgba(0,0,0,.4)}
+.js .phone-static img{width:auto;max-width:100%;height:calc(100% - 120px)}
+.phone-links{display:grid;gap:8px;width:min(240px,100%)}
+.phone-links .app-btn{font-size:14px}
+.app-pending{font:400 12px/1.5 var(--mono);text-align:center}
+.phone-msg{min-height:1.5em;margin:0;font:400 12px/1.5 var(--mono);text-align:center}
+/* Botones como los de la app: «Avisar» (naranja) y «Usar mi ubicación» (borde gris, texto azul petróleo) */
+.app-btn{display:block;box-sizing:border-box;width:100%;margin:0;padding:.8em 1em;border-radius:12px;font:600 1em/1.2 var(--body);text-align:center;text-decoration:none;cursor:pointer}
+.app-btn-main{border:0;background:var(--z-orange);color:#fff}
+.app-btn-ghost{border:1px solid #D9DEE2;background:#fff;color:var(--z-petrol)}
+.app-btn:focus-visible{outline:2px solid var(--z-petrol);outline-offset:2px}
+/* Encima del móvil: el botón invisible y la pantalla (captura + hoja), colocados por main.js sobre «screen» */
+.phone-hit{position:fixed;left:0;top:0;z-index:3;margin:0;padding:0;border:0;border-radius:14%/7%;background:transparent;cursor:pointer}
+.phone-hit:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
+/* overflow:clip y no hidden: así enfocar un botón de la hoja nunca desplaza la captura dentro de su marco */
+.phone-screen{position:fixed;left:0;top:0;z-index:4;overflow:clip;opacity:0;visibility:hidden;pointer-events:none;transition:opacity .3s ease,visibility 0s linear .3s}
+.phone-screen.on{opacity:1;visibility:visible;transition:opacity .35s ease .12s,visibility 0s}
+.phone-screen img{display:block;width:100%;height:100%;object-fit:cover}
+/* La hoja inferior al estilo de la app: blanca, esquinas de arriba redondeadas, barrita de arrastre y dos botones.
+   Su letra se escala con la pantalla (main.js pone el font-size del marco) */
+.app-sheet{position:absolute;left:0;right:0;bottom:0;min-height:36%;box-sizing:border-box;display:flex;flex-direction:column;gap:.6em;padding:.6em 1em 1.3em;background:#fff;border-radius:1.3em 1.3em 0 0;box-shadow:0 -6px 22px rgba(16,45,60,.2);transform:translateY(100%);pointer-events:auto;font-family:var(--body)}
+.app-grip{align-self:center;width:2.6em;height:.32em;margin-bottom:.3em;border-radius:1em;background:#D5DADF}
+.app-msg{margin:0;min-height:1.3em;font:400 .85em/1.3 var(--body);color:#5B6B74;text-align:center}
+/* Sonar del móvil: su contorno se abre y se desvanece (el del velero es un anillo en la base) */
+.sonar-phone i{left:0;top:0;width:100px;height:200px;translate:-50% -50%;border-radius:16px;animation-name:sonar-ring}
+@keyframes sonar-ring{0%{transform:scale(1);opacity:0}10%{opacity:.55}70%{transform:scale(1.14);opacity:0}100%{transform:scale(1.14);opacity:0}}
 
-/* El cuaderno: diálogo a pantalla completa. Dentro, los colores de la web pasan a ser los de Zalapp */
-.logdlg{--accent:var(--z-orange);--ground:var(--z-cream);--ink:var(--z-petrol);position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;background:var(--z-petrol);color:var(--z-petrol);overflow:hidden}
-.logdlg::backdrop{background:rgba(4,12,18,.75)}
+/* El cuaderno: un plano a pantalla completa. Fondo oscuro con rejilla, líneas finas, Martian Mono para notas y
+   rótulos, y el color del tono de la sección (--accent). Solo la página de la marca enseña los colores de Zalapp */
+.logdlg{--line:color-mix(in srgb,var(--ink) 28%,transparent);--faint:color-mix(in srgb,var(--ink) 6%,transparent);--paper:color-mix(in srgb,var(--ground) 94%,var(--ink));
+  position:fixed;inset:0;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:0;border:0;overflow:hidden;color:var(--ink);
+  background-color:var(--ground);background-image:linear-gradient(var(--faint) 1px,transparent 1px),linear-gradient(90deg,var(--faint) 1px,transparent 1px);background-size:72px 72px}
+.logdlg::backdrop{background:rgba(0,0,0,.6)}
 html.log-open{overflow:hidden}
 .log-shell{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:12px;height:100%;max-width:1000px;margin:0 auto;padding:14px 16px calc(14px + env(safe-area-inset-bottom,0px));box-sizing:border-box}
-.log-head{display:flex;justify-content:space-between;align-items:center;gap:12px;color:var(--z-cream)}
+.log-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .log-title-d{margin:0;font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase}
-.log-btn{margin:0;border:1px solid var(--z-cream);background:transparent;color:var(--z-cream);padding:11px 14px;font:600 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:pointer}
-.log-btn-main{background:var(--z-orange);border-color:var(--z-orange);color:#1A0A02}
+.log-btn{margin:0;border:1px solid var(--line);background:transparent;color:var(--ink);padding:11px 14px;font:600 11px/1 var(--mono);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;cursor:pointer}
+.log-btn:hover{border-color:var(--accent);color:var(--accent)}
+.log-btn-main{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+.log-btn-main:hover{color:var(--ground)}
 .log-btn[aria-disabled="true"]{opacity:.35;cursor:default}
-.logdlg button:focus-visible{outline:2px solid var(--z-orange);outline-offset:3px}
-/* Hojas color crema con renglones suaves, línea de margen y agujeros de anilla (se mueven con el texto) */
+.logdlg button:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+/* Cada hoja: rejilla fina de 24 px que se mueve con el texto y un marco de una línea */
 .log-sheet{position:relative;min-height:0;perspective:1600px;touch-action:pan-y}
-.log-page{height:100%;overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:26px 30px 34px 76px;border-radius:4px 12px 12px 4px;font:400 17px/1.55 var(--body);color:var(--z-petrol);
-  background-color:var(--z-cream);
-  background-image:radial-gradient(circle at 26px 32px,var(--z-petrol) 0 7px,rgba(16,45,60,.3) 7.5px,transparent 8.5px),linear-gradient(90deg,transparent 54px,rgba(242,107,44,.4) 54px 55px,transparent 55px),repeating-linear-gradient(transparent 0 31px,rgba(16,45,60,.07) 31px 32px);
-  background-size:52px 64px,100% 100%,100% 32px;background-repeat:repeat-y,no-repeat,repeat;background-attachment:local;
-  transform-origin:0 50%;box-shadow:0 20px 50px rgba(0,0,0,.45)}
+.log-page{height:100%;overflow:auto;overscroll-behavior:contain;box-sizing:border-box;padding:26px 30px 34px;font:400 17px/1.55 var(--body);color:var(--ink);
+  background-color:var(--paper);background-image:linear-gradient(var(--faint) 1px,transparent 1px),linear-gradient(90deg,var(--faint) 1px,transparent 1px);background-size:24px 24px;background-attachment:local;
+  border:1px solid var(--line);transform-origin:0 50%}
 .log-page.turn-fwd{animation:log-turn-fwd .5s cubic-bezier(.2,.7,.2,1)}
 .log-page.turn-back{animation:log-turn-back .5s cubic-bezier(.2,.7,.2,1)}
 @keyframes log-turn-fwd{from{transform:rotateY(16deg);opacity:.35}to{transform:none;opacity:1}}
 @keyframes log-turn-back{from{transform:rotateY(-12deg);opacity:.35}to{transform:none;opacity:1}}
 @keyframes log-fade{from{opacity:0}to{opacity:1}}
 .log-page>*{max-width:52rem}
-.log-km{margin:0;font:600 12px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--z-orange-ink)}
+.log-km{margin:0;font:600 12px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .log-h{margin:6px 0 18px;font:900 clamp(40px,6vw,72px)/.95 var(--display);text-transform:uppercase;text-wrap:balance}
 .log-lead{margin:0 0 20px;max-width:40rem}
-.log-hint{margin:0 0 14px;font:400 12px/1.5 var(--mono);opacity:.8}
-.log-note{margin:20px 0 0;font:400 12px/1.6 var(--mono);opacity:.85}
-.log-sub{margin:24px 0 10px;font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--z-orange-ink)}
-.log-src{font:400 11px/1.5 var(--mono);opacity:.75}
+.log-hint{margin:0 0 14px;font:400 12px/1.5 var(--mono);opacity:.75}
+.log-note{margin:20px 0 0;font:400 12px/1.6 var(--mono);opacity:.8}
+.log-sub{margin:24px 0 10px;font:600 11px/1.3 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.log-src{font:400 11px/1.5 var(--mono);opacity:.7}
 /* KM 0: contadores */
 .log-counters{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:22px}
-.log-count{border-top:3px solid var(--z-orange);padding-top:10px}
+.log-count{border-top:1px solid var(--accent);padding-top:10px}
 .log-count p{margin:0 0 6px}
 .log-count .log-num{font:900 clamp(46px,6vw,70px)/1 var(--display);font-variant-numeric:tabular-nums;margin-bottom:8px}
 /* KM 47: la encuesta (los puntos y filtros de antes) */
 .log-survey{display:flex;flex-direction:column;gap:12px;max-width:34rem}
 .log-survey .readout{margin:0}
 .log-survey .dots{max-width:24rem}
-/* KM 120: cruce de caminos; cada salida es una señal verde */
+/* KM 120: cruce de caminos dibujado a línea; cada salida es una señal */
 .cross{display:grid;grid-template-columns:minmax(0,1fr) 150px minmax(0,1fr);grid-template-areas:". n ." "w c e" ". s .";gap:14px 20px;align-items:center;justify-items:center;margin:4px 0 20px}
-.cross-road{grid-area:c;width:150px;height:150px}
+.cross-road{grid-area:c;width:150px;height:150px;color:var(--line);stroke:currentColor}
+.cross-road .cross-mark{stroke:var(--accent)}
 .exits{display:contents}
 .exit{max-width:17rem;text-align:center;list-style:none}
 .exit-0{grid-area:n}.exit-1{grid-area:e}.exit-2{grid-area:s}.exit-3{grid-area:w}
-.exit-btn{margin:0;border:0;border-radius:7px;padding:11px 14px;background:#0B6B3A;color:#fff;font:600 15px/1.25 var(--body);box-shadow:inset 0 0 0 2px #0B6B3A,inset 0 0 0 4px #fff;cursor:pointer}
+.exit-btn{margin:0;border:1px solid var(--ink);border-radius:4px;padding:10px 14px;background:transparent;color:var(--ink);font:600 15px/1.25 var(--body);cursor:pointer}
 .exit-0 .exit-btn::before{content:"↑ "}.exit-1 .exit-btn::after{content:" →"}.exit-2 .exit-btn::before{content:"↓ "}.exit-3 .exit-btn::before{content:"← "}
-.exit-btn[aria-expanded="true"]{background:var(--z-petrol);box-shadow:inset 0 0 0 2px var(--z-petrol),inset 0 0 0 4px var(--z-orange)}
+.exit-btn::before,.exit-btn::after{color:var(--accent)}
+.exit-btn:hover,.exit-btn[aria-expanded="true"]{border-color:var(--accent);color:var(--accent)}
 .exit-line{margin:8px 0 0;font-size:15px;line-height:1.45}
-/* KM 180: señales del DAFO que se giran; detrás, el contenido */
+/* KM 180: señales del DAFO dibujadas a línea, que se giran; detrás, el contenido */
 .signs{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
 .sign{position:relative;display:block;width:100%;min-height:236px;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;perspective:900px}
 .sign-in{position:absolute;inset:0;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.3,.7,.2,1)}
 .sign[aria-pressed="true"] .sign-in{transform:rotateY(180deg)}
-.sign-front,.sign-back{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;box-sizing:border-box;padding:16px;border-radius:10px;-webkit-backface-visibility:hidden;backface-visibility:hidden}
-.sign-front{background:#FFFDF9;border:1.5px solid rgba(16,45,60,.22)}
-.sign-back{transform:rotateY(180deg);justify-content:center;background:var(--z-petrol);color:var(--z-cream);font-size:15px;line-height:1.5}
+.sign-front,.sign-back{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;box-sizing:border-box;padding:16px;border:1px solid var(--line);background:var(--paper);-webkit-backface-visibility:hidden;backface-visibility:hidden}
+.sign:hover .sign-front{border-color:var(--accent)}
+.sign-back{transform:rotateY(180deg);border-color:var(--accent);font-size:15px;line-height:1.5}
 .sign-word{font:900 26px/1 var(--display);text-transform:uppercase}
-.sign-shape{position:relative;display:grid;place-items:center;width:86px;height:80px;color:#fff;font:900 36px/1 var(--display)}
+/* Las formas: una capa en el color del tono y otra del color de la hoja encima, un poco menor: queda el contorno */
+.sign-shape{position:relative;display:grid;place-items:center;width:84px;height:78px;color:var(--accent);font:900 34px/1 var(--display)}
 .sign-shape b{position:relative;font-weight:900}
-.sign-0 .sign-shape{background:#C8102E;clip-path:polygon(50% 0,100% 92%,0 92%);color:#111;padding-top:22px;box-sizing:border-box}
-.sign-0 .sign-shape::before{content:"";position:absolute;inset:0;background:#fff;clip-path:polygon(50% 22%,85% 82%,15% 82%)}
-.sign-0 .sign-shape b{font-size:28px}
-.sign-1 .sign-shape{width:80px;background:#C8102E;clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%)}
-.sign-2 .sign-shape{width:80px;border-radius:50%;background:#1F5FAD;box-shadow:inset 0 0 0 3px #fff,0 0 0 1px #1F5FAD}
-.sign-3 .sign-shape{width:80px;border-radius:8px;background:#1F5FAD;box-shadow:inset 0 0 0 3px #fff,0 0 0 1px #1F5FAD}
+.sign-0 .sign-shape,.sign-1 .sign-shape{background:var(--accent)}
+.sign-0 .sign-shape::before,.sign-1 .sign-shape::before{content:"";position:absolute;background:var(--paper)}
+.sign-0 .sign-shape{clip-path:polygon(50% 0,100% 92%,0 92%);padding-top:20px;box-sizing:border-box}
+.sign-0 .sign-shape::before{inset:0;clip-path:polygon(50% 4.5%,95.5% 89%,4.5% 89%)}
+.sign-0 .sign-shape b{font-size:26px}
+.sign-1 .sign-shape{width:78px;clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%)}
+.sign-1 .sign-shape::before{inset:2px;clip-path:polygon(29% 0,71% 0,100% 29%,100% 71%,71% 100%,29% 100%,0 71%,0 29%)}
+.sign-2 .sign-shape{width:78px;border:2px solid var(--accent);border-radius:50%;box-sizing:border-box}
+.sign-3 .sign-shape{width:78px;border:2px solid var(--accent);border-radius:6px;box-sizing:border-box}
 .came{display:grid;gap:8px;margin:0;padding:0;list-style:none}
-.came li{border-left:3px solid var(--z-orange);padding-left:12px}
-.came b{margin-right:4px;font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase}
-/* KM 230: la marca */
+.came li{border-left:1px solid var(--accent);padding-left:12px}
+.came b{margin-right:4px;font:600 11px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+/* KM 230: la marca (aquí sí van sus colores: es el contenido) */
 .brand{display:grid;grid-template-columns:auto minmax(0,1fr);gap:30px;align-items:center}
-.brand-z{display:block;width:clamp(130px,22vw,200px);height:auto;padding:14px;box-sizing:border-box;background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(16,45,60,.18)}
+.brand-z{display:block;width:clamp(130px,22vw,200px);height:auto;padding:14px;box-sizing:border-box;background:#fff;border-radius:18px}
 .brand-copy p{margin:0 0 12px}
 .zchips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 16px;padding:0;list-style:none}
-.zchip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1px solid rgba(16,45,60,.25);border-radius:999px;font:400 12px/1 var(--mono)}
-.zchip i{width:22px;height:22px;border-radius:50%}
+.zchip{display:flex;align-items:center;gap:8px;padding:6px 12px 6px 6px;border:1px solid var(--line);border-radius:999px;font:400 12px/1 var(--mono)}
+.zchip i{width:22px;height:22px;border-radius:50%;box-shadow:0 0 0 1px var(--line)}
 .zchip-petrol i{background:var(--z-petrol)}
 .zchip-orange i{background:var(--z-orange)}
 .zchip code{font:inherit;font-weight:600}
 .brand-copy .brand-claim{margin:0;font:900 clamp(30px,4vw,50px)/1 var(--display);text-transform:uppercase;text-wrap:balance}
-/* KM 300: la beta en dos móviles y sus reglas como señales azules */
+/* KM 300: la beta en dos móviles de línea y sus reglas como señales */
 .phones{display:flex;gap:24px;justify-content:center;margin:4px 0 24px}
-.phone{width:min(190px,42%);margin:0;padding:7px;background:#14171A;border-radius:28px;box-shadow:inset 0 0 0 1px #3A3F44,0 16px 36px rgba(16,45,60,.3)}
+.phone{width:min(190px,42%);margin:0;padding:6px;border:1px solid var(--line);border-radius:28px}
 .phone img{display:block;width:100%;height:auto;border-radius:22px}
 .phone-android{border-radius:20px}.phone-android img{border-radius:14px}
 .rules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:0;padding:0;list-style:none}
-.rules li{padding:11px 13px;border-radius:6px;background:#1F5FAD;color:#fff;font-size:15px;line-height:1.4;box-shadow:inset 0 0 0 2px #1F5FAD,inset 0 0 0 4px #fff}
-/* Área de descanso y equipo: los sellos de formación, en tinta */
-.log-stamp{--rot:-5deg;width:min(19rem,100%);margin:4px 0 24px;color:var(--z-orange-ink)}
+.rules li{position:relative;padding:11px 13px 11px 30px;border:1px solid var(--line);font-size:15px;line-height:1.4}
+.rules li::before{content:"";position:absolute;left:12px;top:16px;width:7px;height:7px;border:1px solid var(--accent);rotate:45deg}
+/* Área de descanso y equipo: los sellos de formación, en el color del tono */
+.log-stamp{--rot:-5deg;width:min(19rem,100%);margin:4px 0 24px;color:var(--accent)}
 .log-stamp .stamp-title{font-size:30px}
 .promises{display:grid;gap:10px;margin:0;padding:0;list-style:none;font:600 20px/1.35 var(--body)}
-.promises li::before{content:"✕  ";color:var(--z-orange-ink)}
-/* Próxima salida: cartel de autovía verde */
-.exit-sign{display:inline-flex;flex-direction:column;gap:8px;margin:4px 0 22px;padding:18px 24px 20px;border-radius:10px;background:#0B6B3A;color:#fff;box-shadow:inset 0 0 0 3px #0B6B3A,inset 0 0 0 5px #fff}
-.exit-sign-k{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.promises li::before{content:"✕  ";color:var(--accent)}
+/* Próxima salida: cartel de autovía, a línea doble */
+.exit-sign{display:inline-flex;flex-direction:column;gap:8px;margin:4px 0 22px;padding:18px 24px 20px;border:1px solid var(--accent);border-radius:8px;box-shadow:inset 0 0 0 4px var(--paper),inset 0 0 0 5px var(--accent)}
+.exit-sign-k{font:600 12px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
 .exit-sign-t{font:900 clamp(28px,4vw,46px)/1 var(--display);text-transform:uppercase}
-.exit-sign-t::after{content:" ↗"}
+.exit-sign-t::after{content:" ↗";color:var(--accent)}
 .goals{display:grid;gap:8px;margin:0;padding:0 0 0 20px}
 .team{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:24px;margin:26px 0 22px}
 .team-stamp{--rot:-4deg}
@@ -342,17 +361,19 @@ html.log-open{overflow:hidden}
 /* Abajo: botones y tacógrafo. El trazo avanza hasta la etapa actual (--p, de 0 a 1); cada marca lleva a su etapa */
 .log-foot{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:14px;align-items:center}
 .tacho{--p:0;position:relative;height:44px}
-.tacho-band{position:absolute;inset:6px 12px;border-radius:4px;overflow:hidden;background:repeating-linear-gradient(90deg,rgba(255,246,238,.1) 0 1px,transparent 1px 22px),rgba(255,246,238,.06)}
+.tacho-band{position:absolute;inset:6px 12px;overflow:hidden;border:1px solid var(--line);background:repeating-linear-gradient(90deg,var(--faint) 0 1px,transparent 1px 22px)}
 .tacho-trace{display:block;width:100%;height:100%;clip-path:inset(0 calc((1 - var(--p)) * 100%) 0 0);transition:clip-path .6s cubic-bezier(.2,.7,.2,1)}
+.tacho-trace path{stroke:var(--accent)}
 .tacho-marks{position:absolute;inset:0;display:flex;justify-content:space-between}
 .tacho-mark{position:relative;width:24px;margin:0;padding:0;border:0;background:none;cursor:pointer}
-.tacho-mark::before{content:"";position:absolute;left:50%;top:3px;bottom:3px;width:2px;translate:-50% 0;border-radius:1px;background:rgba(255,246,238,.4)}
-.tacho-mark.past::before{background:var(--z-orange)}
-.tacho-mark.on::before{width:4px;background:var(--z-orange);box-shadow:0 0 0 3px rgba(242,107,44,.3)}
+.tacho-mark::before{content:"";position:absolute;left:50%;top:3px;bottom:3px;width:1px;translate:-50% 0;background:var(--line)}
+.tacho-mark.past::before{background:var(--accent)}
+.tacho-mark.on::before{width:3px;background:var(--accent)}
 @media (max-width:860px){
-  .log-stage{width:min(250px,64vw)}
+  .phone-col{order:-1}
+  .js .phone-slot{height:50svh}
   .log-shell{padding:8px 8px calc(10px + env(safe-area-inset-bottom,0px));gap:8px}
-  .log-page{padding:18px 16px 26px 46px;font-size:16px;background-image:radial-gradient(circle at 17px 32px,var(--z-petrol) 0 5px,rgba(16,45,60,.3) 5.5px,transparent 6.5px),linear-gradient(90deg,transparent 34px,rgba(242,107,44,.4) 34px 35px,transparent 35px),repeating-linear-gradient(transparent 0 31px,rgba(16,45,60,.07) 31px 32px);background-size:34px 64px,100% 100%,100% 32px}
+  .log-page{padding:18px 16px 26px;font-size:16px}
   .log-foot{grid-template-columns:1fr 1fr;grid-template-areas:"t t" "p n";gap:8px}
   .tacho{grid-area:t}
   #zPrev{grid-area:p}#zNext{grid-area:n}
@@ -362,7 +383,10 @@ html.log-open{overflow:hidden}
   .phones{gap:14px}
   .sign{min-height:250px}
 }
-/* Móvil en horizontal: hojas más bajas, así que título y botones más compactos */
+/* Móvil en horizontal: el móvil de puntos algo más alto (a 50 svh la hoja no cabría) y el cuaderno más compacto */
+@media (max-width:860px) and (orientation:landscape){
+  .js .phone-slot{height:min(86svh,340px)}
+}
 @media (orientation:landscape) and (max-height:520px){
   .log-shell{gap:6px;padding-top:6px}
   .log-foot{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:none}
@@ -371,7 +395,6 @@ html.log-open{overflow:hidden}
   .log-btn{padding:9px 10px}
 }
 @media (prefers-reduced-motion:reduce){
-  .log-book{animation:none}
   .log-page.turn-fwd,.log-page.turn-back{animation:log-fade .25s ease-out}
   /* Las señales no giran: se cambia de cara con un fundido */
   .sign-in{transition:none}
@@ -383,11 +406,11 @@ html.log-open{overflow:hidden}
   .tacho-trace{transition:none}
 }
 /* Sin JavaScript: el cuaderno se ve abierto, con todas las etapas una detrás de otra */
-html:not(.js) .logdlg{display:block;position:static;width:auto;min-width:0;max-width:100%;height:auto;background:none;color:inherit;overflow:visible}
+html:not(.js) .logdlg{grid-column:1/-1;display:block;position:static;width:auto;min-width:0;max-width:100%;height:auto;background:none;overflow:visible;margin-top:24px}
 html:not(.js) .log-shell{display:block;height:auto;max-width:none;padding:0}
-html:not(.js) .log-head{color:inherit;margin-bottom:12px}
+html:not(.js) .log-head{margin-bottom:12px}
 html:not(.js) .log-sheet{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;perspective:none}
-html:not(.js) .log-page{height:auto;overflow:visible;padding:20px 18px 24px 46px;background-image:linear-gradient(90deg,transparent 34px,rgba(242,107,44,.4) 34px 35px,transparent 35px);font-size:16px}
+html:not(.js) .log-page{height:auto;overflow:visible;padding:20px 18px 24px;font-size:16px}
 html:not(.js) .log-h{font-size:34px}
 html:not(.js) .cross{display:block}
 html:not(.js) .cross-road{display:none}
@@ -395,8 +418,7 @@ html:not(.js) .exit{max-width:none;text-align:left;margin-bottom:10px}
 html:not(.js) .exit-btn{cursor:default}
 html:not(.js) .sign{min-height:0;cursor:default;margin-bottom:10px}
 html:not(.js) :is(.sign-in,.sign-front,.sign-back){position:static;transform:none;backface-visibility:visible}
-html:not(.js) .sign-front{flex-direction:row;justify-content:flex-start;border-radius:10px 10px 0 0}
-html:not(.js) .sign-back{border-radius:0 0 10px 10px}
+html:not(.js) .sign-front{flex-direction:row;justify-content:flex-start;border-bottom:0}
 html:not(.js) .brand{grid-template-columns:minmax(0,1fr)}
 .gauge{height:14px;border:1px solid currentColor;position:relative}
 .gauge i{position:absolute;inset:0 auto 0 0;width:73.9%;background:var(--accent)}

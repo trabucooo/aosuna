@@ -10,9 +10,17 @@ const es = {
   crew: ['WordPress', 'Redactor SEO', 'Comercial', 'Investigador', 'Videomapping', 'Coordinador Zalapp', 'Moderador', 'Newsletter', 'Prompts con IA', 'Diseño web', 'Captación', 'Atención al cliente'],
   // Filtros de Zalapp, en el mismo orden que los grupos de main.js
   zalapp: ['47 registros', '41 conductores', '36 asalariados', '5 autónomos', '4 de flota', '2 con perfil Otro'],
-  // Cuaderno de ruta de Zalapp: cursor de la invitación, aviso de la web en obra y lo que se anuncia al pasar de etapa
+  // Móvil de Zalapp: botón invisible sobre el móvil, captura, etiqueta del cursor (ratón / táctil) y botones de la hoja
+  zalappPhone: {
+    label: 'Ver la app de Zalapp',
+    alt: 'Pantalla del mapa de la beta de Zalapp',
+    cueMouse: 'Enciéndeme',
+    cueTouch: 'Toca la pantalla',
+    log: 'Ver cuaderno de ruta',
+    web: 'Ver la web',
+  },
+  // Cuaderno de ruta de Zalapp: aviso de la web en obra y lo que se anuncia al pasar de etapa
   zalappLog: {
-    cue: 'Ábreme',
     pending: 'En obra: pronto en zalapp.aosuna.es',
     stage: (i, n, km, t) => `Etapa ${i} de ${n}. ${km}. ${t}`,
     mark: (i, t) => `Etapa ${i}: ${t}`,
@@ -93,7 +101,7 @@ const es = {
     painted: c => `Fondo pintado de ${c}.`,
     rePaint: /\b(pinta|pintad|color)\b/,
     noColor: 'De ese color no queda bote. Prueba rojo, azul, verde, rosa o morado.',
-    places: [['projects', /proyectos/, 'proyectos'], ['contact', /contacto/, 'contacto'], ['tools', /herramientas/, 'herramientas'], ['home', /inicio/, 'inicio'], ['zalapp', /zalapp/, 'zalapp'], ['zalapp', /cuaderno/, 'zalapp'], ['zalapp', /\bruta\b/, 'zalapp'], ['nautes', /nautes/, 'nautes'], ['alcar', /alcar/, 'alcar'], ['mapping', /videomapping/, 'videomapping'], ['mapping', /mapping/, 'mapping'], ['formacion', /formacion/, 'formación'], ['sellos', /\bsellos?\b/, 'los sellos']],
+    places: [['projects', /proyectos/, 'proyectos'], ['contact', /contacto/, 'contacto'], ['tools', /herramientas/, 'herramientas'], ['home', /inicio/, 'inicio'], ['zalapp', /zalapp/, 'zalapp'], ['zalapp', /cuaderno/, 'zalapp'], ['zalapp', /\bapp\b/, 'zalapp'], ['nautes', /nautes/, 'nautes'], ['alcar', /alcar/, 'alcar'], ['mapping', /videomapping/, 'videomapping'], ['mapping', /mapping/, 'mapping'], ['formacion', /formacion/, 'formación'], ['sellos', /\bsellos?\b/, 'los sellos']],
     goTo: p => `Vamos a ${p}.`,
     reDance: /(baila|bailad|fiesta)/,
     dance: 'Música, maestro.',
@@ -123,7 +131,7 @@ const es = {
     ['Menú corto', 'Pocos enlaces y fijos. Puedes irte directo a lo que buscas sin tragarte toda la historia.'],
     ['Trayectoria elegida', 'Solo cuento lo que conecta con el trabajo que busco. Un portfolio también se hace quitando cosas.'],
     ['Formación con sello', 'La formación no va en una lista: la traen los mismos cursores que construyen la web. El segundo sello está a medias porque todavía estoy cursando ese ciclo.'],
-    ['Un proyecto que se abre', 'En vez de enseñar una gráfica suelta, el proyecto va en un cuaderno de ruta: cada etapa es una decisión, con sus datos y sus límites.'],
+    ['La app, por dentro', 'Un móvil hecho de puntos que se enciende con la beta real. Los botones imitan los de la app para que el paso al proyecto sea natural.'],
     ['Del barco a la web', 'Los mismos puntos que forman el velero construyen el esqueleto de la web, y después aparece la página real. El sector y el trabajo se ven en el mismo gesto.'],
     ['El método, en ruta', 'Los cuatro pasos de cada pieza van como boyas en un rumbo, sin pestañas: se leen de un vistazo y el barco sigue siendo el protagonista.'],
     ['Entrar a la web', 'En vez de describir la web nueva, la dejo a la vista. Al tocarla se deshace en código y dan ganas de entrar.'],
@@ -142,8 +150,15 @@ const en = {
   repairs: n => n < 3 ? `Repairs: ${n}. Carry on, they’re paid by the hour.` : n < 6 ? `Repairs: ${n}. Not a single complaint.` : `Repairs: ${n}. Scroll down and meet the crew.`,
   crew: ['WordPress', 'SEO writer', 'Sales', 'Researcher', 'Videomapping', 'Zalapp lead', 'Moderator', 'Newsletter', 'AI prompts', 'Web design', 'Lead generation', 'Customer service'],
   zalapp: ['47 responses', '41 drivers', '36 employed', '5 self-employed', '4 fleet managers', '2 other profiles'],
+  zalappPhone: {
+    label: 'See the Zalapp app',
+    alt: 'Map screen from the Zalapp beta',
+    cueMouse: 'Switch me on',
+    cueTouch: 'Tap the screen',
+    log: 'See the route logbook',
+    web: 'See the website',
+  },
   zalappLog: {
-    cue: 'Open me',
     pending: 'Under construction: coming soon at zalapp.aosuna.es',
     stage: (i, n, km, t) => `Stage ${i} of ${n}. ${km}. ${t}`,
     mark: (i, t) => `Stage ${i}: ${t}`,
@@ -213,7 +228,7 @@ const en = {
     painted: c => `Background painted ${c}.`,
     rePaint: /\b(paint|colou?r)\b/,
     noColor: "We’re out of that colour. Try red, blue, green, pink or purple.",
-    places: [['projects', /\bprojects?\b/, 'the projects'], ['contact', /\bcontact\b/, 'the contact section'], ['tools', /\b(tools?|toolbox)\b/, 'the toolbox'], ['home', /\b(home|top)\b/, 'the top'], ['zalapp', /zalapp/, 'Zalapp'], ['zalapp', /\b(logbook|notebook)\b/, 'Zalapp'], ['zalapp', /\broute\b/, 'Zalapp'], ['nautes', /nautes/, 'Nautes'], ['alcar', /alcar/, 'Alcar'], ['mapping', /mapping/, 'the videomapping'], ['formacion', /\beducation\b/, 'my education'], ['sellos', /\bstamps?\b/, 'the stamps']],
+    places: [['projects', /\bprojects?\b/, 'the projects'], ['contact', /\bcontact\b/, 'the contact section'], ['tools', /\b(tools?|toolbox)\b/, 'the toolbox'], ['home', /\b(home|top)\b/, 'the top'], ['zalapp', /zalapp/, 'Zalapp'], ['zalapp', /\b(logbook|notebook)\b/, 'Zalapp'], ['zalapp', /\bapp\b/, 'Zalapp'], ['nautes', /nautes/, 'Nautes'], ['alcar', /alcar/, 'Alcar'], ['mapping', /mapping/, 'the videomapping'], ['formacion', /\beducation\b/, 'my education'], ['sellos', /\bstamps?\b/, 'the stamps']],
     goTo: p => `Off to ${p}.`,
     reDance: /\b(dance|party|boogie)\b/,
     dance: 'Cue the music.',
@@ -242,7 +257,7 @@ const en = {
     ['A short menu', "A handful of fixed links. You can jump straight to what you’re after without sitting through the whole story."],
     ['A chosen path', "I only include what connects with the work I’m looking for. A portfolio is also made by leaving things out."],
     ['Stamped, not listed', "My education isn’t a bullet list: the same cursors that build this site bring it in. The second stamp is only half-inked because I haven’t finished that course yet."],
-    ['A project that opens up', 'Rather than showing a lone chart, the project sits in a route logbook: each stage is a decision, with its data and its limits.'],
+    ['The app, from the inside', 'A phone made of dots that switches on with the real beta. The buttons mimic the app’s own, so stepping into the project feels natural.'],
     ['From boat to website', 'The same dots that form the sailboat build the skeleton of the website, and then the real page appears. The industry and the work show up in a single gesture.'],
     ['The method, under way', 'The four steps of every piece sit like buoys along a course, with no tabs: you take them in at a glance and the boat stays the star.'],
     ['Step inside', 'Rather than describe the new website, I put it on show. Touch it and it dissolves into code, which makes you want to go in.'],
