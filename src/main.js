@@ -1812,7 +1812,8 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zPhone','#nautesBoat','#nRoute','#portal','#stage','#tool','#mail'];
+// En el orden de la página: portada, menú, retrato y sellos, Nautes, Zalapp, Alcar, videomapping, herramientas y contacto
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#nautesBoat','#nRoute','#zPhone','#portal','#stage','#tool','#mail'];
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
