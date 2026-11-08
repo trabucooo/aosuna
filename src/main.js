@@ -81,12 +81,13 @@ function paintLetter(L){const s=L.sc.x,t=(L.x||L.y||L.r||s!==1)?`translate(${L.x
 const LABELS=T.crew;
 const COLORS=['#2A3FF0','#D6264F','#0A8A5C','#B3470F','#7A2BD6','#00788C','#B81F8A','#7A8500','#3A3AD0','#A8341A','#006B4F','#C03030'];
 const crew=$('#crew'),cursors=[];
+const CURSOR_SVG='<svg viewBox="0 0 20 24"><path d="M1.5 1.5v18.6l5-4.5 3.4 7.6 3.5-1.6-3.4-7.4 7-.6z"/></svg>';
 function makeCursors(){
   const n=rm?0:(small()?12:22);
   for(let i=0;i<n;i++){
     const el=document.createElement('div');el.className='c';
     const col=COLORS[i%COLORS.length];el.style.setProperty('--c',col);
-    el.innerHTML='<svg viewBox="0 0 20 24"><path d="M1.5 1.5v18.6l5-4.5 3.4 7.6 3.5-1.6-3.4-7.4 7-.6z"/></svg>'+(i<LABELS.length?`<span>${LABELS[i]}</span>`:'');
+    el.innerHTML=CURSOR_SVG+(i<LABELS.length?`<span>${LABELS[i]}</span>`:'');
     crew.appendChild(el);
     const a=Math.random()*6.28,R=Math.hypot(vw,vh)*.62;
     const c={el,x:vw/2+Math.cos(a)*R,y:vh/2+Math.sin(a)*R,vx:0,vy:0,tx:vw/2,ty:vh/2,k:rand(.05,.085),next:0,trail:[],col,job:null,script:true,sel:null,slot:null,sx:0,sy:0,follow:null,hidden:false};
@@ -149,6 +150,8 @@ function stepCursors(f,now){
       if(L.mode==='wait'&&Math.hypot(c.tx-c.x,c.ty-c.y)<34)L.mode='carry';
     }else if(c.task){
       aimTask(c,now);c.box.classList.remove('on');
+    }else if(c.park){
+      c.tx=c.park.x;c.ty=c.park.y;c.box.classList.remove('on');
     }else if(orderTarget(c,cursors.indexOf(c),cursors.length,now)){
       c.box.classList.remove('on');
     }else if(c.follow){
@@ -352,7 +355,7 @@ function stopRange(st){
   if(st.shape==='portrait'){st.s=scene.top+scene.len*PORTRAIT_IN;st.e=scene.top+scene.len*PORTRAIT_OUT;return}
   const r=st.el.getBoundingClientRect();
   // En móvil, el velero (encima del texto) queda completo justo debajo de la barra de arriba, no a media pantalla
-  if(st.shape==='morph'&&st.data&&small()){st.s=st.e=r.top+scrollY-24;return}
+  if(st.shape==='morph'&&st.data&&small()){st.s=st.e=st.el.querySelector('.boat-slot').getBoundingClientRect().top+scrollY-58;return}
   st.s=st.e=r.top+scrollY+r.height/2-vh/2;
 }
 /* Imágenes en puntos (public/retrato-puntos.json, public/apreton-puntos.json…): {ratio, desktop:[x,y,s,...], mobile:[...]}.
@@ -371,11 +374,7 @@ function readPoints(d){
 }
 const loadPoints=src=>pointFiles[src]||(pointFiles[src]=fetch(import.meta.env.BASE_URL+src.replace(/^\//,''))
   .then(r=>r.ok?r.json():null).then(readPoints).catch(()=>null));
-const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>{
-  st.data=d;
-  // En móvil, el proyecto se abre por arriba para dejar sitio al velero (ver .has-boat en style.css)
-  if(d&&st.shape==='morph')st.el.classList.add('has-boat');
-})));
+const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>st.data=d)));
 // Tamaño del punto: base + luz × rango, en ordenador (d) y en móvil (m)
 const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]},morph:{d:[1,2.4],m:[1.2,2.2]}};
 function pointTargets(data,[x0,y0,W,H],dot){
@@ -407,22 +406,13 @@ function chapterBox(st,ratio){
   const tw=Math.min(vw*.92,vw-2*g,(top-gap-y1)*ratio),th=tw/ratio;
   return sw>tw?side:[(vw-tw)/2,y1+(top-gap-y1-th)/2,tw,th];
 }
-/* Proyecto con velero: en la zona libre, sin tapar .proj-copy ni .toy. En ordenador, en la columna de .toy,
-   encima o debajo de ella (donde haya más alto); en móvil, en el hueco que .has-boat abre encima del texto.
-   Va anclado al contenido, así que se mide en la página y se pasa a la pantalla en la posición de la parada */
+/* Proyecto con velero: ocupa su hueco (.boat-slot: la columna derecha en ordenador, arriba en móvil) con su
+   proporción. Va anclado al contenido, así que se mide en la página y se pasa a la pantalla en la posición de la parada */
 function boatBox(st,ratio){
-  const sm=small(),q=s=>st.el.querySelector(s).getBoundingClientRect();
-  const art=st.el.getBoundingClientRect(),copy=q('.proj-copy'),toy=q('.toy'),off=scrollY-st.s; // + off: pantalla en la parada
-  let L,R,top,bot;
-  if(sm){L=16;R=vw-16;top=art.top+off+40;bot=copy.top+off-16}
-  else{
-    // Entre la barra de arriba (64 px) y la .toy, o entre la .toy y el dock (60 px): el hueco más alto
-    const up=[64,toy.top+off-28],down=[toy.bottom+off+28,vh-60];
-    [top,bot]=up[1]-up[0]>=down[1]-down[0]?up:down;L=toy.left;R=toy.right;
-  }
-  const H=Math.min(bot-top,(R-L)/ratio,420),W=H*ratio;
+  const r=st.el.querySelector('.boat-slot').getBoundingClientRect(),off=scrollY-st.s;
+  const H=Math.min(r.height,r.width/ratio),W=H*ratio;
   if(!(H>=40))return null;
-  return[L+(R-L-W)/2,top+(bot-top-H)/2,W,H];
+  return[r.left+(r.width-W)/2,r.top+off+(r.height-H)/2,W,H];
 }
 // La web, centrada en la pantalla: ancho min(72vw, 1000px) con su proporción
 function shotRect(ratio){const W=Math.min(vw*.72,1000),H=W/ratio;return[(vw-W)/2,(vh-H)/2,W,H]}
@@ -523,15 +513,28 @@ function stepDust(f,now){
   // Del velero a la web: cada punto lleva el progreso de su grupo de retardo (boat.mb) y sale en arco
   const bm=boat.moving&&!rm&&boat.st.shot?boat:null,MBN=MB/N;
   if(bm)al+=(1-al)*clamp(boat.m);
-  const repel=bm?1-clamp(boat.m*4):1;
-  const mr=small()?70:110,mr2=mr*mr;
+  // Junto al velero los puntos no huyen del ratón: se inclinan hacia él (boat.pull, de 0 a 1, lo calcula stepBoat)
+  const atBoat=boat.w>.5&&!!boat.st.shot,pull=atBoat&&!bm?boat.pull:0;
+  const repel=atBoat?0:bm?1-clamp(boat.m*4):1;
+  // El velero se mece en reposo: ±1,5° alrededor de la base y 2 px arriba y abajo, cada 4 s (sobre las dianas)
+  let rkA=false,rkB=false,rc=1,rs=0,rdy=0,rpx=0,rpy=0;
+  if(!rm&&boat.st?.box&&(a===boat.st||b===boat.st)){
+    const ph=now*6.2832/BOAT_ROCK_MS,calm=1-clamp(boat.m),q=BOAT_ROCK_DEG*Math.PI/180*Math.sin(ph)*calm,[bx,by,bw,bh]=boat.st.box;
+    rc=Math.cos(q);rs=Math.sin(q);rdy=BOAT_BOB_PX*Math.cos(ph)*calm;rpx=bx+bw/2;rpy=by+bh*.95;rkA=a===boat.st;rkB=b===boat.st;
+  }
+  const mr=small()?70:110,mr2=mr*mr,PR2=BOAT_PULL_R*BOAT_PULL_R;
   // Ruido solo cuando no se hace scroll: entra en medio segundo
   const amp=rm?0:NOISE*smooth(clamp((now-scrollT-150)/500));
   const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y,wt=now*.0016;
   for(let n=0;n<N;n++){
     const k=n*2;
-    let gx=ta[k]+(tb[k]-ta[k])*t,gy=ta[k+1]+oa+(tb[k+1]+ob-ta[k+1]-oa)*t;
+    let ax=ta[k],ay=ta[k+1],bx=tb[k],by=tb[k+1];
+    if(rkA){const u=ax-rpx,v=ay-rpy;ax=rpx+u*rc-v*rs;ay=rpy+u*rs+v*rc+rdy}
+    if(rkB){const u=bx-rpx,v=by-rpy;bx=rpx+u*rc-v*rs;by=rpy+u*rs+v*rc+rdy}
+    let gx=ax+(bx-ax)*t,gy=ay+oa+(by+ob-ay-oa)*t;
     if(wa)gy+=Math.sin(gx*.012+wt)*16*wa;
+    // Atracción suave: cada punto se acerca un poco al ratón, menos cuanto más lejos está
+    if(pull){const u=mx-gx,v=my-gy,q=BOAT_PULL*pull/(1+(u*u+v*v)/PR2);gx+=u*q;gy+=v*q}
     if(bm){const p=bm.mb[(n*MBN)|0];
       if(p>0){
         // Recto de su sitio en el barco a su sitio en la web, más un empujón hacia fuera desde el centro
@@ -570,12 +573,26 @@ const NAUTES_URL='';
 const MB=16,MB_MS=8;
 // Muelle del progreso m (rad/s y amortiguación): ni lineal ni con duración fija, y se puede dar la vuelta a medias
 const BOAT_W=9,BOAT_Z=.9,BOAT_HOLD_MS=300,SHOT_FADE_MS=350;
+// Reposo: vaivén (grados, px y periodo) y atracción hacia el ratón cuando se acerca a menos de BOAT_NEAR px
+const BOAT_ROCK_DEG=1.5,BOAT_BOB_PX=2,BOAT_ROCK_MS=4000,BOAT_NEAR=140,BOAT_PULL=.08,BOAT_PULL_R=220;
 const boat={st:stops.find(s=>s.shape==='morph')||null,w:0,want:0,m:0,v:0,mb:new Float32Array(MB),moving:false,
-  hT:new Float64Array(64),hM:new Float32Array(64),hN:0,shown:false,holdT:0,closeAt:0,openY:0,done:false,cx:0,cy:0,arc:0,rect:'',btn:null,veil:null,img:null};
+  hT:new Float64Array(64),hM:new Float32Array(64),hN:0,shown:false,holdT:0,closeAt:0,openY:0,done:false,cx:0,cy:0,arc:0,rect:'',btn:null,veil:null,img:null,
+  // Invitación: atracción (pull), sonar, cursor aparcado (park) o, sin animaciones, uno fijo (cue). seen: ya se completó
+  pull:0,seen:false,used:false,sonar:null,sonarOn:false,sonarT:'',park:null,parkLabel:'',parkW:0,cue:null,cueW:0,cueT:''};
+// Cuando alguien completa la transformación, el sonar y el cursor de la proa dejan de salir en esta sesión
+const SEEN_KEY='nautes-velero-visto';
+try{boat.seen=sessionStorage.getItem(SEEN_KEY)==='1'}catch(e){}
+const CUE=fine?T.nautesBoat.cueMouse:T.nautesBoat.cueTouch;
 if(boat.st){
+  // Sonar: un anillo que sale de la base del barco (el aro interior lo anima el CSS; este solo se coloca)
+  boat.sonar=document.createElement('div');boat.sonar.className='sonar';boat.sonar.setAttribute('aria-hidden','true');boat.sonar.appendChild(document.createElement('i'));
+  document.body.appendChild(boat.sonar);
+  // Sin animaciones no hay equipo de cursores: un cursor fijo hace de invitación
+  if(rm){const q=boat.cue=document.createElement('div');q.className='c boat-cue';q.hidden=true;q.setAttribute('aria-hidden','true');
+    q.style.setProperty('--c','#00788C');q.innerHTML=CURSOR_SVG+'<span></span>';q.querySelector('span').textContent=CUE;document.body.appendChild(q)}
   const b=boat.btn=document.createElement('button');
   b.type='button';b.id='nautesBoat';b.className='boat-hit';b.hidden=true;b.setAttribute('aria-label',T.nautesBoat.label);
-  boat.st.el.querySelector('.proj-copy').after(b); // en el orden del teclado, entre el texto y la .toy
+  boat.st.el.querySelector('.proj-copy').after(b); // en el orden del teclado, entre el texto y las boyas
   boat.veil=document.createElement('div');boat.veil.className='nautes-veil';
   boat.img=document.createElement('img');boat.img.className='nautes-shot';boat.img.alt=T.nautesBoat.alt;boat.img.decoding='async';
   document.body.append(boat.veil,boat.img);
@@ -599,8 +616,8 @@ function openBoat(){
   if(!boat.st?.shot||boat.btn.hidden)return;
   if(boat.want&&!boat.closeAt)return;
   if(!boat.img.src)boat.img.src=import.meta.env.BASE_URL+(boat.st.el.dataset.shot||'').replace(/^\//,'');
-  boat.closeAt=0;boat.want=1;boat.openY=scrollY;
-  boat.veil.classList.add('on');
+  boat.closeAt=0;boat.want=1;boat.openY=scrollY;boat.used=true;
+  boat.veil.classList.add('on');boat.btn.classList.add('open');
   // Mientras dura, el botón queda por encima del velo y los puntos también (estos, solo con animaciones: ver style.css)
   root.classList.add('nautes-on');
 }
@@ -608,7 +625,7 @@ function openBoat(){
 function closeBoat(){
   if(!boat.want||boat.closeAt)return;
   const fade=boat.shown&&!rm?SHOT_FADE_MS:0;
-  boat.img.classList.remove('on');boat.btn.classList.remove('link');boat.shown=false;boat.holdT=0;
+  boat.img.classList.remove('on');boat.btn.classList.remove('link','open');boat.shown=false;boat.holdT=0;
   boat.closeAt=performance.now()+fade;
 }
 // La captura y el centro de la web se recolocan con la maqueta (layout)
@@ -647,14 +664,57 @@ function stepBoat(f,now){
     if(!boat.shown&&(rm||now-boat.holdT>=BOAT_HOLD_MS)&&boat.img.complete&&boat.img.naturalWidth){
       boat.shown=true;boat.img.classList.add('on');if(NAUTES_URL)boat.btn.classList.add('link');
       if(!boat.done){boat.done=true;track('nautes-velero')}
+      if(!boat.seen){boat.seen=true;try{sessionStorage.setItem(SEEN_KEY,'1')}catch(e){}}
     }
   }else boat.holdT=0;
+  stepInvite(f,now,live);
   if(!live)return;
   // El botón tapa el velero (que se mueve con el scroll); abierto, también la web, para que salir de ella lo deshaga
   let[x,y,w,h]=st.box;y+=st.s-SY;
   if(boat.want){const[sx,sy,sw,sh]=st.shotBox,x2=Math.max(x+w,sx+sw),y2=Math.max(y+h,sy+sh);x=Math.min(x,sx);y=Math.min(y,sy);w=x2-x;h=y2-y}
   const r=`${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}`;
   if(r!==boat.rect){boat.rect=r;const s=boat.btn.style;s.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;s.width=Math.round(w)+'px';s.height=Math.round(h)+'px'}
+}
+/* Invitación a pasar por el velero: mientras el proyecto está en pantalla y nadie lo ha usado todavía,
+   un cursor del equipo espera junto a la proa con su etiqueta y sale un pulso de sonar cada 2,5 s.
+   Al acercar el ratón, los puntos se inclinan hacia él (boat.pull, que usa stepDust) */
+function stepInvite(f,now,live){
+  const st=boat.st;
+  let x=0,y=0,w=0,h=0;
+  if(st.box){[x,y,w,h]=st.box;y+=st.s-SY}
+  const vis=!!st.shot&&boat.w>.5&&y+h>40&&y<vh-40;
+  if(!vis)boat.used=false; // al salir del proyecto, la próxima vez vuelve a invitar (si no se completó)
+  // Con una boya abierta, el cursor y el sonar se apartan: la etiqueta de la boya queda encima del velero
+  const inv=vis&&introDone&&!boat.seen&&!boat.want&&!boat.used&&buoyOpen<0;
+  let tp=0;
+  if(fine&&!rm&&live&&!boat.want&&mouse.x>0){
+    const dx=Math.max(x-mouse.x,0,mouse.x-x-w),dy=Math.max(y-mouse.y,0,mouse.y-y-h),d=Math.hypot(dx,dy);
+    tp=d<BOAT_NEAR?1-d/BOAT_NEAR:0;
+  }
+  boat.pull+=(tp-boat.pull)*(1-Math.pow(.85,f));if(boat.pull<.002)boat.pull=0;
+  const son=inv&&!rm;
+  if(son!==boat.sonarOn){boat.sonarOn=son;boat.sonar.classList.toggle('on',son)}
+  if(son){const t=`translate(${Math.round(x+w/2)}px,${Math.round(y+h*.97)}px)`;if(t!==boat.sonarT){boat.sonarT=t;boat.sonar.style.transform=t}}
+  // La punta del cursor, junto a la proa (a la derecha del casco). Si la etiqueta no cabe, va a la izquierda del cursor
+  const tipX=x+w*.95+4,tipY=y+h*.93+4;
+  if(rm){
+    const q=boat.cue;if(q.hidden===inv)q.hidden=!inv;
+    if(inv){boat.cueW||=q.querySelector('span').offsetWidth;q.classList.toggle('flip',tipX+15+boat.cueW+12>vw);
+      const t=`translate(${Math.round(tipX)}px,${Math.round(tipY)}px)`;if(t!==boat.cueT){boat.cueT=t;q.style.transform=t}}
+    return;
+  }
+  if(inv&&!boat.park){
+    const pool=cursors.slice(3,LABELS.length).filter(c=>!c.job&&!c.script&&!c.follow&&!c.task&&!c.park);
+    if(pool.length){
+      const c=pool.sort((p,q)=>Math.hypot(p.x-tipX,p.y-tipY)-Math.hypot(q.x-tipX,q.y-tipY))[0],sp=c.el.querySelector('span');
+      c.script=true;c.park={x:tipX,y:tipY};boat.parkLabel=sp.textContent;sp.textContent=CUE;boat.parkW=sp.offsetWidth;
+      c.el.classList.remove('off');boat.park=c;
+    }
+  }
+  if(!inv&&boat.park){
+    const c=boat.park;c.park=null;c.script=false;c.next=now+500;c.el.classList.remove('flip');c.el.querySelector('span').textContent=boat.parkLabel;boat.park=null;
+  }
+  if(boat.park){const c=boat.park;c.park.x=tipX;c.park.y=tipY;c.el.classList.toggle('flip',tipX+15+boat.parkW+12>vw)}
 }
 
 /* ---------- El equipo acompaña el scroll ---------- */
@@ -665,7 +725,7 @@ function updateTeam(){
   gather=top<vh*.45&&bottom>0;
   cursors.forEach((c,i)=>{
     const guide=i<3;
-    c.el.classList.toggle('off',introDone&&heroOut&&!gather&&!strike&&!order&&!c.task&&!(guide&&(c.follow||!small())));
+    c.el.classList.toggle('off',introDone&&heroOut&&!gather&&!strike&&!order&&!c.task&&!c.park&&!(guide&&(c.follow||!small())));
   });
 }
 const selObs=new IntersectionObserver(es=>{
@@ -796,10 +856,31 @@ zOpts.forEach(([t,g],i)=>{const b=document.createElement('button');b.type='butto
   b.onclick=()=>{track('zalapp-filtro',{filtro:ES.zalapp[i]});$$('.pill',zPills).forEach(x=>x.setAttribute('aria-pressed',x===b));zRead.textContent=t;$$('.dot').forEach(d=>d.classList.toggle('on',g.includes(d.dataset.g)))};zPills.appendChild(b)});
 
 /* ---------- Nautes ---------- */
-const nSteps=T.nautes;
-const nPills=$('#nPills'),nPanel=$('#nPanel');
-function showStep(i){const s=nSteps[i];nPanel.innerHTML=`<p class="eyebrow">${s[0]}</p><h4>${s[1]}</h4><ul>${s[2].map(x=>`<li>${x}</li>`).join('')}</ul>`;$$('.pill',nPills).forEach((p,k)=>p.setAttribute('aria-pressed',k===i))}
-nSteps.forEach((s,i)=>{const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=s[0];b.onclick=()=>{track('nautes-paso',{paso:ES.nautes[i][0]});showStep(i)};nPills.appendChild(b)});showStep(0);
+/* Nautes: el método como rumbo. Cuatro boyas en una línea; cada una abre encima su etiqueta (título y lista).
+   Ratón: al pasar por encima. Teclado: al enfocarla. Táctil: al tocarla. Solo una abierta; Escape la cierra */
+const nSteps=T.nautes,buoys=[];
+let buoyOpen=-1;
+function setBuoy(i){
+  if(i===buoyOpen)return;
+  buoyOpen=i;
+  buoys.forEach((b,k)=>{b.btn.setAttribute('aria-expanded',k===i);b.tag.hidden=k!==i});
+  if(i>=0)track('nautes-paso',{paso:ES.nautes[i][0]});
+}
+const closeBuoys=()=>setBuoy(-1);
+nSteps.forEach((s,i)=>{
+  const li=document.createElement('li'),btn=document.createElement('button'),tag=document.createElement('div'),h=document.createElement('p'),ul=document.createElement('ul');
+  btn.type='button';btn.className='buoy';btn.id='nBuoy'+i;btn.textContent=s[0];btn.setAttribute('aria-expanded','false');btn.setAttribute('aria-controls','nTag'+i);
+  tag.className='buoy-tag';tag.id='nTag'+i;tag.hidden=true;h.textContent=s[1];
+  ul.replaceChildren(...s[2].map(x=>{const q=document.createElement('li');q.textContent=x;return q}));
+  tag.append(h,ul);li.append(btn,tag);$('#nBuoys').appendChild(li);buoys.push({btn,tag});
+  btn.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')setBuoy(i)});
+  btn.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&document.activeElement!==btn&&buoyOpen===i)closeBuoys()});
+  btn.addEventListener('focus',()=>setBuoy(i));
+  btn.addEventListener('blur',()=>{if(buoyOpen===i)closeBuoys()});
+  btn.addEventListener('click',()=>setBuoy(i)); // táctil (y clic): abre la suya y cierra las demás
+});
+document.addEventListener('pointerdown',e=>{if(buoyOpen>=0&&!e.target.closest?.('#nBuoys'))closeBuoys()});
+
 
 /* ---------- Alcar: la captura se deshace en ceros y unos ---------- */
 const PORTAL_URL=''; // Dirección de la web nueva
@@ -1051,7 +1132,7 @@ async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'sm
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
-const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zRead',nautes:'#nPanel',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
+const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zRead',nautes:'#nRoute',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
 function command(raw){
   const B=T.boss,t=strip(raw);if(!t)return B.empty;
   let m;
@@ -1064,7 +1145,10 @@ function command(raw){
   if(B.rePaint.test(t))return B.noColor;
   for(const[id,re,name] of B.places)if(re.test(t)){
     // La escena es alta: se baja hasta donde los dos sellos ya están puestos
-    if(PLACES[id]==='#open')goScene(.9);else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});
+    if(PLACES[id]==='#open')goScene(.9);
+    // Nautes: hasta donde el velero está completo
+    else if(id==='nautes'&&boat.st?.shot)scrollTo({top:boat.st.s,behavior:rm?'auto':'smooth'});
+    else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});
     return B.goTo(name)}
   if(B.reDance.test(t)){setOrder('dance');return B.dance}
   if(B.reFollow.test(t)){setOrder('follow');return B.follow}
@@ -1085,7 +1169,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat()}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys()}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -1128,7 +1212,7 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zRead','.gauge','#nautesBoat','#portal','#stage','#tool','#mail'];
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#zRead','.gauge','#nautesBoat','#nRoute','#portal','#stage','#tool','#mail'];
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;

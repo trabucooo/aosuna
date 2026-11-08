@@ -157,8 +157,8 @@ main{position:relative;z-index:2}
 .readout{font:900 clamp(38px,5vw,60px)/1 var(--display);text-transform:uppercase;font-variant-numeric:tabular-nums}
 /* Nautes: el velero de puntos lo dibuja #dust. Encima va un botón transparente con su rectángulo (main.js lo coloca);
    al transformarse, el velo oscurece la página, los puntos pasan por encima y al final se funde la captura real */
-.boat-hit{position:fixed;left:0;top:0;z-index:27;margin:0;padding:0;border:0;border-radius:6px;background:transparent;cursor:default}
-.boat-hit.link{cursor:pointer}
+.boat-hit{position:fixed;left:0;top:0;z-index:27;margin:0;padding:0;border:0;border-radius:6px;background:transparent;cursor:pointer}
+.boat-hit.open:not(.link){cursor:default}
 .boat-hit:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 .nautes-veil{position:fixed;inset:0;z-index:24;background:rgba(3,9,15,.86);opacity:0;pointer-events:none;transition:opacity .45s}
 .nautes-veil.on{opacity:1;pointer-events:auto}
@@ -171,13 +171,42 @@ main{position:relative;z-index:2}
 .nautes-on #crew{z-index:23}
 .nautes-shot{position:fixed;z-index:26;box-sizing:border-box;border-radius:6px;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .35s;box-shadow:0 20px 60px rgba(0,0,0,.55)}
 .nautes-shot.on{opacity:1}
+/* Columna del velero: el hueco (.boat-slot) lo ocupa el velero de puntos; debajo, el rumbo con las cuatro boyas */
+.boat-col{display:flex;flex-direction:column;gap:18px;min-width:0}
+.boat-slot{height:62vh}
+.route-label{margin:0 0 12px;font:600 10px/1 var(--mono);letter-spacing:.08em;text-transform:uppercase;opacity:.8}
+.buoys{position:relative;display:flex;justify-content:space-between;margin:0;padding:0;list-style:none}
+/* Línea de rumbo discontinua a la altura de las boyas, con punta de flecha al final */
+.buoys::before{content:"";position:absolute;left:6px;right:2px;top:12px;border-top:1.5px dashed color-mix(in srgb,currentColor 55%,transparent)}
+.buoys::after{content:"";position:absolute;right:0;top:8.5px;width:7px;height:7px;border-top:1.5px solid color-mix(in srgb,currentColor 55%,transparent);border-right:1.5px solid color-mix(in srgb,currentColor 55%,transparent);rotate:45deg}
+.buoys>li{position:relative;display:flex;flex-direction:column;align-items:center}
+.buoys>li:first-child{align-items:flex-start}
+.buoys>li:last-child{align-items:flex-end;padding-right:14px}
+.buoy{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px;margin:0;padding:6px 2px;border:0;background:none;color:inherit;font:600 10px/1 var(--mono);text-transform:uppercase;letter-spacing:.04em;cursor:pointer}
+.buoys>li:first-child .buoy{align-items:flex-start}
+.buoys>li:last-child .buoy{align-items:flex-end}
+.buoy::before{content:"";width:13px;height:13px;box-sizing:border-box;border-radius:50%;border:2px solid var(--accent);background:var(--ground);transition:background-color .2s,scale .2s}
+.buoy[aria-expanded="true"]::before{background:var(--accent);scale:1.15}
+.buoy:hover{color:var(--accent)}
+/* Etiqueta de cada boya: encima, pequeña y en Martian Mono. La primera y la última se alinean a su borde */
+.buoy-tag{position:absolute;z-index:5;bottom:calc(100% + 6px);left:50%;translate:-50% 0;box-sizing:border-box;width:max-content;max-width:min(17rem,calc(100vw - 32px));background:var(--ground);border:1px solid currentColor;padding:10px 12px;font:400 11px/1.5 var(--mono);text-align:left;box-shadow:0 10px 30px rgba(0,0,0,.35)}
+.buoys>li:first-child .buoy-tag{left:0;translate:none}
+.buoys>li:last-child .buoy-tag{left:auto;right:0;translate:none}
+.buoy-tag p{margin:0 0 6px;font-weight:600}
+.buoy-tag ul{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.buoy-tag li::before{content:"› ";color:var(--accent)}
+/* Sonar: un anillo fino que se abre desde la base del barco cada 2,5 s (solo transform y opacity) */
+.sonar{position:fixed;left:0;top:0;z-index:1;display:none;pointer-events:none;color:var(--accent)}
+.sonar.on{display:block}
+.sonar i{position:absolute;left:-70px;top:-14px;width:140px;height:28px;box-sizing:border-box;border:1.5px solid currentColor;border-radius:50%;opacity:0;animation:sonar 2.5s cubic-bezier(.2,.6,.3,1) infinite}
+@keyframes sonar{0%{transform:scale(.2);opacity:0}8%{opacity:.7}70%{transform:scale(2.2);opacity:0}100%{transform:scale(2.2);opacity:0}}
+/* Cursor junto a la proa: si su etiqueta no cabe a la derecha, va a la izquierda */
+.c.flip span{left:auto;right:5px}
+/* Sin animaciones no hay equipo: un cursor fijo hace de invitación */
+.c.boat-cue{position:fixed;z-index:30;display:block;pointer-events:none}
 .gauge{height:14px;border:1px solid currentColor;position:relative}
 .gauge i{position:absolute;inset:0 auto 0 0;width:73.9%;background:var(--accent)}
 .steps{display:grid;gap:0;background:color-mix(in srgb,var(--ground) 80%,transparent)}
-.step-panel{border:1px solid currentColor;padding:18px;min-height:190px;display:flex;flex-direction:column;gap:8px}
-.step-panel h4{margin:0;font:900 30px/1.05 var(--display);text-transform:uppercase;text-wrap:balance}
-.step-panel ul{display:grid;gap:4px;font-size:15px}
-.step-panel li::before{content:"› ";color:var(--accent)}
 .portal{position:relative;display:block;aspect-ratio:16/10;width:100%;max-width:100%;overflow:hidden;border:1px solid color-mix(in srgb,var(--ink) 40%,transparent);text-decoration:none;color:var(--ink);cursor:pointer;touch-action:pan-y}
 .bits{position:absolute;inset:0;width:100%;height:100%;display:block}
 .enter{position:absolute;left:0;top:0;opacity:0;pointer-events:none;background:var(--ink);color:var(--ground);font:600 12px/1 var(--mono);padding:9px 12px;transition:opacity .2s}
@@ -229,8 +258,12 @@ main{position:relative;z-index:2}
   .ch{align-items:flex-end;min-height:115vh;padding-bottom:9vh}
   .ch-text{background:color-mix(in srgb,var(--ground) 84%,transparent);padding:14px}
   .proj{padding-block:48px}
-  /* Hueco para el velero encima del texto (solo si su JSON llegó) */
-  .js .proj.has-boat{padding-top:calc(48px + clamp(150px,34svh,300px))}
+  /* Nautes: el velero arriba y el texto debajo */
+  .boat-col{order:-1}
+  .boat-slot{height:46svh}
+  /* Las etiquetas de las boyas ocupan el ancho del rumbo: centradas en su boya se saldrían de la pantalla */
+  .buoys>li{position:static}
+  .buoy-tag,.buoys>li:first-child .buoy-tag,.buoys>li:last-child .buoy-tag{left:0;right:0;translate:none;width:auto;max-width:none}
   .stick{padding-block:58px 56px}
   #pit{min-height:440px}
   .js .open{height:300vh}
@@ -280,6 +313,7 @@ html:not(.js) .name{font-size:min(calc((100vw - 32px) / 2.95),50vh)}
 html:not(.js) .l{cursor:auto}
 html:not(.js) .ch{min-height:0;padding-block:12vh}
 html:not(.js) .portrait-slot{display:none}
+html:not(.js) .boat-col{display:none}
 html:not(.js) .open-grid{grid-template-columns:minmax(0,1fr)}
 html:not(.js) .stamp{cursor:default}
 html:not(.js) .stamp-info{position:static;width:auto;margin-top:16px;background:none;border:0;padding:0;box-shadow:none;font-size:14px}

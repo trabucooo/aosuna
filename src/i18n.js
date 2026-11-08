@@ -16,8 +16,9 @@ const es = {
     ['Estructura', 'Un guion antes de escribir', ['H1 y bloques H2', 'Preguntas frecuentes', 'Enlaces internos propuestos']],
     ['Metadatos', 'Listo para buscadores', ['Metatítulo', 'Metadescripción', 'Slug']],
   ],
-  // Velero del proyecto Nautes: botón que lo transforma en la web y texto alternativo de la captura
-  nautesBoat: { label: 'Ver la web de Nautes', alt: 'Portada de la web de Nautes' },
+  // Velero del proyecto Nautes: botón que lo transforma en la web, texto alternativo de la captura
+  // y etiqueta del cursor que se queda junto a la proa (con ratón / en táctil)
+  nautesBoat: { label: 'Ver la web de Nautes', alt: 'Portada de la web de Nautes', cueMouse: 'Pásame por encima', cueTouch: 'Toca el velero' },
   portal: {
     placeholder: 'CAPTURA PROVISIONAL',
     placeholderSub: 'Aquí va la web nueva',
@@ -118,6 +119,7 @@ const es = {
     ['Enseñar la base', 'Un dato sin contexto no convence. Enseño de dónde sale cada cifra y puedes filtrar la muestra.'],
     ['Decir el límite', 'El 7,39 solo describe a quienes respondieron. Prefiero aclararlo a que parezca un dato de todo el sector.'],
     ['Del barco a la web', 'Los mismos puntos que forman el velero construyen el esqueleto de la web, y después aparece la página real. El sector y el trabajo se ven en el mismo gesto.'],
+    ['El método, en ruta', 'Los cuatro pasos de cada pieza van como boyas en un rumbo, sin pestañas: se leen de un vistazo y el barco sigue siendo el protagonista.'],
     ['Entrar a la web', 'En vez de describir la web nueva, la dejo a la vista. Al tocarla se deshace en código y dan ganas de entrar.'],
     ['Probar en vez de leer', 'Explicar el videomapping cuesta. Encajar tú mismo la luz se entiende en diez segundos.'],
     ['Nivel real', 'Cada herramienta dice dónde la usé y con qué nivel. Inflarlo se notaría en la primera entrevista.'],
@@ -140,7 +142,7 @@ const en = {
     ['Structure', 'An outline before writing a word', ['H1 and H2 sections', 'FAQs', 'Suggested internal links']],
     ['Metadata', 'Ready for search engines', ['Meta title', 'Meta description', 'Slug']],
   ],
-  nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage' },
+  nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage', cueMouse: 'Hover over me', cueTouch: 'Tap the boat' },
   portal: {
     placeholder: 'PLACEHOLDER SCREENSHOT',
     placeholderSub: 'The new website goes here',
@@ -231,6 +233,7 @@ const en = {
     ['Show the base', "A figure without context convinces no one. I show where each number comes from, and you can filter the sample."],
     ['State the limits', "The 7.39 only describes the people who responded. I’d rather say so than let it pass as a figure for the whole industry."],
     ['From boat to website', 'The same dots that form the sailboat build the skeleton of the website, and then the real page appears. The industry and the work show up in a single gesture.'],
+    ['The method, under way', 'The four steps of every piece sit like buoys along a course, with no tabs: you take them in at a glance and the boat stays the star.'],
     ['Step inside', 'Rather than describe the new website, I put it on show. Touch it and it dissolves into code, which makes you want to go in.'],
     ["Try it, don’t read it", 'Videomapping is hard to explain. Lining up the light yourself makes sense in ten seconds.'],
     ['Honest levels', 'Every tool says where I used it and how well I know it. Overstating it would show in the first interview.'],
