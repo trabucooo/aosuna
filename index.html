@@ -184,9 +184,11 @@
           <button type="button" class="log-btn needs-js" id="zClose">Cerrar cuaderno</button>
         </div>
         <div class="log-sheet" id="zSheet">
+          <canvas class="log-art" id="zArt" aria-hidden="true"></canvas>
         <section class="log-page" id="zEt0" data-etapa="El problema" aria-labelledby="zEt0h">
           <p class="log-km">KM 0 · 06:40</p>
           <h3 class="log-h" id="zEt0h">El problema</h3>
+          <p class="sr-only">Ilustración: un camión ante un aparcamiento lleno, con las seis plazas tachadas, y la cifra 390.057.</p>
           <p class="log-lead">Llegas a un área que viste en un mapa genérico y no quedan plazas, las duchas no funcionan o el sitio no te da confianza. Zalapp quiere que esa duda se resuelva antes de llegar, no después.</p>
           <div class="log-counters">
             <div class="log-count"><p class="log-num" data-count="283818">283.818</p><p>vehículos pesados autorizados de servicio público en España (1 de enero de 2026)</p><p class="log-src">Fuente: Observatorio del Transporte de Mercancías por Carretera</p></div>
@@ -197,6 +199,7 @@
         <section class="log-page" id="zEt1" data-etapa="La encuesta" aria-labelledby="zEt1h">
           <p class="log-km">KM 47 · 09:15</p>
           <h3 class="log-h" id="zEt1h">La encuesta</h3>
+          <p class="sr-only">Ilustración: 47 círculos, uno por registro de la encuesta, y la cifra 7,39.</p>
           <p class="log-lead">La difundimos por CETM y otras asociaciones del sector.</p>
           <div class="log-survey">
             <p class="readout" id="zRead" aria-live="polite">47 registros</p>
@@ -211,6 +214,7 @@
         <section class="log-page" id="zEt2" data-etapa="La competencia" aria-labelledby="zEt2h">
           <p class="log-km">KM 120 · 11:30</p>
           <h3 class="log-h" id="zEt2h">La competencia</h3>
+          <p class="sr-only">Ilustración: un cruce visto desde arriba, con cuatro salidas curvas y un rombo en el centro.</p>
           <p class="log-hint needs-js">Cada salida es una alternativa: pulsa para ver adónde lleva.</p>
           <div class="cross">
             <svg class="cross-road" viewBox="0 0 160 160" aria-hidden="true"><path d="M58 0v58H0M102 0v58h58M58 160v-58H0M102 160v-58h58" fill="none" stroke-width="1.5"/><path class="cross-mark" d="M80 6v40M80 114v40M6 80h40M114 80h40" fill="none" stroke-width="1.5" stroke-dasharray="6 6"/><circle class="cross-mark" cx="80" cy="80" r="11" fill="none" stroke-width="1.5"/></svg>
@@ -226,6 +230,7 @@
         <section class="log-page" id="zEt3" data-etapa="DAFO y CAME" aria-labelledby="zEt3h">
           <p class="log-km">KM 180 · 13:00</p>
           <h3 class="log-h" id="zEt3h">DAFO y CAME</h3>
+          <p class="sr-only">Ilustración: cuatro señales de tráfico en fila, con las letras D, A, F y O.</p>
           <p class="log-hint needs-js">Pulsa cada señal para darle la vuelta.</p>
           <div class="signs">
             <button type="button" class="sign sign-0" aria-pressed="false" aria-label="Debilidades" aria-describedby="zS0"><span class="sign-in"><span class="sign-front" aria-hidden="true"><span class="sign-shape"><b>D</b></span><span class="sign-word">Debilidades</span></span><span class="sign-back" id="zS0">Sin datos propios ni usuarios todavía, beta por estabilizar, equipo pequeño y dependencia de fuentes de datos con licencia.</span></span></button>
@@ -244,6 +249,7 @@
         <section class="log-page" id="zEt4" data-etapa="La marca" aria-labelledby="zEt4h">
           <p class="log-km">KM 230 · 15:20</p>
           <h3 class="log-h" id="zEt4h">La marca</h3>
+          <p class="sr-only">Ilustración: la Z de Zalapp, compacta y con un corte diagonal.</p>
           <div class="brand">
             <img class="brand-z" src="/zalapp/z.svg" alt="Z de Zalapp" width="180" height="180">
             <div class="brand-copy">
@@ -260,6 +266,7 @@
         <section class="log-page" id="zEt5" data-etapa="La beta" aria-labelledby="zEt5h">
           <p class="log-km">KM 300 · 17:45</p>
           <h3 class="log-h" id="zEt5h">La beta</h3>
+          <p class="sr-only">Ilustración: el móvil con la beta de Zalapp, dibujado con puntos.</p>
           <div class="phones">
             <figure class="phone phone-ios"><img src="/zalapp/beta-mapa-iphone.webp" alt="Pantalla del mapa de la beta de Zalapp" width="445" height="900" loading="lazy" decoding="async"></figure>
             <figure class="phone phone-android"><img src="/zalapp/beta-mapa-android.webp" alt="Pantalla del mapa de la beta de Zalapp" width="480" height="1000" loading="lazy" decoding="async"></figure>
@@ -274,6 +281,7 @@
         <section class="log-page" id="zEt6" data-etapa="Lo que no prometemos" aria-labelledby="zEt6h">
           <p class="log-km">Área de descanso · 19:30</p>
           <h3 class="log-h" id="zEt6h">Lo que no prometemos</h3>
+          <p class="sr-only">Ilustración: un sello redondo de doble círculo con «Palabra de Zalapp» en arco y una estrella en el centro.</p>
           <div class="stamp inked log-stamp"><span class="stamp-face"><span class="stamp-title">Palabra de Zalapp</span></span></div>
           <ul class="promises">
             <li>No decimos que un sitio sea seguro.</li>
@@ -284,6 +292,7 @@
         <section class="log-page" id="zEt7" data-etapa="Próxima salida" aria-labelledby="zEt7h">
           <p class="log-km">21:00</p>
           <h3 class="log-h" id="zEt7h">Próxima salida</h3>
+          <p class="sr-only">Ilustración: un cartel de autovía con una flecha de salida y la cifra 30.</p>
           <p class="exit-sign"><span class="exit-sign-k">Próxima salida</span> <span class="exit-sign-t">Piloto con conductores reales</span></p>
           <ul class="goals">
             <li>Meta propuesta: 150 respuestas a la encuesta.</li>
@@ -294,6 +303,7 @@
         <section class="log-page" id="zEt8" data-etapa="El equipo" aria-labelledby="zEt8h">
           <p class="log-km">Fin de la jornada</p>
           <h3 class="log-h" id="zEt8h">El equipo</h3>
+          <p class="sr-only">Ilustración: tres cursores, uno por persona del equipo, con las letras A, V y R.</p>
           <div class="team">
             <div class="stamp inked team-stamp"><span class="stamp-face"><span class="stamp-title">Alonso</span><span class="stamp-school">Coordinación, código y diseño.</span></span></div>
             <div class="stamp inked team-stamp"><span class="stamp-face"><span class="stamp-title">Víctor</span><span class="stamp-school">Documentación, redes y gestión económica.</span></span></div>
