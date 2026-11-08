@@ -180,6 +180,8 @@ const en = {
     enter: 'Enter the website ↗',
     pending: "Link coming soon: the new website isn’t live yet.",
     cue: 'Build it',
+    // Etiquetas del plano (en el JSON van en español, como en la web de Alcar)
+    tags: { 'VOLUMEN SUPERIOR': 'UPPER VOLUME', 'CUBIERTA EN VOLADIZO': 'CANTILEVERED ROOF', 'LAMAS DE MADERA': 'TIMBER SLATS' },
   },
   stamps: [
     {

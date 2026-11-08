@@ -1411,9 +1411,9 @@ function sizePlan(){
     const p=l.p.map(([x,y])=>[x*W,y*H]);let len=0;for(let i=1;i<p.length;i++)len+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]);
     return{g:l.g,p,len,drawn:0};
   });
-  // Cotas: en inglés, con punto decimal
-  plan.tags=(plan.data.etiquetas||plan.data.cotas||[]).map(t=>({a:[t.p[0][0]*W,t.p[0][1]*H],b:[t.p[1][0]*W,t.p[1][1]*H],
-    t:String(t.t).toUpperCase().replace(/(\d),(\d)/g,LANG==='en'?'$1.$2':'$1,$2')}));
+  // Etiquetas (o cotas, en versiones anteriores del JSON): traducidas con i18n si hace falta; en inglés, punto decimal
+  plan.tags=(plan.data.etiquetas||plan.data.cotas||[]).map(t=>{const up=String(t.t).toUpperCase();
+    return{a:[t.p[0][0]*W,t.p[0][1]*H],b:[t.p[1][0]*W,t.p[1][1]*H],t:(T.portal.tags?.[up]||up).replace(/(\d),(\d)/g,LANG==='en'?'$1.$2':'$1,$2')}});
   // Al redimensionar: lo ya trazado se redibuja entero, sin animar (si estaba a medias, se termina)
   if(plan.started&&!plan.done)planFinish();
   if(plan.done){plan.lines.forEach(l=>l.drawn=l.len);plan.tagA=1}
@@ -1489,13 +1489,15 @@ function planDraw(){
   // Cotas: línea guía de p0 a p1, un punto en p0 y el texto junto a p1, con fondo y borde fino
   if(plan.tagA>0){
     const bg=root.style.getPropertyValue('--ground')||'#000';
-    c.font='600 9.5px "Martian Mono",monospace';c.textBaseline='middle';
+    // Letra pequeña, a escala del marco (como las etiquetas de la web de Alcar)
+    const fs=clamp(W*.013,7.5,10),pad=Math.round(fs*.6);c.font=`600 ${fs.toFixed(1)}px "Martian Mono",monospace`;c.textBaseline='middle';
     for(const t of plan.tags){
       c.globalAlpha=plan.tagA*.75;c.lineWidth=1;c.beginPath();c.moveTo(t.a[0],t.a[1]);c.lineTo(t.b[0],t.b[1]);c.stroke();
       c.globalAlpha=plan.tagA;c.beginPath();c.arc(t.a[0],t.a[1],2.5,0,6.283);c.fill();
-      const tw=c.measureText(t.t).width+12,th=19,right=t.b[0]+6+tw<=W-2;
-      const x=Math.max(2,Math.min(W-tw-2,right?t.b[0]+6:t.b[0]-6-tw)),y=Math.max(2,Math.min(H-th-2,t.b[1]-th/2));
-      c.fillStyle=bg;c.fillRect(x,y,tw,th);c.fillStyle=ink;c.strokeRect(x+.5,y+.5,tw-1,th-1);c.fillText(t.t,x+6,y+th/2+.5);
+      // Junto a p[1], a su derecha; si no cabe, se desplaza a la izquierda solo lo justo (no salta al otro lado)
+      const tw=c.measureText(t.t).width+pad*2,th=Math.round(fs*2);
+      const x=Math.max(2,Math.min(W-tw-2,t.b[0]+4)),y=Math.max(2,Math.min(H-th-2,t.b[1]-th/2));
+      c.fillStyle=bg;c.fillRect(x,y,tw,th);c.fillStyle=ink;c.strokeRect(x+.5,y+.5,tw-1,th-1);c.fillText(t.t,x+pad,y+th/2+.5);
     }
   }
   c.globalAlpha=1;plan.dirty=false;
