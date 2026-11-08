@@ -341,26 +341,54 @@ function heroPts(){
 }
 /* Cada parada tiene s (la forma queda completa) y e (empieza a deshacerse). Casi todas son un punto
    (e = s); el retrato tiene meseta. Entre dos paradas a y b, los puntos viajan de a.e a b.s. */
-const stops=$$('[data-shape]').map(el=>({el,shape:el.dataset.shape,alpha:+el.dataset.alpha,s:0,e:0,t:null,z:null,flat:el.dataset.shape==='portrait'}));
+// data-points="/archivo.json": la parada dibuja esa imagen en puntos; si el archivo no llega, usa data-fallback
+const stops=$$('[data-shape]').map(el=>({el,shape:el.dataset.shape,alpha:+el.dataset.alpha,src:el.dataset.points||'',fallback:el.dataset.fallback||'scatter',data:null,s:0,e:0,t:null,z:null,flat:el.dataset.shape==='portrait'}));
 function stopRange(st){
   if(st.shape==='hero'){st.s=st.e=vh*.32;return}
   if(st.shape==='portrait'){st.s=scene.top+scene.len*PORTRAIT_IN;st.e=scene.top+scene.len*PORTRAIT_OUT;return}
   const r=st.el.getBoundingClientRect();st.s=st.e=r.top+scrollY+r.height/2-vh/2;
 }
-/* Retrato: puntos de public/retrato-puntos.json ({ratio, desktop:[x,y,s,...], mobile:[...]}) */
-let portrait=null;
-const portraitLoad=fetch(import.meta.env.BASE_URL+'retrato-puntos.json').then(r=>r.ok?r.json():null).then(d=>{if(d&&d.ratio&&d.desktop?.length&&d.mobile?.length)portrait=d;return portrait}).catch(()=>null);
-function portraitTargets(){
-  const sm=small(),pts=sm?portrait.mobile:portrait.desktop,M=Math.floor(pts.length/3);
-  const sr=scene.slot.getBoundingClientRect(),kr=scene.stick.getBoundingClientRect();
-  if(!M||!sr.width||!sr.height)return null;
-  // Encaja el recorte en el hueco respetando la proporción; en ordenador, como mucho el 78 % del alto
-  const H=Math.min(sr.height,sm?sr.height:vh*.78,sr.width/portrait.ratio),W=H*portrait.ratio;
-  const x0=sr.left+(sr.width-W)/2,y0=sr.top-kr.top+(sr.height-H)/2; // con el sticky ya pegado arriba
-  const t=new Float32Array(N*2),z=new Float32Array(N),[z0,zk]=sm?[1.3,2.4]:[1.1,2.6];
+/* Imágenes en puntos (public/retrato-puntos.json, public/apreton-puntos.json…): {ratio, desktop:[x,y,s,...], mobile:[...]}.
+   x e y van de 0 a 1 sobre el recorte; s, la luz de 0 a 1, da el tamaño del punto. Cada archivo se pide una sola vez */
+const pointFiles={};
+const loadPoints=src=>pointFiles[src]||(pointFiles[src]=fetch(import.meta.env.BASE_URL+src.replace(/^\//,''))
+  .then(r=>r.ok?r.json():null).then(d=>d&&d.ratio&&d.desktop?.length&&d.mobile?.length?d:null).catch(()=>null));
+const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>st.data=d)));
+// Tamaño del punto: base + luz × rango, en ordenador (d) y en móvil (m)
+const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]}};
+function pointTargets(data,[x0,y0,W,H],dot){
+  const sm=small(),pts=sm?data.mobile:data.desktop,M=Math.floor(pts.length/3);
+  if(!M||!(W>=1)||!(H>=1))return null;
+  const t=new Float32Array(N*2),z=new Float32Array(N),[z0,zk]=sm?dot.m:dot.d;
   // Si hay más partículas que puntos, se repiten con un desplazamiento mínimo; si hay menos, se recortan
   for(let i=0;i<N;i++){const k=(i%M)*3,j=i>=M?.8:0;t[i*2]=x0+pts[k]*W+(jx[i]*2-1)*j;t[i*2+1]=y0+pts[k+1]*H+(jy[i]*2-1)*j;z[i]=z0+pts[k+2]*zk}
   return{t,z};
+}
+// Retrato: encaja el recorte en su hueco respetando la proporción; en ordenador, como mucho el 78 % del alto
+function portraitBox(ratio){
+  const sm=small(),sr=scene.slot.getBoundingClientRect(),kr=scene.stick.getBoundingClientRect();
+  if(!sr.width||!sr.height)return null;
+  const H=Math.min(sr.height,sm?sr.height:vh*.78,sr.width/ratio),W=H*ratio;
+  return[sr.left+(sr.width-W)/2,sr.top-kr.top+(sr.height-H)/2,W,H]; // con el sticky ya pegado arriba
+}
+/* Capítulo: la imagen va donde iba la forma suelta, a la derecha del texto en ordenador (hasta el 46 % del ancho,
+   centrada en vertical) y encima en móvil (92 % del ancho). Nunca pisa el texto, la barra de arriba ni el dock:
+   se mide dónde queda el texto en la pantalla cuando la forma está completa (scroll = st.s) */
+function chapterBox(st,ratio){
+  const sm=small(),r=(st.el.querySelector('.ch-text')||st.el).getBoundingClientRect();
+  const top=r.top+scrollY-st.s,gap=sm?14:32,y1=sm?58:72,y2=vh-60,g=16;
+  // Al lado: entre el texto y el borde derecho, centrada en vh/2 y, si cabe, en el 72 % del ancho como la forma de antes
+  const L=r.right+gap,R=vw-g,sw=Math.min(vw*(sm?.92:.46),R-L,(y2-y1)*ratio),sh=sw/ratio;
+  const side=[clamp(vw*.72-sw/2,L,R-sw),clamp(vh/2-sh/2,y1,y2-sh),sw,sh];
+  if(!sm)return side;
+  // Encima: entre la barra de arriba y el texto, centrada en ese hueco. En móvil en horizontal suele caber más al lado
+  const tw=Math.min(vw*.92,vw-2*g,(top-gap-y1)*ratio),th=tw/ratio;
+  return sw>tw?side:[(vw-tw)/2,y1+(top-gap-y1-th)/2,tw,th];
+}
+function imageTargets(st){
+  if(!st.data)return null;
+  const box=st.shape==='portrait'?portraitBox(st.data.ratio):chapterBox(st,st.data.ratio);
+  return box&&pointTargets(st.data,box,DOT[st.shape]||DOT.points);
 }
 function sizeCanvas(){
   vw=innerWidth;vh=innerHeight;SY=scrollY;
@@ -375,14 +403,14 @@ function layout(){
   for(const st of stops){
     stopRange(st);st.z=null;
     if(st.shape==='hero'){st.t=toTargets(heroPts(),0,0,2,2);continue}
-    if(st.shape==='portrait'){
-      const pt=portrait&&portraitTargets();
-      if(pt){st.t=pt.t;st.z=pt.z}else st.t=toTargets(sample(320,180,SHAPES.scatter),0,0,vw/320,vh/180);
-      continue}
-    if(FULL[st.shape]){st.t=toTargets(sample(320,180,SHAPES[st.shape]),0,0,vw/320,vh/180);continue}
+    const pt=imageTargets(st);
+    if(pt){st.t=pt.t;st.z=pt.z;continue}
+    // Sin imagen (no hay data-points o el archivo no llegó): la forma dibujada, o la de reserva
+    const shape=SHAPES[st.shape]?st.shape:SHAPES[st.fallback]?st.fallback:'scatter';
+    if(FULL[shape]){st.t=toTargets(sample(320,180,SHAPES[shape]),0,0,vw/320,vh/180);continue}
     const size=sm?Math.min(vw*.74,vh*.38):Math.min(vw*.4,vh*.62);
     const x0=sm?(vw-size)/2:vw*.72-size/2,y0=sm?vh*.1:(vh-size)/2;
-    st.t=toTargets(sample(240,240,SHAPES[st.shape]),x0,y0,size/240,size/240);
+    st.t=toTargets(sample(240,240,SHAPES[shape]),x0,y0,size/240,size/240);
   }
   applyTone();
 }
@@ -436,8 +464,8 @@ function stepDust(f,now){
   const lo=a.flat?0:.22,hi=b.flat?1:.78;
   let t=smooth(clamp((raw-lo)/(hi-lo)));
   let al=(a.alpha+(b.alpha-a.alpha)*t);
-  // Sin animaciones: el retrato aparece ya formado (fundido, sin viaje)
-  if(rm&&(a.flat||b.flat)){t=raw<.5?0:1;al=(t?b.alpha:a.alpha)*smooth(clamp(Math.abs(raw-.5)*4))}
+  // Sin animaciones: las imágenes en puntos (retrato, apretón de manos) aparecen ya formadas (fundido, sin viaje)
+  if(rm&&(a.flat||b.flat||a.z||b.z)){t=raw<.5?0:1;al=(t?b.alpha:a.alpha)*smooth(clamp(Math.abs(raw-.5)*4))}
   if(i===0)al*=clamp(hp*1.6);
   const wa=a.shape==='wave'?1-t:b.shape==='wave'?t:0;
   const ta=a.t,tb=b.t;
@@ -1010,7 +1038,7 @@ addEventListener('scroll',()=>{scrollT=performance.now();scrolled=true},{passive
 async function boot(){
   for(let i=0;i<60&&(!innerWidth||!innerHeight);i++)await pause(100);
   vw=innerWidth;vh=innerHeight;
-  try{await Promise.race([Promise.all([document.fonts.load('900 100px "Big Shoulders Display"'),document.fonts.load('600 11px "Martian Mono"'),portraitLoad]),pause(1400)])}catch(e){}
+  try{await Promise.race([Promise.all([document.fonts.load('900 100px "Big Shoulders Display"'),document.fonts.load('600 11px "Martian Mono"'),pointsLoad]),pause(1400)])}catch(e){}
   // Si algo falla o el visor frena la animación, la web se abre igualmente
   const guard=setTimeout(rescue,11000);
   try{
@@ -1020,8 +1048,8 @@ async function boot(){
   }catch(e){console.error(e);clearTimeout(guard);rescue();return}
   // Google Fonts puede llegar tarde: recoloca si cambia la medida
   document.fonts.ready.then(()=>{layout();warp();sizePortal()});
-  // Si los puntos del retrato llegan tarde, se recalculan las dianas; si no llegan, se queda la forma scatter
-  portraitLoad.then(d=>{if(d&&!stops.find(st=>st.flat)?.z)layout()});
+  // Si las imágenes en puntos llegan tarde, se recalculan las dianas; si no llegan, se queda la forma de reserva
+  pointsLoad.then(()=>{if(stops.some(st=>st.data&&!st.z))layout()});
   if(rm){introDone=true;skipped=true;$('#loader').remove();$('#skip').remove();return}
   surEl.textContent='';
   $('#skip').onclick=()=>{track('intro-saltada');finish()};
