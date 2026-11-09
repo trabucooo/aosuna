@@ -414,13 +414,14 @@ const pointsObs=new IntersectionObserver(es=>es.forEach(e=>{
   });
 }),{rootMargin:'100% 0px'});
 stops.forEach(st=>{if(st.src)pointsObs.observe(st.el)});
-// Recoloca cuando llega un JSON, pero no a mitad de un scroll (daría un tirón): espera a que se pare, como relayout()
+// Recoloca cuando llega un JSON o las fuentes, pero no a mitad de un scroll (daría un tirón): espera a que se pare,
+// como relayout(). Lo que llega casi a la vez (fuentes y retrato al cargar) se junta en un solo layout()
 function pointsReady(){
   clearTimeout(pointsT);
   pointsT=setTimeout(function go(){
     if(performance.now()-scrollT<250){pointsT=setTimeout(go,200);return}
-    if(ready){layout();wake()}
-  },0);
+    if(ready){layout();warp();sizePlan();wake()}
+  },120);
 }
 // Tamaño del punto: base + luz × rango, en ordenador (d) y en móvil (m)
 const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]},morph:{d:[1,2.4],m:[1.2,2.2]},phone:{d:[1,2.4],m:[1,2.4]}};
@@ -2300,7 +2301,7 @@ async function boot(){
     ready=true;wake();
   }catch(e){console.error(e);clearTimeout(guard);rescue();return}
   // Las fuentes propias (fonts.js, con font-display:swap) pueden llegar tarde: recoloca si cambia la medida
-  document.fonts.ready.then(()=>{layout();warp();sizePlan();wake()});
+  document.fonts.ready.then(pointsReady);
   // Las imágenes en puntos llegan después (pointsReady); si alguna llegó antes de boot, layout() ya la ha usado
   // Sin intro (ya vista en esta sesión o con «reducir movimiento»: boot.js no puso la clase), la página abre montada
   if(!root.classList.contains('intro')){introDone=true;skipped=true;clearTimeout(guard);$('#skip').remove();return}
