@@ -57,6 +57,8 @@ const es = {
     enter: 'Entrar en la web ↗',
     pending: 'Enlace pendiente: la web nueva todavía no está publicada.',
     cue: 'Levántala',
+    // Nombre del marco mientras no hay dirección (PORTAL_URL vacía en main.js)
+    raise: 'Levantar la captura de la web nueva de Alcar',
   },
   // Sellos de formación de la escena «Ese equipo soy yo». El HTML lleva una copia para quien
   // navega sin JavaScript: si cambias un texto aquí, cámbialo también en index.html.
@@ -209,6 +211,7 @@ const en = {
     enter: 'Enter the website ↗',
     pending: "Link coming soon: the new website isn’t live yet.",
     cue: 'Build it',
+    raise: 'Raise the screenshot of the new Alcar website',
     // Etiquetas del plano (en el JSON van en español, como en la web de Alcar)
     tags: { 'VOLUMEN SUPERIOR': 'UPPER VOLUME', 'CUBIERTA EN VOLADIZO': 'CANTILEVERED ROOF', 'LAMAS DE MADERA': 'TIMBER SLATS' },
   },

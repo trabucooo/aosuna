@@ -1681,7 +1681,9 @@ const PLAN_SPEED=900,PLAN_JUMP=2700,PLAN_W=9,PLAN_Z=.9,PLAN_TAGS_MS=450,PLAN_SEE
 let portal=$('#portal');
 // Sin dirección, el marco es un botón: un enlace que no lleva a ninguna parte confunde al teclado y al lector
 if(PORTAL_URL){portal.href=PORTAL_URL;portal.target='_blank';portal.rel='noopener'}
-else{const b=document.createElement('button');b.type='button';[...portal.attributes].forEach(a=>b.setAttribute(a.name,a.value));b.append(...portal.childNodes);portal.replaceWith(b);portal=b}
+else{const b=document.createElement('button');b.type='button';[...portal.attributes].forEach(a=>b.setAttribute(a.name,a.value));b.append(...portal.childNodes);portal.replaceWith(b);portal=b;
+  // Sin dirección no se «ve la web»: el nombre dice lo que hace, y la nota de debajo («Enlace pendiente…») lo completa (A-06)
+  b.setAttribute('aria-label',T.portal.raise);b.setAttribute('aria-describedby','portalNote')}
 const planC=$('.plan-lines',portal),pctx=planC.getContext('2d'),planShot=$('.plan-shot',portal),planLevel=$('.plan-level',portal),planNote=$('#portalNote');
 // El marco ya lleva su nombre (aria-label): la captura, dentro, es decorativa
 planShot.src=PORTAL_IMG;planShot.alt='';
