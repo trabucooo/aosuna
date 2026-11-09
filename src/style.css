@@ -42,6 +42,8 @@ main{position:relative;z-index:2}
 .top .lang{display:flex;gap:5px}
 .top .lang span{opacity:.5}
 .top .lang .on{opacity:1;color:var(--accent)}
+/* El enlace de idioma, al menos 24 px de ancho: es fácil fallar el toque en «EN» (A-07) */
+.top .lang a{min-width:24px;text-align:center}
 .js.intro .top{opacity:0}
 
 /* Cursores */
@@ -578,6 +580,10 @@ html:not(.js) .plan{cursor:default}
 #tool{display:flex;flex-direction:column;gap:10px;background:color-mix(in srgb,var(--ink) 8%,var(--ground));border:1.5px solid var(--ink);padding:20px;min-width:0}
 #tool h3{font:900 clamp(34px,4vw,48px)/1 var(--display);text-transform:uppercase;overflow-wrap:anywhere}
 #tool .eyebrow{color:inherit;opacity:.7;margin-top:6px}
+/* Los textos que cambian, en su propia región viva (A-09): así no se anuncia también «Volcar la caja» */
+.tool-live,.note-live{display:flex;flex-direction:column}
+.tool-live{gap:10px}
+.note-live{gap:9px}
 #dump{margin-top:auto;background:var(--ink);color:var(--ground);border:0;padding:12px;font:600 11px var(--mono)}
 
 /* Contacto */

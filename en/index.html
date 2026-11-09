@@ -41,18 +41,23 @@
 <div class="you" id="you" aria-hidden="true">You</div>
 <button id="skip" type="button">Skip intro</button>
 
-<div id="pins"></div>
+<!-- Herramientas de la página (A-08): el dock y sus paneles en una región con nombre. Los pines de «Auditar»
+     van después de la nota, en el orden del foco -->
+<div class="needs-js" role="region" aria-label="Page tools">
 <div class="dock" id="dock">
   <button id="bAudit" type="button" aria-pressed="false">Audit this site</button>
   <button id="bBoss" type="button" aria-pressed="false">Site foreman</button>
   <button id="bPause" type="button" aria-pressed="false">Pause animations</button>
 </div>
-<aside class="panel" id="note" hidden aria-live="polite">
-  <p class="eyebrow" id="nNum"></p>
-  <h2 id="nTitle"></h2>
-  <p id="nText"></p>
+<aside class="panel" id="note" hidden>
+  <div class="note-live" aria-live="polite">
+    <p class="eyebrow" id="nNum"></p>
+    <h2 id="nTitle"></h2>
+    <p id="nText"></p>
+  </div>
   <div class="row"><button class="pill" id="nPrev" type="button">Previous</button><button class="pill" id="nNext" type="button">Next</button><button class="pill" id="nClose" type="button">Close</button></div>
 </aside>
+<div id="pins"></div>
 <form class="panel" id="boss" hidden>
   <p class="eyebrow">Site foreman</p>
   <h2>Give an order</h2>
@@ -61,6 +66,7 @@
   <p id="bossReply" aria-live="polite"></p>
   <div class="pills" id="bossChips"></div>
 </form>
+</div>
 <nav class="top" aria-label="Main">
   <a href="#inicio">Alonso Osuna</a>
   <ul>
@@ -321,8 +327,8 @@
           <h3 class="log-h" id="zEt5h">The beta</h3>
           <p class="sr-only">Illustration: the phone showing the Zalapp beta, drawn in dots.</p>
           <div class="phones">
-            <figure class="phone phone-ios"><img src="/zalapp/beta-mapa-iphone.webp" alt="Map screen from the Zalapp beta" width="445" height="900" loading="lazy" decoding="async"></figure>
-            <figure class="phone phone-android"><img src="/zalapp/beta-mapa-android.webp" alt="Map screen from the Zalapp beta" width="480" height="1000" loading="lazy" decoding="async"></figure>
+            <figure class="phone phone-ios"><img src="/zalapp/beta-mapa-iphone.webp" alt="Map screen from the Zalapp beta on an iPhone" width="445" height="900" loading="lazy" decoding="async"></figure>
+            <figure class="phone phone-android"><img src="/zalapp/beta-mapa-android.webp" alt="Map screen from the Zalapp beta on an Android phone" width="480" height="1000" loading="lazy" decoding="async"></figure>
           </div>
           <ul class="rules">
             <li>You can only rate a stop if you’re within 2 km of it.</li>
@@ -450,10 +456,12 @@
   <p class="intro-text needs-js">Shake them, throw them, and tap any of them to see where I’ve used it and how well I really know it.</p>
   <div class="lab-grid">
     <div id="pit"></div>
-    <aside id="tool" aria-live="polite">
-      <h3 id="tName"></h3>
-      <p class="eyebrow">Where</p><p id="tWhere"></p>
-      <p class="eyebrow">Level</p><p id="tLevel"></p>
+    <aside id="tool">
+      <div class="tool-live" aria-live="polite">
+        <h3 id="tName"></h3>
+        <p class="eyebrow">Where</p><p id="tWhere"></p>
+        <p class="eyebrow">Level</p><p id="tLevel"></p>
+      </div>
       <button id="dump" type="button">Tip out the box</button>
     </aside>
   </div>
