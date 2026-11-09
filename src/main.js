@@ -1508,7 +1508,8 @@ nSteps.forEach((s,i)=>{
   ul.replaceChildren(...s[2].map(x=>{const q=document.createElement('li');q.textContent=x;return q}));
   tag.append(h,ul);li.append(btn,tag);$('#nBuoys').appendChild(li);buoys.push({btn,tag});
   btn.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse')setBuoy(i)});
-  btn.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&document.activeElement!==btn&&buoyOpen===i)closeBuoys()});
+  // Se cierra al salir del <li> (boya + etiqueta), no de la boya: así el ratón puede subir a leer la etiqueta (A-05)
+  li.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&document.activeElement!==btn&&buoyOpen===i)closeBuoys()});
   btn.addEventListener('focus',()=>setBuoy(i));
   btn.addEventListener('blur',()=>{if(buoyOpen===i)closeBuoys()});
   btn.addEventListener('click',()=>setBuoy(i)); // táctil (y clic): abre la suya y cierra las demás
