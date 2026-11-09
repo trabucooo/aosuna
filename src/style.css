@@ -669,8 +669,20 @@ html:not(.js) .plan{cursor:default}
 .js.intro .dock{opacity:0;pointer-events:none}
 /* En pausa (A-02) no hay cursores ni sonar: main.js deja de moverlos y aquí se ocultan */
 .paused :is(#crew,.sonar){display:none}
-.dock button{background:var(--ground);border:1px solid var(--ink);padding:9px 11px;font:600 10px/1 var(--mono)}
+.dock :is(button,a){background:var(--ground);border:1px solid var(--ink);padding:9px 11px;font:600 10px/1 var(--mono);text-decoration:none;white-space:nowrap}
 .dock button:hover,.dock button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+/* «Escríbeme» (UX-01): un acceso fijo al contacto, en el color de acento de la sección */
+.dock .dock-cta{background:var(--accent);border-color:var(--accent);color:var(--ground)}
+.dock .dock-cta:hover{background:var(--ink);border-color:var(--ink)}
+.dock-group{display:flex;gap:6px}
+.dock-more{display:none}
+/* Estrecho: no caben los cuatro (unos 470 px). Los secundarios se agrupan en «Más», que los abre encima */
+@media (max-width:540px){
+  .dock .dock-more{display:block}
+  .dock-group{position:absolute;left:0;bottom:calc(100% + 6px);display:none;flex-direction:column;align-items:stretch}
+  .dock.more-open .dock-group{display:flex}
+  .dock .dock-more[aria-expanded="true"]{background:var(--ink);border-color:var(--ink);color:var(--ground)}
+}
 #pins{position:fixed;inset:0;z-index:33;pointer-events:none;overflow:hidden}
 .pin{position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:0;padding:0;background:var(--accent);color:var(--ground);font:600 10px/26px var(--mono);pointer-events:auto;box-shadow:0 0 0 0 var(--accent);animation:ping 1.8s infinite}
 .pin.on{outline:2px solid var(--ink);outline-offset:2px}

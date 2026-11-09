@@ -108,9 +108,14 @@
      van después de la nota, en el orden del foco -->
 <div class="needs-js" role="region" aria-label="Herramientas de la página">
 <div class="dock" id="dock">
-  <button id="bAudit" type="button" aria-pressed="false">Auditar esta web</button>
-  <button id="bBoss" type="button" aria-pressed="false">Jefe de obra</button>
-  <button id="bPause" type="button" aria-pressed="false">Pausar animaciones</button>
+  <a class="dock-cta" id="bContact" href="#contacto">Escríbeme</a>
+  <!-- En pantallas estrechas los tres secundarios van dentro de «Más» (UX-01); en las anchas, el botón no se ve -->
+  <button class="dock-more" id="bMore" type="button" aria-expanded="false" aria-controls="dockMore">Más</button>
+  <div class="dock-group" id="dockMore">
+    <button id="bAudit" type="button" aria-pressed="false">Auditar esta web</button>
+    <button id="bBoss" type="button" aria-pressed="false">Jefe de obra</button>
+    <button id="bPause" type="button" aria-pressed="false">Pausar animaciones</button>
+  </div>
 </div>
 <aside class="panel" id="note" hidden>
   <div class="note-live" aria-live="polite">

@@ -2060,6 +2060,19 @@ function fling(L){
 }
 async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'smooth'});await pause(900)}}
 
+/* ---------- Dock: «Escríbeme» y el grupo «Más» (UX-01) ---------- */
+const dockEl=$('#dock'),bMore=$('#bMore'),dockMore=$('#dockMore');
+$('#bContact').addEventListener('click',()=>track('dock-contacto'));
+// En estrecho, los secundarios van en «Más». Al cerrarlo con el foco dentro, el foco vuelve a «Más»
+function setMore(on){
+  dockEl.classList.toggle('more-open',on);bMore.setAttribute('aria-expanded',on);
+  if(!on&&dockMore.contains(document.activeElement)&&!document.activeElement.offsetParent)bMore.focus();
+}
+bMore.addEventListener('click',()=>setMore(bMore.getAttribute('aria-expanded')!=='true'));
+document.addEventListener('pointerdown',e=>{if(!dockEl.contains(e.target))setMore(false)});
+// Al cerrar un panel, el foco vuelve a su botón; si está escondido dentro de «Más», a «Más»
+function dockFocus(b){(b.offsetParent?b:bMore).focus()}
+
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
@@ -2098,14 +2111,14 @@ T.boss.chips.forEach(t=>{
   const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;
   b.onclick=()=>giveOrder(t);$('#bossChips').appendChild(b)});
 function giveOrder(raw){const t=strip(raw);if(t)track('jefe-orden',{orden:t.slice(0,40)});bossReply.textContent=command(raw)}
-function openBoss(){track('jefe-abierto');closeNote();setAudit(false);boss.hidden=false;bBoss.setAttribute('aria-pressed',true);bossReply.textContent='';if(fine)bossIn.focus()}
+function openBoss(){track('jefe-abierto');closeNote();setAudit(false);setMore(false);boss.hidden=false;bBoss.setAttribute('aria-pressed',true);bossReply.textContent='';if(fine)bossIn.focus()}
 // Al cerrar un panel con el foco dentro, el foco vuelve al botón que lo abrió (si no, se pierde en <body>)
-function closeBoss(){const had=boss.contains(document.activeElement);boss.hidden=true;bBoss.setAttribute('aria-pressed',false);if(had)bBoss.focus()}
+function closeBoss(){const had=boss.contains(document.activeElement);boss.hidden=true;bBoss.setAttribute('aria-pressed',false);if(had)dockFocus(bBoss)}
 bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();compassFree();phoneOff();planDown();mapSelect(-1)}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();compassFree();phoneOff();planDown();mapSelect(-1);setMore(false)}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -2170,9 +2183,9 @@ function showNote(i,go){
     if(comp.st&&el.id==='eCompass'){scrollTo({top:comp.st.s,behavior:rm?'auto':'smooth'});return}
     el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
 }
-function closeNote(){const had=note.contains(document.activeElement);note.hidden=true;if(had)bAudit.focus()}
+function closeNote(){const had=note.contains(document.activeElement);note.hidden=true;if(had)dockFocus(bAudit)}
 function setAudit(on){auditOn=on;bAudit.setAttribute('aria-pressed',on);pinEls.forEach(p=>p.hidden=!on);if(!on)closeNote()}
-bAudit.onclick=()=>{if(auditOn){setAudit(false);return}track('auditar-abierto');closeBoss();setAudit(true);showNote(0,true)};
+bAudit.onclick=()=>{if(auditOn){setAudit(false);return}track('auditar-abierto');closeBoss();setMore(false);setAudit(true);showNote(0,true)};
 $('#nPrev').onclick=()=>showNote(noteI-1,true);$('#nNext').onclick=()=>showNote(noteI+1,true);$('#nClose').onclick=()=>setAudit(false);
 function stepPins(){
   if(!auditOn)return;
