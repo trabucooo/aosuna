@@ -1764,6 +1764,8 @@ function stepPlan(f,now){
 
 /* ---------- Videomapping ---------- */
 const stage=$('#stage'),map=$('#map'),mctx=map.getContext('2d'),mRead=$('#mRead');
+// Navegadores sin overflow:clip (style.css): si algo desplaza el escaparate, vuelve a su sitio
+stage.addEventListener('scroll',()=>{stage.scrollTop=stage.scrollLeft=0});
 const goal=[[.28,.22],[.76,.16],[.78,.72],[.26,.66]];
 const pts=[[.08,.1],[.56,.05],[.66,.58],[.16,.52]];
 let fitted=false;
@@ -1777,7 +1779,9 @@ function warp(){
   const a=x1-x0+g*x1,b=x3-x0+h*x3,d=y1-y0+g*y1,e=y3-y0+h*y3;
   const w=400,hh=300;
   map.style.transform=`matrix3d(${a/w},${d/w},0,${g/w},${b/hh},${e/hh},0,${h/hh},0,0,1,0,${x0},${y0},0,1)`;
-  hs.forEach((el,i)=>el.style.transform=`translate(${q[i][0]}px,${q[i][1]}px)`);
+  // Con la propiedad translate y no con transform: el scale del asa al cogerla (style.css, .h.grab) se aplica por
+  // encima de transform, y escalaba también la posición desde la esquina del escaparate: el asa saltaba lejos del dedo
+  hs.forEach((el,i)=>el.style.translate=`${q[i][0]}px ${q[i][1]}px`);
   // Cada esquina en su sitio se pone verde por separado: se ve el progreso, no solo el final
   const seated=pts.map((p,i)=>p[0]===goal[i][0]&&p[1]===goal[i][1]);
   hs.forEach((el,i)=>el.classList.toggle('ok',seated[i]));
@@ -1807,18 +1811,24 @@ function stepMapSprings(f){
   });
   if(moved)warp();
 }
+/* Arrastre: la esquina se mueve exactamente lo que se mueve el dedo desde que tocó el asa (x0, y0 y la esquina
+   de partida), no según dónde está el dedo respecto al escaparate. Así, si la página se mueve a mitad del gesto
+   (Safari en iOS que hace scroll, el navegador que enseña el asa enfocada, la barra que aparece), la esquina no salta */
 hs.forEach((b,i)=>{
   const c=corners[i];
-  const at=e=>{const r=stage.getBoundingClientRect();return[(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height]};
+  // Táctil: tocar un asa no hace scroll, ni zoom, ni la enfoca (enfocarla puede desplazar la página bajo el dedo)
+  b.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
   b.addEventListener('pointerdown',e=>{
-    if(c.grab)return;
-    // Se guarda dónde se ha cogido el asa: la esquina no salta al centro del dedo
-    const[x,y]=at(e);c.grab={id:e.pointerId,ox:x-pts[i][0],oy:y-pts[i][1]};c.anim=false;
-    b.setPointerCapture(e.pointerId);b.classList.add('grab');
+    // Si otro dedo ya la lleva, se queda con él. Un arrastre que no terminó bien (sin pointerup) no bloquea el nuevo
+    if(c.grab&&c.grab.id!==e.pointerId&&b.hasPointerCapture(c.grab.id))return;
+    const r=stage.getBoundingClientRect();
+    c.grab={id:e.pointerId,x0:e.clientX,y0:e.clientY,w:r.width||1,h:r.height||1,px:pts[i][0],py:pts[i][1]};c.anim=false;
+    try{b.setPointerCapture(e.pointerId)}catch(err){}
+    b.classList.add('grab');
   });
   b.addEventListener('pointermove',e=>{
-    if(!c.grab||e.pointerId!==c.grab.id)return;
-    const[x,y]=at(e);placeCorner(i,x-c.grab.ox,y-c.grab.oy);warp();
+    const g=c.grab;if(!g||e.pointerId!==g.id)return;
+    placeCorner(i,g.px+(e.clientX-g.x0)/g.w,g.py+(e.clientY-g.y0)/g.h);warp();
   });
   const up=e=>{
     if(!c.grab||e.pointerId!==c.grab.id)return;c.grab=null;b.classList.remove('grab');
@@ -1826,11 +1836,13 @@ hs.forEach((b,i)=>{
     const g=goal[i],d=Math.hypot(pts[i][0]-g[0],pts[i][1]-g[1]);
     if(d>0&&d<MAG){if(rm){pts[i][0]=g[0];pts[i][1]=g[1];warp()}else{c.sx={x:pts[i][0],v:0};c.sy={x:pts[i][1],v:0};c.anim=true}}
   };
-  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);
+  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);
   // Flechas: un paso pequeño; con Mayúsculas, uno grande. El imán también funciona con teclado
   b.addEventListener('keydown',e=>{const k={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!k)return;e.preventDefault();
     const s=e.shiftKey?.05:.01;c.anim=false;placeCorner(i,pts[i][0]+k[0]*s,pts[i][1]+k[1]*s,true);warp()});
 });
+// Mientras se arrastra una esquina, el dedo no hace scroll (touch-action:none no basta en todos los Safari)
+stage.addEventListener('touchmove',e=>{if(corners.some(c=>c.grab))e.preventDefault()},{passive:false});
 let mapOn=false;new IntersectionObserver(es=>mapOn=es[0].isIntersecting).observe(stage);
 function drawMap(now){
   const t=now*.0006;
