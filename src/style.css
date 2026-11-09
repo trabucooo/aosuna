@@ -205,8 +205,10 @@ main{position:relative;z-index:2}
 .buoys>li:first-child .buoy-tag{left:0;translate:none}
 .buoys>li:last-child .buoy-tag{left:auto;right:0;translate:none}
 .buoy-tag p{margin:0 0 6px;font-weight:600}
-/* Puente invisible sobre el hueco de 6 px entre la etiqueta y la boya: al subir el ratón no se sale del <li> (A-05) */
+/* Puente invisible sobre el hueco de 6 px entre la etiqueta y la boya: al subir el ratón no se sale del <li> (A-05).
+   Y la etiqueta, por encima del botón invisible del velero (z-index 27), que si no tapaba su parte de arriba */
 .buoy-tag::after{content:"";position:absolute;left:0;right:0;top:100%;height:8px}
+.buoy-tag{z-index:28}
 .buoy-tag ul{display:grid;gap:2px;margin:0;padding:0;list-style:none}
 .buoy-tag li::before{content:"› ";color:var(--accent)}
 /* Sonar: un anillo fino que se abre desde la base del barco cada 2,5 s (solo transform y opacity) */
