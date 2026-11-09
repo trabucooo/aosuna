@@ -1030,7 +1030,7 @@ function openLog(from){
   zLog.from=from||null;root.classList.add('log-open');zDlg.showModal();artOpen();zGo(0,0,true);
 }
 // Al cerrar (botón o Escape), el foco vuelve a lo que abrió el cuaderno
-zDlg.addEventListener('close',()=>{artClose();root.classList.remove('log-open');wake();const f=zLog.from;if(f&&!f.hidden&&f.getClientRects().length)f.focus()});
+zDlg.addEventListener('close',()=>{track('zalapp-cerrar',{etapa:zLog.cur+1});artClose();root.classList.remove('log-open');wake();const f=zLog.from;if(f&&!f.hidden&&f.getClientRects().length)f.focus()});
 $('#zClose').addEventListener('click',()=>zDlg.close());
 function zGo(i,dir,first){
   const n=zPages.length;i=Math.max(0,Math.min(n-1,i));
@@ -2033,14 +2033,18 @@ $('#dump').onclick=()=>{
 
 /* ---------- Contacto ---------- */
 const copy=$('#copy');
+// email-copiado se envía cuando ya se sabe qué pasó: copiado al portapapeles o solo seleccionado (AN-02)
 copy.onclick=()=>{
-  track('email-copiado');
   const mail=$('#mail').textContent;
-  const ok=()=>{copy.textContent=T.copy.done;setTimeout(()=>copy.textContent=T.copy.idle,1800)};
-  const fallback=()=>{const s=getSelection(),r=document.createRange();r.selectNodeContents($('#mail'));s.removeAllRanges();s.addRange(r);copy.textContent=T.copy.selected};
+  const ok=()=>{track('email-copiado',{modo:'portapapeles'});copy.textContent=T.copy.done;setTimeout(()=>copy.textContent=T.copy.idle,1800)};
+  const fallback=()=>{track('email-copiado',{modo:'seleccion'});const s=getSelection(),r=document.createRange();r.selectNodeContents($('#mail'));s.removeAllRanges();s.addRange(r);copy.textContent=T.copy.selected};
   if(navigator.clipboard)navigator.clipboard.writeText(mail).then(ok,fallback);else fallback();
 };
+// La conversión principal: el clic en el email (AN-02)
+$('#mail a').addEventListener('click',()=>track('email-clic'));
 $('#linkedin').addEventListener('click',()=>track('linkedin'));
+// Clics del menú: a qué sección va la gente (AN-02)
+$$('.top a[href^="#"]').forEach(a=>a.addEventListener('click',()=>track('menu',{a:a.getAttribute('href')})));
 $('#cv').addEventListener('click',()=>track('cv-descargado',{idioma:LANG}));
 $$('[data-lang]').forEach(a=>a.addEventListener('click',()=>track('idioma',{a:a.dataset.lang})));
 const seenContact=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){track('scroll-contacto');seenContact.disconnect()}},{threshold:.2});
@@ -2077,17 +2081,20 @@ function dockFocus(b){(b.offsetParent?b:bMore).focus()}
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
 const PLACES={projects:'#trabajo',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zPhone',nautes:'#nRoute',explora:'#explora',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
+/* La orden que se envía a la analítica (AN-03): solo la que se ha reconocido (dance, paint:red, goto:contact…) o
+   «desconocida». Nunca el texto que escribe la gente, que podría ser personal */
+let orderKey='';
 function command(raw){
-  const B=T.boss,t=strip(raw);if(!t)return B.empty;
+  const B=T.boss,t=strip(raw);orderKey='desconocida';if(!t)return B.empty;
   let m;
-  if((m=t.match(B.reLetter))){
+  if((m=t.match(B.reLetter))){orderKey='letter:'+m[1];
     const i='alonso'.indexOf(m[1]);const list=letters.filter((L,k)=>'alonso'[k]===m[1]);
     atHero().then(()=>list.forEach(fling));return i<0?B.notOurs:B.letter(m[1].toUpperCase())}
-  if(B.reBreak.test(t)){atHero().then(()=>letters.forEach(fling));return B.broken}
-  if(B.reReset.test(t)){paint=null;repaint();return B.reset}
-  for(const[id,re,name] of B.colors)if(re.test(t)){paint=PAINT[id];repaint();return B.painted(name)}
-  if(B.rePaint.test(t))return B.noColor;
-  for(const[id,re,name] of B.places)if(re.test(t)){
+  if(B.reBreak.test(t)){orderKey='break';atHero().then(()=>letters.forEach(fling));return B.broken}
+  if(B.reReset.test(t)){orderKey='reset';paint=null;repaint();return B.reset}
+  for(const[id,re,name] of B.colors)if(re.test(t)){orderKey='paint:'+id;paint=PAINT[id];repaint();return B.painted(name)}
+  if(B.rePaint.test(t)){orderKey='paint:otro';return B.noColor}
+  for(const[id,re,name] of B.places)if(re.test(t)){orderKey='goto:'+id;
     // La escena es alta: se baja hasta donde los dos sellos ya están puestos
     if(PLACES[id]==='#open')goScene(.9);
     // Nautes: hasta donde el velero está completo
@@ -2099,18 +2106,18 @@ function command(raw){
     // Los proyectos, desde su encabezado (la sección es muy alta: centrada caería en mitad de Nautes)
     else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:id==='projects'?'start':'center'});
     return B.goTo(name)}
-  if(B.reDance.test(t)){setOrder('dance');return B.dance}
-  if(B.reFollow.test(t)){setOrder('follow');return B.follow}
-  if(B.reCircle.test(t)){setOrder('circle');return B.circle}
-  if(B.reLeave.test(t)){setOrder('leave',6000);return B.leave}
-  if(B.reStrike.test(t)){closeBoss();startStrike();return''}
-  if(B.reWork.test(t)){setOrder(null);endStrike();return B.work}
+  if(B.reDance.test(t)){orderKey='dance';setOrder('dance');return B.dance}
+  if(B.reFollow.test(t)){orderKey='follow';setOrder('follow');return B.follow}
+  if(B.reCircle.test(t)){orderKey='circle';setOrder('circle');return B.circle}
+  if(B.reLeave.test(t)){orderKey='leave';setOrder('leave',6000);return B.leave}
+  if(B.reStrike.test(t)){orderKey='strike';closeBoss();startStrike();return''}
+  if(B.reWork.test(t)){orderKey='work';setOrder(null);endStrike();return B.work}
   return B.unknown;
 }
 T.boss.chips.forEach(t=>{
   const b=document.createElement('button');b.type='button';b.className='pill';b.textContent=t;
   b.onclick=()=>giveOrder(t);$('#bossChips').appendChild(b)});
-function giveOrder(raw){const t=strip(raw);if(t)track('jefe-orden',{orden:t.slice(0,40)});bossReply.textContent=command(raw)}
+function giveOrder(raw){const r=command(raw);if(strip(raw))track('jefe-orden',{orden:orderKey});bossReply.textContent=r}
 function openBoss(){track('jefe-abierto');closeNote();setAudit(false);setMore(false);boss.hidden=false;bBoss.setAttribute('aria-pressed',true);bossReply.textContent='';if(fine)bossIn.focus()}
 // Al cerrar un panel con el foco dentro, el foco vuelve al botón que lo abrió (si no, se pierde en <body>)
 function closeBoss(){const had=boss.contains(document.activeElement);boss.hidden=true;bBoss.setAttribute('aria-pressed',false);if(had)dockFocus(bBoss)}
