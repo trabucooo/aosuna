@@ -2063,7 +2063,7 @@ async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'sm
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
-const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zPhone',nautes:'#nRoute',explora:'#explora',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
+const PLACES={projects:'#trabajo',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zPhone',nautes:'#nRoute',explora:'#explora',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
 function command(raw){
   const B=T.boss,t=strip(raw);if(!t)return B.empty;
   let m;
@@ -2083,7 +2083,8 @@ function command(raw){
     else if(id==='zalapp'&&phone.st?.box)scrollTo({top:phone.st.s,behavior:rm?'auto':'smooth'});
     // Explora Natura: hasta donde la brújula está completa
     else if(id==='explora'&&comp.st)scrollTo({top:comp.st.s,behavior:rm?'auto':'smooth'});
-    else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});
+    // Los proyectos, desde su encabezado (la sección es muy alta: centrada caería en mitad de Nautes)
+    else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:id==='projects'?'start':'center'});
     return B.goTo(name)}
   if(B.reDance.test(t)){setOrder('dance');return B.dance}
   if(B.reFollow.test(t)){setOrder('follow');return B.follow}
