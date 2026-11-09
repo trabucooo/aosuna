@@ -653,6 +653,8 @@ html:not(.js) .plan{cursor:default}
 [hidden]{display:none!important}
 .dock{position:fixed;z-index:28;left:var(--gutter-l);bottom:calc(12px + env(safe-area-inset-bottom,0px));display:flex;gap:6px;transition:opacity .4s}
 .js.intro .dock{opacity:0;pointer-events:none}
+/* En pausa (A-02) no hay cursores ni sonar: main.js deja de moverlos y aquí se ocultan */
+.paused :is(#crew,.sonar){display:none}
 .dock button{background:var(--ground);border:1px solid var(--ink);padding:9px 11px;font:600 10px/1 var(--mono)}
 .dock button:hover,.dock button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--ground)}
 #pins{position:fixed;inset:0;z-index:33;pointer-events:none;overflow:hidden}

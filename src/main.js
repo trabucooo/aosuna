@@ -15,7 +15,17 @@ function springStep(s,target,dt,response=.35,damping=1){
   s.v+=(w*w*(target-s.x)-2*damping*w*s.v)*dt;s.x+=s.v*dt;
 }
 const root=document.documentElement;
-const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;
+// «Reducir movimiento» se puede cambiar con la página abierta: rm se actualiza (ver «Pausa», más abajo)
+const rmQuery=matchMedia('(prefers-reduced-motion: reduce)');
+let rm=rmQuery.matches;
+/* Pausa (A-02): el botón «Pausar animaciones» del dock, recordado en localStorage. En pausa no hay cursores, ni ruido
+   de partículas, ni sonar, ni huelga automática, y el videomapping se queda en un fotograma fijo. Con «reducir
+   movimiento» pasa lo mismo: calm() vale para los dos */
+const PAUSE_KEY='animaciones-pausadas';
+let paused=false;try{paused=localStorage.getItem(PAUSE_KEY)==='1'}catch(e){}
+const calm=()=>rm||paused;
+/* El bucle duerme cuando no hay nada que mover (P-02): cada paso pone busy = true si necesita otro frame */
+let busy=false;
 const small=()=>innerWidth<=860;
 // Ancho visible, sin la barra de scroll: #dust (width:100%) mide eso, y getBoundingClientRect y clientX también.
 // Con innerWidth (que la incluye), en Windows todo lo dibujado con puntos quedaba ~15 px corrido a la izquierda
@@ -117,7 +127,8 @@ function wanderTarget(c){
   c.next=performance.now()+rand(1400,4200);
 }
 const MAX_WANDER_V=()=>Math.max(9,Math.min(vw,vh)*.018); // px por frame a 60 Hz (~1000 px/s en un portátil)
-function freeCursors(){return cursors.filter(c=>!c.job&&!c.script&&!c.follow&&!c.task)}
+// En pausa no hay cursores libres: las letras vuelven solas y los sellos llegan sin nadie que los traiga
+function freeCursors(){return paused?[]:cursors.filter(c=>!c.job&&!c.script&&!c.follow&&!c.task)}
 function fetchLetter(L,list){
   L.mode='wait';
   const offs=[[-.3,-.1],[.3,.25]];
@@ -130,6 +141,7 @@ function stepLetters(f){
   for(const L of letters){
     // Al cogerla se levanta (escala 1,08, sin rebote); al soltarla vuelve con un pelín de rebote, porque se lanzó
     if(!rm){springStep(L.sc,L.held?1.08:1,dt,.3,L.held?1:.8);if(!L.held&&Math.abs(L.sc.x-1)<.0005&&Math.abs(L.sc.v)<.01){L.sc.x=1;L.sc.v=0}}
+    if(L.mode!=='rest'||L.sc.x!==1)busy=true;
     if(L.mode==='drag'){
       // Se inclina hacia donde va, como algo que cuelga de los dedos, y se endereza al parar
       L.dvx*=Math.pow(.8,f);
@@ -152,9 +164,11 @@ function stepLetters(f){
   }
 }
 function stepCursors(f,now){
+  if(paused)return;
   const vmax=MAX_WANDER_V();
   for(const c of cursors){
     let wander=false;
+    if(c.job||c.task||c.park||c.slot||!c.el.classList.contains('off'))busy=true;
     if(c.job){
       const L=c.job.L;c.tx=L.cx+L.x+c.job.ox;c.ty=L.cy+L.y+c.job.oy;
       if(L.mode==='wait'&&Math.hypot(c.tx-c.x,c.ty-c.y)<34)L.mode='carry';
@@ -507,7 +521,7 @@ function drawField(now){
   for(let x=(vw%step)/2;x<vw;x+=step*4)for(let y=off;y<vh;y+=step*4){ctx.fillRect(x-4,y,9,1);ctx.fillRect(x,y-4,1,9)}
   ctx.lineWidth=1;
   for(const c of cursors){
-    const t=c.trail;if(t.length<8||c.el.classList.contains('off'))continue;
+    const t=c.trail;if(paused||t.length<8||c.el.classList.contains('off'))continue;
     ctx.strokeStyle=c.col;ctx.globalAlpha=SY>vh*.3?.2:.42;ctx.beginPath();ctx.moveTo(t[0],t[1]);
     for(let i=2;i<t.length;i+=2)ctx.lineTo(t[i],t[i+1]);ctx.stroke();
   }
@@ -568,14 +582,17 @@ function stepDust(f,now){
   const pp=phone.p?smooth(phone.p):0,peA=pp&&a===phone.st?a.edge:null,peB=pp&&b===phone.st?b.edge:null,pe=peA||peB;
   // El velero se mece en reposo: ±1,5° alrededor de la base y 2 px arriba y abajo, cada 4 s (sobre las dianas)
   let rkA=false,rkB=false,rc=1,rs=0,rdy=0,rpx=0,rpy=0;
-  if(!rm&&boat.st?.box&&(a===boat.st||b===boat.st)){
+  if(!calm()&&boat.st?.box&&(a===boat.st||b===boat.st)){busy=true;
     const ph=now*6.2832/BOAT_ROCK_MS,calm=1-clamp(boat.m),q=BOAT_ROCK_DEG*Math.PI/180*Math.sin(ph)*calm,[bx,by,bw,bh]=boat.st.box;
     rc=Math.cos(q);rs=Math.sin(q);rdy=BOAT_BOB_PX*Math.cos(ph)*calm;rpx=bx+bw/2;rpy=by+bh*.95;rkA=a===boat.st;rkB=b===boat.st;
   }
   const mr=small()?70:110,mr2=mr*mr,PR2=BOAT_PULL_R*BOAT_PULL_R;
   // Ruido solo cuando no se hace scroll: entra en medio segundo
-  const amp=rm?0:NOISE*smooth(clamp((now-scrollT-150)/500));
-  const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y,wt=now*.0016;
+  const amp=calm()?0:NOISE*smooth(clamp((now-scrollT-150)/500));
+  // La ola (forma de reserva de Nautes) se mueve con el tiempo; quieta con calm()
+  const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y,wt=calm()?0:now*.0016;
+  if(amp||(wa&&!calm()))busy=true;
+  let moving=false;
   for(let n=0;n<N;n++){
     const k=n*2;
     let ax=ta[k],ay=ta[k+1],bx=tb[k],by=tb[k+1];
@@ -597,15 +614,18 @@ function stepDust(f,now){
         const q=Math.sin(Math.PI*clamp(p))*bm.arc*(.5+jx[n])/(Math.hypot(ox,oy)||1);
         gx=lx+ox*q;gy=ly+oy*q;
       }}
-    if(rm){px[n]=gx;py[n]=gy;continue}
+    // (px y py son Float32Array: se compara con margen, no con !==, o nunca darían igual)
+    if(rm){if(Math.abs(px[n]-gx)+Math.abs(py[n]-gy)>.01)moving=true;px[n]=gx;py[n]=gy;continue}
     if(amp){const w=now*nfq[n]+nph[n];gx+=Math.sin(w)*amp;gy+=Math.cos(w*1.31+nph[n])*amp}
     const e=ez[n]*f*(pe&&(pe[k]||pe[k+1])?2.6:1);
     pvx[n]+=(gx-px[n])*e*.55;pvy[n]+=(gy-py[n])*e*.55;
     const dx=px[n]-mx,dy=py[n]-my,d2=dx*dx+dy*dy;
     if(repel&&d2<mr2&&d2>1){const q=(1-d2/mr2)*3.2*repel/Math.sqrt(d2);pvx[n]+=dx*q*f;pvy[n]+=dy*q*f}
     pvx[n]*=dm;pvy[n]*=dm;px[n]+=pvx[n]*f;py[n]+=pvy[n]*f;
+    if(!moving&&pvx[n]*pvx[n]+pvy[n]*pvy[n]>.0004)moving=true;
   }
-  for(let c=0;c<3;c++)dustNow[c]+=(dustTarget[c]-dustNow[c])*.06;
+  if(moving)busy=true;
+  for(let c=0;c<3;c++){dustNow[c]+=(dustTarget[c]-dustNow[c])*.06;if(Math.abs(dustTarget[c]-dustNow[c])>.5)busy=true}
   ctx.clearRect(0,0,vw,vh);
   try{drawField(now)}catch(e){console.error(e)}
   if(al<.01)return;
@@ -733,6 +753,7 @@ function stepBoat(f,now){
   if(boat.arrive&&live&&Math.abs(SY-st.s)<=40&&now-scrollT>150){boat.arrive=false;if(document.activeElement===b)openBoat()}
   if(b.hidden!==!!st.failed)b.hidden=!!st.failed;
   if(boat.closeAt&&now>=boat.closeAt){boat.closeAt=0;boat.want=0;boat.veil.classList.remove('on')}
+  if(boat.want||boat.moving||boat.closeAt||boat.arrive||boat.pull||boat.goVis)busy=true;
   if(boat.want||boat.moving){
     if(rm){boat.m=boat.want;boat.v=0}
     else{const dt=f/60;boat.v+=(BOAT_W*BOAT_W*(boat.want-boat.m)-2*BOAT_Z*BOAT_W*boat.v)*dt;boat.m+=boat.v*dt}
@@ -802,7 +823,7 @@ function stepInvite(f,now,live){
     tp=d<BOAT_NEAR?1-d/BOAT_NEAR:0;
   }
   boat.pull+=(tp-boat.pull)*(1-Math.pow(.85,f));if(boat.pull<.002)boat.pull=0;
-  const son=inv&&!rm;
+  const son=inv&&!calm();
   if(son!==boat.sonarOn){boat.sonarOn=son;boat.sonar.classList.toggle('on',son)}
   if(son){const t=`translate(${Math.round(x+w/2)}px,${Math.round(y+h*.97)}px)`;if(t!==boat.sonarT){boat.sonarT=t;boat.sonar.style.transform=t}}
   // La punta del cursor, junto a la proa (a la derecha del casco)
@@ -814,7 +835,8 @@ function stepInvite(f,now,live){
    fijo con el mismo aspecto (cue) hace de invitación. Lo usan el velero de Nautes y el cuaderno de Zalapp */
 function parker(label,color){return{label,color,c:null,keep:'',w:0,cue:null,t:''}}
 function stepPark(P,on,x,y,now){
-  if(rm){
+  if(calm()){
+    if(P.c){const c=P.c;c.park=null;c.script=false;c.el.classList.remove('flip');c.el.querySelector('span').textContent=P.keep;P.c=null}
     if(on&&!P.cue){
       const q=P.cue=document.createElement('div');q.className='c park-cue';q.setAttribute('aria-hidden','true');q.style.setProperty('--c',P.color);
       q.innerHTML=CURSOR_SVG+'<span></span>';q.querySelector('span').textContent=P.label;document.body.appendChild(q);P.w=q.querySelector('span').offsetWidth;
@@ -946,10 +968,11 @@ function stepScene(now){
     if(mode==='out'){dx=off;dy=-LIFT;sc=UP}
     else if(mode==='carry'){
       const q=clamp((p-c.a)/(c.hover-c.a)),e=1-Math.pow(1-q,3);
-      dx=off*(1-e);dy=-LIFT+(q>=1?Math.sin(now*.006)*2:0);rot+=7*(1-e);sc=UP;
+      dx=off*(1-e);dy=-LIFT+(q>=1&&!calm()?Math.sin(now*.006)*2:0);rot+=7*(1-e);sc=UP;if(q>=1&&!calm())busy=true;
     }else{
       const t=now-st.dropT;
       // Caída: misma curva acelerada para la altura y para la escala (de UP a SQUASH justo en el impacto)
+      if(t<DROP_MS+SETTLE_MS)busy=true;
       if(t<DROP_MS){const k=t/DROP_MS,g=k*k;dy=-LIFT*(1-g);sc=UP+(SQUASH-UP)*g}
       else{if(!st.inked){setInk(st,true);if(t<DROP_MS+120)scene.shake=now}sc=settle(t-DROP_MS)}
     }
@@ -960,7 +983,7 @@ function stepScene(now){
     crewFor(st,st.role==='carry'?2:st.role?1:0);
   });
   // Golpe seco: hacia abajo, un rebote y se apaga (antes era ruido aleatorio en cada frame, que se leía como vibración)
-  if(!rm&&now-scene.shake<SHAKE_MS){const k=(now-scene.shake)/SHAKE_MS;scene.grid.style.transform=`translateY(${(SHAKE_PX*(1-k)*(1-k)*Math.sin(k*Math.PI*3)).toFixed(2)}px)`}
+  if(!rm&&now-scene.shake<SHAKE_MS){busy=true;const k=(now-scene.shake)/SHAKE_MS;scene.grid.style.transform=`translateY(${(SHAKE_PX*(1-k)*(1-k)*Math.sin(k*Math.PI*3)).toFixed(2)}px)`}
   else if(scene.grid.style.transform)scene.grid.style.transform='';
 }
 
@@ -984,7 +1007,7 @@ const zLog={cur:-1,swipe:null,from:null};
 const NF=new Intl.NumberFormat(LANG==='en'?'en-GB':'es-ES');
 function openLog(from){zLog.from=from||null;root.classList.add('log-open');zDlg.showModal();artOpen();zGo(0,0,true)}
 // Al cerrar (botón o Escape), el foco vuelve a lo que abrió el cuaderno
-zDlg.addEventListener('close',()=>{artClose();root.classList.remove('log-open');const f=zLog.from;if(f&&!f.hidden&&f.getClientRects().length)f.focus()});
+zDlg.addEventListener('close',()=>{artClose();root.classList.remove('log-open');wake();const f=zLog.from;if(f&&!f.hidden&&f.getClientRects().length)f.focus()});
 $('#zClose').addEventListener('click',()=>zDlg.close());
 function zGo(i,dir,first){
   const n=zPages.length;i=Math.max(0,Math.min(n-1,i));
@@ -1396,7 +1419,8 @@ function stepPhone(f,now){
   phone.p=clamp(phone.p+(clear?1:-1)*dt*1000/PHONE_CLEAR_MS);
   const kT=phone.on&&(rm||phone.p>=1)?1:0;
   if(rm){phone.k=kT;phone.kv=0}
-  else{phone.kv+=(SHEET_W*SHEET_W*(kT-phone.k)-2*SHEET_Z*SHEET_W*phone.kv)*dt;phone.k+=phone.kv*dt;if(!kT&&phone.k<.003&&Math.abs(phone.kv)<.02){phone.k=0;phone.kv=0}}
+  else{phone.kv+=(SHEET_W*SHEET_W*(kT-phone.k)-2*SHEET_Z*SHEET_W*phone.kv)*dt;phone.k+=phone.kv*dt;if(Math.abs(kT-phone.k)<.003&&Math.abs(phone.kv)<.02){phone.k=kT;phone.kv=0}}
+  if((phone.p>0&&phone.p<1)||phone.kv||phone.pull||(clear!==phone.p>0))busy=true;
   if(st.box&&(imgOn||phone.p)){
     const[a,b]=st.data.screen,t=`translate(${(x+w*a).toFixed(1)}px,${(y+h*b).toFixed(1)}px)`;
     if(t!==phone.scrT){phone.scrT=t;phone.scr.style.transform=t}
@@ -1421,7 +1445,7 @@ function stepPhoneInvite(f,now,live,x,y,w,h){
   }
   phone.pull+=(tp-phone.pull)*(1-Math.pow(.85,f));if(phone.pull<.002)phone.pull=0;
   // Sonar: un contorno del móvil que se abre y se desvanece cada 2,5 s
-  const son=inv&&!rm;
+  const son=inv&&!calm();
   if(son!==phone.sonarOn){phone.sonarOn=son;phone.sonar.classList.toggle('on',son)}
   if(son){const t=`translate(${Math.round(x+w/2)}px,${Math.round(y+h/2)}px)`;if(t!==phone.sonarT){phone.sonarT=t;phone.sonar.style.transform=t}}
   // El cursor, a la derecha del móvil, a la altura de los botones laterales
@@ -1589,10 +1613,10 @@ function stepCompass(f,now){
   else if(comp.follow){goal=dist>S*.05?Math.atan2(dx,-dy):comp.goal||0;resp=.3;damp=.95}
   comp.goal=goal;goal=nearAngle(goal,comp.ang.x);
   if(rm){comp.ang.x=goal;comp.ang.v=0}
-  else if(Math.abs(goal-comp.ang.x)>1e-4||Math.abs(comp.ang.v)>1e-4)springStep(comp.ang,goal,Math.min(f/60,.04),resp,damp);
+  else if(Math.abs(goal-comp.ang.x)>1e-4||Math.abs(comp.ang.v)>1e-4){springStep(comp.ang,goal,Math.min(f/60,.04),resp,damp);busy=true}
   // La letra del punto activo se ilumina (y se apaga) en unos 150 ms
   const kg=rm?1:1-Math.pow(.8,f);
-  for(let k=0;k<4;k++){const g=comp.active===k?1:0;comp.glow[k]+=(g-comp.glow[k])*kg;if(Math.abs(g-comp.glow[k])<.005)comp.glow[k]=g}
+  for(let k=0;k<4;k++){const g=comp.active===k?1:0;comp.glow[k]+=(g-comp.glow[k])*kg;if(Math.abs(g-comp.glow[k])<.005)comp.glow[k]=g;else busy=true}
   // Los botones, sobre cada letra (se recolocan con el scroll y al redimensionar)
   if(box){
     const bs=Math.round(Math.max(44,S*.14)),r=S*CP_LETTER;
@@ -1630,7 +1654,7 @@ fetch(import.meta.env.BASE_URL+'alcar-plano.json').then(r=>r.ok?r.json():null).t
   if(!d||!(d.ratio>0)||!Array.isArray(d.lineas)||!d.lineas.length)throw 0;
   plan.data=d;portal.classList.add('has-plan');sizePlan();
 }).catch(()=>portal.classList.add('no-plan')); // Sin plano: la captura a la vista, con su texto
-new IntersectionObserver(es=>{plan.vis=es[0].isIntersecting},{threshold:.5}).observe(portal);
+new IntersectionObserver(es=>{plan.vis=es[0].isIntersecting;wake()},{threshold:.5}).observe(portal);
 function planMeasure(){const r=portal.getBoundingClientRect();plan.left=r.left;plan.top=r.top+scrollY;return r}
 function sizePlan(){
   const r=planMeasure();if(!r.width)return;
@@ -1663,7 +1687,7 @@ function planRoute(g,x0,y0){
 }
 function planStart(){
   plan.started=true;
-  if(rm){planFinish();return} // sin animaciones: el plano aparece entero, sin cursores
+  if(calm()){planFinish();return} // sin animaciones (o en pausa): el plano aparece entero, sin cursores
   const pool=cursors.slice(3,LABELS.length).filter(c=>!c.job&&!c.script&&!c.follow&&!c.task&&!c.park);
   const sy=plan.top-SY;
   plan.tracers=['ui','casa','lamas'].map((g,k)=>{
@@ -1773,6 +1797,7 @@ function stepPlan(f,now){
     if(lvl!==plan.lvl){plan.lvl=lvl;planLevel.style.transform=lvl||'translateY(-9999px)';planLevel.style.opacity=lvl?1:0}
   }
   const op=(1-.7*m).toFixed(3);if(op!==plan.op){plan.op=op;planC.style.opacity=op}
+  if((plan.started&&!plan.done)||plan.v||plan.m!==want)busy=true;
   // Cursor «Levántala» junto al marco cuando el plano está hecho, hasta que alguien levanta la obra
   const y=plan.top-SY,on=plan.done&&introDone&&!plan.seen&&!plan.up&&!plan.used&&y+plan.h>60&&y<vh-60;
   if(!(y+plan.h>0&&y<vh))plan.used=false;
@@ -1826,7 +1851,7 @@ function stepMapSprings(f){
     pts[i][0]=c.sx.x;pts[i][1]=c.sy.x;moved=true;
     if(Math.hypot(c.sx.x-goal[i][0],c.sy.x-goal[i][1])<.002&&Math.hypot(c.sx.v,c.sy.v)<.01){c.anim=false;pts[i][0]=goal[i][0];pts[i][1]=goal[i][1]}
   });
-  if(moved)warp();
+  if(moved){warp();busy=true}
 }
 /* Arrastre: la esquina se mueve exactamente lo que se mueve el dedo desde que tocó el asa (x0, y0 y la esquina
    de partida), no según dónde está el dedo respecto al escaparate. Así, si la página se mueve a mitad del gesto
@@ -1860,7 +1885,7 @@ hs.forEach((b,i)=>{
 });
 // Mientras se arrastra una esquina, el dedo no hace scroll (touch-action:none no basta en todos los Safari)
 stage.addEventListener('touchmove',e=>{if(corners.some(c=>c.grab))e.preventDefault()},{passive:false});
-let mapOn=false;new IntersectionObserver(es=>mapOn=es[0].isIntersecting).observe(stage);
+let mapOn=false,mapDrawn=false;new IntersectionObserver(es=>{mapOn=es[0].isIntersecting;wake()}).observe(stage);
 function drawMap(now){
   const t=now*.0006;
   mctx.fillStyle='#10061C';mctx.fillRect(0,0,400,300);
@@ -1927,11 +1952,12 @@ function stepPit(){
     }
   }
   for(const c of chips){
+    if(c.hold||Math.abs(c.vx)>.05||Math.abs(c.vy)>.6||Math.abs(clamp(c.vx*1.6,-16,16)-c.rot)>.05)busy=true;
     const goal=clamp(c.vx*1.6,-16,16);c.rot+=(goal-c.rot)*.14;
     c.el.style.transform=`translate(${c.x-c.w/2}px,${c.y-c.h/2}px) rotate(${c.rot}deg)`;
   }
 }
-new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn)startPit()},{threshold:.15}).observe(pit);
+new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn)startPit();wake()},{threshold:.15}).observe(pit);
 // El tamaño de la caja se lee solo cuando cambia, no en cada frame
 new ResizeObserver(()=>{if(pitBuilt){pW=pit.clientWidth;pH=pit.clientHeight}}).observe(pit);
 $('#dump').onclick=()=>{
@@ -1958,7 +1984,7 @@ seenContact.observe($('#contacto'));
 /* ---------- Plumbing común de órdenes ---------- */
 const strip=t=>t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
 let order=null,orderT=0,strike=false,lastAct=performance.now(),paint=null;
-function setOrder(o,ms=9000){order=o;clearTimeout(orderT);if(o&&ms)orderT=setTimeout(()=>{order=null;updateTeam()},ms);updateTeam()}
+function setOrder(o,ms=9000){order=o;clearTimeout(orderT);if(o&&ms)orderT=setTimeout(()=>{order=null;updateTeam()},ms);updateTeam();wake()}
 function repaint(){tone='';applyTone()}
 function fling(L){
   if(L.mode!=='rest'&&L.mode!=='loose')return;
@@ -2021,7 +2047,7 @@ addEventListener('keydown',e=>{
 const QUEJAS=T.strike.complaints;
 let banner=null,speech=null,speechC=null,quejaT=0;
 function startStrike(){
-  if(strike||rm||!cursors.length)return;strike=true;order=null;
+  if(strike||calm()||!cursors.length)return;strike=true;order=null;wake();
   banner=document.createElement('div');banner.className='banner';banner.textContent=fine?T.strike.bannerMouse:T.strike.bannerTouch;document.body.appendChild(banner);
   speech=document.createElement('div');speech.className='speech';document.body.appendChild(speech);
   const say=()=>{if(!strike)return;speechC=cursors[1+Math.floor(Math.random()*(cursors.length-1))];speech.textContent=QUEJAS[Math.floor(Math.random()*QUEJAS.length)]};
@@ -2100,17 +2126,67 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;
 document.addEventListener('pointerleave',()=>{mouse.x=mouse.y=-999;you.style.opacity=0});
 let last=performance.now();
 // Lista fija de pasos: no se crean funciones nuevas en cada frame (menos trabajo para el recolector)
-const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepCompass,stepPhone,stepPit,stepPlan,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
-let scrolled=false;
+/* Qué mantiene vivo cada paso (pone busy = true; si ninguno lo pone, el bucle se duerme):
+   stepScene     un sello que cae, se asienta o flota (este solo sin calm()) y el golpe de la escena
+   stepLetters   una letra que no está en reposo (arrastrada, suelta, esperando o de vuelta) o su escala
+   stepCursors   un cursor a la vista o con encargo (en pausa no se mueven: están ocultos)
+   stepDust      puntos que aún se mueven, el ruido de reposo y la ola (no con calm()), el vaivén del velero
+                 y el cambio de color
+   stepBoat      la transformación del velero, su atracción y el botón «Visitar nautes.es»
+   stepCompass   el muelle de la aguja y el brillo de las letras
+   stepPhone     encender o apagar la pantalla, el muelle de la hoja y la atracción
+   stepPit       piezas de la caja en movimiento o cogidas
+   stepPlan      el trazado del plano, las cotas y el muelle de la obra
+   stepStrike    la huelga en curso (la automática la despierta un temporizador: armStrike)
+   stepPins      nada propio: los pines solo cambian con el scroll o con otra animación
+   videomapping  el dibujo animado (no con calm(): ahí se pinta un fotograma fijo) y los muelles de las esquinas
+   Además: la intro y las órdenes del jefe de obra. Lo despiertan scroll, puntero, teclado, foco, cambio de tamaño
+   y lo que llega más tarde (JSON, fuentes, recolocar) */
+const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepCompass,stepPhone,stepPit,stepPlan,(f,now)=>stepStrike(now),stepPins,
+  (f,now)=>{if(!mapOn)return;stepMapSprings(f);if(!calm()){drawMap(now);busy=true}else if(!mapDrawn){drawMap(0);mapDrawn=true}}];
+let scrolled=false,awake=false,wakeT=0,strikeT=0,ready=false; // ready: boot() ya ha colocado las formas
+const IDLE_MS=400; // margen tras el último evento antes de dormir
+function wake(){wakeT=performance.now();if(ready&&!awake){awake=true;last=wakeT;requestAnimationFrame(loop)}}
+['scroll','wheel','pointermove','pointerdown','keydown','focusin','touchstart','resize'].forEach(n=>addEventListener(n,wake,{passive:true,capture:true}));
+// Huelga automática a los 16 s sin actividad: con el bucle dormido hace falta un temporizador que lo despierte
+function armStrike(){clearTimeout(strikeT);if(!calm()&&introDone&&!strike)strikeT=setTimeout(wake,Math.max(0,lastAct+16050-performance.now()))}
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;
-  requestAnimationFrame(loop);
-  if(zDlg.open)return;
+  // Con el cuaderno abierto, el bucle principal duerme (el cuaderno tiene el suyo); al cerrarlo, wake()
+  if(zDlg.open){awake=false;return}
+  busy=!introDone||!!order||strike;
   // scrollY se lee una vez, al principio del frame y antes de escribir nada
   SY=scrollY;
   if(scrolled){scrolled=false;try{applyTone();updateTeam()}catch(e){console.error(e)}}
   for(let i=0;i<STEPS.length;i++){try{STEPS[i](f,now)}catch(e){console.error(e)}}
+  if(busy||now-wakeT<IDLE_MS)requestAnimationFrame(loop);
+  else{awake=false;armStrike()}
 }
+/* ---------- Pausar animaciones (A-02) ---------- */
+const bPause=$('#bPause');
+function setPaused(on,user){
+  paused=on;root.classList.toggle('paused',on);bPause.setAttribute('aria-pressed',on);
+  if(!user)return;
+  try{localStorage.setItem(PAUSE_KEY,on?'1':'0')}catch(e){}
+  track('pausa',{activa:on?'si':'no'});
+  if(on){
+    endStrike();
+    // Lo que llevaban los cursores sigue sin ellos: las letras vuelven solas y el plano se termina
+    cursors.forEach(c=>{if(c.job){const L=c.job.L;if(L.mode==='wait')L.mode='carry';c.job=null}});
+    if(plan.started&&!plan.done)planFinish();
+  }else cursors.forEach(c=>{c.next=0});
+  mapDrawn=false;updateTeam();wake();
+}
+bPause.addEventListener('click',()=>setPaused(!paused,true));
+setPaused(paused);
+// «Reducir movimiento» cambiado con la página abierta (A-02 d): se aplica sin recargar
+rmQuery.addEventListener('change',e=>{
+  rm=e.matches;
+  if(rm){endStrike();finish()}
+  else if(!cursors.length&&introDone){makeCursors();cursors.forEach(c=>{c.script=false;c.next=0});updateTeam()}
+  mapDrawn=false;wake();
+});
+
 function placeStops(){measureScene();measureTones();planMeasure();for(const st of stops)stopRange(st)}
 /* Si la tipografía u otra cosa cambia la altura, recalcula dónde aparece cada forma */
 // Si cambia el ancho visible sin que la ventana cambie (aparece la barra de scroll al acabar la intro, que tenía la
@@ -2121,7 +2197,7 @@ function relayout(){
   // En móvil, la barra del navegador cambia el alto mientras se hace scroll. El lienzo se ajusta
   // al momento (es barato); el recálculo de formas espera a que el scroll se pare para no dar un tirón
   if(performance.now()-scrollT<250){rto=setTimeout(relayout,200);return}
-  layout();warp();sizePlan();
+  layout();warp();sizePlan();wake();
 }
 addEventListener('resize',()=>{
   clearTimeout(rto);
@@ -2141,12 +2217,12 @@ async function boot(){
   try{
     makeCursors();layout();warp();sizePlan();bindLetters();updateTeam();
     for(let n=0;n<N;n++){px[n]=stops[0].t[n*2];py[n]=stops[0].t[n*2+1]}
-    requestAnimationFrame(loop);
+    ready=true;wake();
   }catch(e){console.error(e);clearTimeout(guard);rescue();return}
   // Google Fonts puede llegar tarde: recoloca si cambia la medida
-  document.fonts.ready.then(()=>{layout();warp();sizePlan()});
+  document.fonts.ready.then(()=>{layout();warp();sizePlan();wake()});
   // Si las imágenes en puntos llegan tarde, se recalculan las dianas; si no llegan, se queda la forma de reserva
-  pointsLoad.then(()=>{if(stops.some(st=>st.data&&!st.z))layout()});
+  pointsLoad.then(()=>{if(stops.some(st=>st.data&&!st.z)){layout();wake()}});
   // Sin intro (ya vista en esta sesión o con «reducir movimiento»: boot.js no puso la clase), la página abre montada
   if(!root.classList.contains('intro')){introDone=true;skipped=true;clearTimeout(guard);$('#skip').remove();return}
   surEl.textContent='';
