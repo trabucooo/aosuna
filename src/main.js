@@ -1684,6 +1684,10 @@ else{const b=document.createElement('button');b.type='button';[...portal.attribu
 const planC=$('.plan-lines',portal),pctx=planC.getContext('2d'),planShot=$('.plan-shot',portal),planLevel=$('.plan-level',portal),planNote=$('#portalNote');
 // El marco ya lleva su nombre (aria-label): la captura, dentro, es decorativa
 planShot.src=PORTAL_IMG;planShot.alt='';
+// La captura lleva loading="lazy" (P-07), pero con JavaScript empieza recortada del todo y Chrome no la pediría hasta
+// levantarla: se pide cuando el marco está a una pantalla, para que al levantarla ya esté
+const shotObs=new IntersectionObserver(es=>{if(es.some(e=>e.isIntersecting)){planShot.loading='eager';shotObs.disconnect()}},{rootMargin:'100% 0px'});
+shotObs.observe(portal);
 const plan={data:null,w:0,h:0,left:0,top:0,lines:[],tags:[],vis:false,started:false,traced:false,done:false,tracers:[],tagT:0,tagA:0,
   speed:PLAN_SPEED,up:false,upAt:0,m:0,v:0,clip:'',lvl:'',op:'',ink:'',dirty:true,seen:false,used:false,park:parker(T.portal.cue,'#B81F8A'),noteK:''};
 try{plan.seen=sessionStorage.getItem(PLAN_SEEN)==='1'}catch(e){}
