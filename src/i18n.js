@@ -34,6 +34,22 @@ const es = {
   // Velero del proyecto Nautes: botón que lo transforma en la web, texto alternativo de la captura
   // y etiqueta del cursor que se queda junto a la proa (con ratón / en táctil)
   nautesBoat: { label: 'Ver la web de Nautes', alt: 'Portada de la web de Nautes', cueMouse: 'Pásame por encima', cueTouch: 'Toca el velero', go: 'Visitar nautes.es ↗' },
+  // Explora Natura: la brújula (en el orden N, E, S, O: k es la letra que se dibuja, dir el nombre para el lector
+  // de pantalla) y el cuadro de texto. Las piezas del diario están en ENTREGAS, al final del archivo
+  explora: {
+    points: [
+      { k: 'N', dir: 'Norte', name: 'Nautes', text: 'Web y contenidos náuticos en WordPress. Lo has visto justo arriba.' },
+      { k: 'E', dir: 'Este', name: 'IA y GEO', text: 'Prompts y contenidos pensados para buscadores con IA.' },
+      { k: 'S', dir: 'Sur', name: 'Videomapping', text: 'Montaje y visuales con IA para escaparates. Lo verás al final.' },
+      { k: 'O', dir: 'Oeste', name: 'Captación', text: 'La parte comercial: llegar a clientes del sector.' },
+    ],
+    hintMouse: 'Pasa el cursor por un punto cardinal.',
+    hintTouch: 'Toca un punto cardinal.',
+    cueMouse: 'Pásame por encima',
+    cueTouch: 'Tócame',
+    piece: d => `Pieza entregada el ${d}: brief con keyword principal, H2, preguntas frecuentes y metadatos.`,
+    read: 'Leer en Nautes ↗',
+  },
   // Alcar, del plano a la obra: aviso bajo el marco (con ratón / en táctil), texto con la obra levantada
   // (con enlace / sin él) y etiqueta del cursor que espera junto al marco
   portal: {
@@ -105,8 +121,8 @@ const es = {
     painted: c => `Fondo pintado de ${c}.`,
     rePaint: /\b(pinta|pintad|color)\b/,
     noColor: 'De ese color no queda bote. Prueba rojo, azul, verde, rosa o morado.',
-    places: [['projects', /proyectos/, 'proyectos'], ['contact', /contacto/, 'contacto'], ['tools', /herramientas/, 'herramientas'], ['home', /inicio/, 'inicio'], ['zalapp', /zalapp/, 'zalapp'], ['zalapp', /cuaderno/, 'zalapp'], ['zalapp', /\bapp\b/, 'zalapp'], ['nautes', /nautes/, 'nautes'], ['alcar', /alcar/, 'alcar'], ['mapping', /videomapping/, 'videomapping'], ['mapping', /mapping/, 'mapping'], ['formacion', /formacion/, 'formación'], ['sellos', /\bsellos?\b/, 'los sellos']],
-    goTo: p => `Vamos a ${p}.`,
+    places: [['projects', /proyectos/, 'proyectos'], ['contact', /contacto/, 'contacto'], ['tools', /herramientas/, 'herramientas'], ['home', /inicio/, 'inicio'], ['zalapp', /zalapp/, 'zalapp'], ['zalapp', /cuaderno/, 'zalapp'], ['zalapp', /\bapp\b/, 'zalapp'], ['nautes', /nautes/, 'nautes'], ['explora', /explora/, 'Explora Natura'], ['explora', /brujula/, 'la brújula'], ['explora', /diario/, 'el diario'], ['alcar', /alcar/, 'alcar'], ['mapping', /videomapping/, 'videomapping'], ['mapping', /mapping/, 'mapping'], ['formacion', /formacion/, 'formación'], ['sellos', /\bsellos?\b/, 'los sellos']],
+    goTo: p => `Vamos ${p.startsWith('el ') ? 'al ' + p.slice(3) : 'a ' + p}.`,
     reDance: /(baila|bailad|fiesta)/,
     dance: 'Música, maestro.',
     reFollow: /(seguidme|sigueme|siguedme|seguid|detras)/,
@@ -137,6 +153,7 @@ const es = {
     ['Formación con sello', 'La formación no va en una lista: la traen los mismos cursores que construyen la web. El segundo sello está a medias porque todavía estoy cursando ese ciclo.'],
     ['Del barco a la web', 'Los mismos puntos que forman el velero construyen el esqueleto de la web, y después aparece la página real. El sector y el trabajo se ven en el mismo gesto.'],
     ['El método, en ruta', 'Los cuatro pasos de cada pieza van como boyas en un rumbo, sin pestañas: se leen de un vistazo y el barco sigue siendo el protagonista.'],
+    ['Un nudo, no un párrafo', 'Explora Natura conecta Nautes y el videomapping: la brújula señala hacia arriba y hacia abajo, y el diario enseña lo que salió de allí, con fecha.'],
     ['La app, por dentro', 'Un móvil hecho de puntos que se enciende con la beta real. Los botones imitan los de la app para que el paso al proyecto sea natural.'],
     ['Del plano a la obra', 'La web nueva de Alcar se explica como se construye una casa: primero el trazado, después la obra. Los mismos cursores que montan esta web dibujan el plano.'],
     ['Probar en vez de leer', 'Explicar el videomapping cuesta. Encajar tú mismo la luz se entiende en diez segundos.'],
@@ -174,6 +191,20 @@ const en = {
     ['Metadata', 'Ready for search engines', ['Meta title', 'Meta description', 'Slug']],
   ],
   nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage', cueMouse: 'Hover over me', cueTouch: 'Tap the boat', go: 'Visit nautes.es ↗' },
+  explora: {
+    points: [
+      { k: 'N', dir: 'North', name: 'Nautes', text: "Website and boating content in WordPress. You've just seen it above." },
+      { k: 'E', dir: 'East', name: 'AI and GEO', text: 'Prompts and content written for AI search engines.' },
+      { k: 'S', dir: 'South', name: 'Videomapping', text: "Set-up and AI visuals for shop windows. You'll find it at the end." },
+      { k: 'W', dir: 'West', name: 'Lead generation', text: 'The sales side: reaching clients in the sector.' },
+    ],
+    hintMouse: 'Hover over a compass point.',
+    hintTouch: 'Tap a compass point.',
+    cueMouse: 'Hover over me',
+    cueTouch: 'Tap me',
+    piece: d => `Piece delivered on ${d}: brief with main keyword, H2s, FAQs and metadata.`,
+    read: 'Read on Nautes ↗',
+  },
   portal: {
     hintMouse: 'Hover to build it',
     hintTouch: 'Tap to build it',
@@ -236,7 +267,7 @@ const en = {
     painted: c => `Background painted ${c}.`,
     rePaint: /\b(paint|colou?r)\b/,
     noColor: "We’re out of that colour. Try red, blue, green, pink or purple.",
-    places: [['projects', /\bprojects?\b/, 'the projects'], ['contact', /\bcontact\b/, 'the contact section'], ['tools', /\b(tools?|toolbox)\b/, 'the toolbox'], ['home', /\b(home|top)\b/, 'the top'], ['zalapp', /zalapp/, 'Zalapp'], ['zalapp', /\b(logbook|notebook)\b/, 'Zalapp'], ['zalapp', /\bapp\b/, 'Zalapp'], ['nautes', /nautes/, 'Nautes'], ['alcar', /alcar/, 'Alcar'], ['mapping', /mapping/, 'the videomapping'], ['formacion', /\beducation\b/, 'my education'], ['sellos', /\bstamps?\b/, 'the stamps']],
+    places: [['projects', /\bprojects?\b/, 'the projects'], ['contact', /\bcontact\b/, 'the contact section'], ['tools', /\b(tools?|toolbox)\b/, 'the toolbox'], ['home', /\b(home|top)\b/, 'the top'], ['zalapp', /zalapp/, 'Zalapp'], ['zalapp', /\b(logbook|notebook)\b/, 'Zalapp'], ['zalapp', /\bapp\b/, 'Zalapp'], ['nautes', /nautes/, 'Nautes'], ['explora', /explora/, 'Explora Natura'], ['explora', /\bcompass\b/, 'the compass'], ['explora', /\b(diary|log|placement log)\b/, 'the placement log'], ['alcar', /alcar/, 'Alcar'], ['mapping', /mapping/, 'the videomapping'], ['formacion', /\beducation\b/, 'my education'], ['sellos', /\bstamps?\b/, 'the stamps']],
     goTo: p => `Off to ${p}.`,
     reDance: /\b(dance|party|boogie)\b/,
     dance: 'Cue the music.',
@@ -267,6 +298,7 @@ const en = {
     ['Stamped, not listed', "My education isn’t a bullet list: the same cursors that build this site bring it in. The second stamp is only half-inked because I haven’t finished that course yet."],
     ['From boat to website', 'The same dots that form the sailboat build the skeleton of the website, and then the real page appears. The industry and the work show up in a single gesture.'],
     ['The method, under way', 'The four steps of every piece sit like buoys along a course, with no tabs: you take them in at a glance and the boat stays the star.'],
+    ['A knot, not a paragraph', 'Explora Natura ties Nautes and the videomapping together: the compass points up and down, and the log shows what came out of it, with dates.'],
     ['The app, from the inside', 'A phone made of dots that switches on with the real beta. The buttons mimic the app’s own, so stepping into the project feels natural.'],
     ['From plan to build', 'The new Alcar website is explained the way a house gets built: first the drawing, then the building. The same cursors that put this site together draw the plan.'],
     ["Try it, don’t read it", 'Videomapping is hard to explain. Lining up the light yourself makes sense in ten seconds.'],
@@ -276,6 +308,27 @@ const en = {
   noteCount: (i, n) => `Note ${i} of ${n}`,
   notePin: (i, t) => `Note ${i}: ${t}`,
 };
+
+/* Diario de prácticas de Explora Natura: las piezas entregadas, en orden. fecha va en el botón, dia en el
+   cuadro de texto. Si una tiene url, el cuadro enseña «Leer en Nautes ↗» (en otra pestaña).
+   El HTML lleva una copia para quien navega sin JavaScript: si cambias un título, cámbialo también allí */
+export const ENTREGAS = [
+  { url: '',
+    es: { fecha: '19 mar', dia: '19 de marzo', titulo: 'Guía de costes reales según eslora y uso' },
+    en: { fecha: '19 Mar', dia: '19 March', titulo: 'A guide to real costs by boat length and use' } },
+  { url: '',
+    es: { fecha: '26 mar', dia: '26 de marzo', titulo: 'Propietarios a distancia: gestionar tu barco desde otra ciudad' },
+    en: { fecha: '26 Mar', dia: '26 March', titulo: 'Owning from afar: managing your boat from another city' } },
+  { url: '',
+    es: { fecha: '7 abr', dia: '7 de abril', titulo: 'Cuánto cuesta mantener un barco: 5, 8 y 10 m' },
+    en: { fecha: '7 Apr', dia: '7 April', titulo: 'What it costs to keep a boat: 5, 8 and 10 m' } },
+  { url: '',
+    es: { fecha: '9 abr', dia: '9 de abril', titulo: '¿Cuánto cuesta realmente un varadero?' },
+    en: { fecha: '9 Apr', dia: '9 April', titulo: 'What does a boatyard really cost?' } },
+  { url: '',
+    es: { fecha: '13 abr', dia: '13 de abril', titulo: 'El mantenimiento oculto al comprar de segunda mano' },
+    en: { fecha: '13 Apr', dia: '13 April', titulo: 'The hidden upkeep of buying second-hand' } },
+];
 
 export const STRINGS = { es, en };
 export const LANG = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'es';

@@ -1,6 +1,6 @@
 import './fonts.js';
 import './style.css';
-import { T, ES, LANG } from './i18n.js';
+import { T, ES, LANG, ENTREGAS } from './i18n.js';
 import alcarShot from './assets/alcar.webp';
 
 (()=>{
@@ -317,6 +317,7 @@ const nph=new Float32Array(N),nfq=new Float32Array(N);
 const pick=new Float32Array(N),jx=new Float32Array(N),jy=new Float32Array(N);
 for(let i=0;i<N;i++){px[i]=rand(0,vw);py[i]=rand(0,vh);ez[i]=rand(.045,.12);ps[i]=rand(1.7,3.3);nph[i]=rand(0,6.283);nfq[i]=rand(.0006,.0014);pick[i]=Math.random();jx[i]=Math.random();jy[i]=Math.random()}
 const NOISE=.4; // px por eje: en diagonal no pasa de 0,57 px
+const dsz=new Float32Array(N); // tamaño de cada punto en este frame (la segunda pasada de la brújula lo reutiliza)
 let scrollT=0;
 let dustNow=[125,139,255],dustTarget=[125,139,255],inkRgb=[238,240,244],layer=T.layerHome;
 const aura=$('#aura');let auraX=-1,auraY=-1;
@@ -325,7 +326,8 @@ const SHAPES={
   olive(c,w,h){c.save();c.translate(w*.5,h*.54);c.rotate(-.5);c.beginPath();c.ellipse(0,0,w*.3,h*.38,0,0,6.3);c.fill();c.globalCompositeOperation='destination-out';c.beginPath();c.ellipse(-w*.1,-h*.14,w*.05,h*.09,.4,0,6.3);c.fill();c.restore();c.globalCompositeOperation='source-over';c.save();c.translate(w*.72,h*.13);c.rotate(.55);c.beginPath();c.ellipse(0,0,w*.2,h*.07,0,0,6.3);c.fill();c.restore()},
   bubble(c,w,h){c.beginPath();c.roundRect(w*.06,h*.12,w*.88,h*.58,w*.09);c.fill();c.beginPath();c.moveTo(w*.26,h*.66);c.lineTo(w*.22,h*.92);c.lineTo(w*.5,h*.66);c.fill();c.globalCompositeOperation='destination-out';[.3,.5,.7].forEach(x=>{c.beginPath();c.arc(w*x,h*.41,w*.058,0,6.3);c.fill()});c.globalCompositeOperation='source-over'},
   boat(c,w,h){c.beginPath();c.moveTo(w*.48,h*.04);c.lineTo(w*.48,h*.66);c.lineTo(w*.12,h*.66);c.fill();c.beginPath();c.moveTo(w*.54,h*.14);c.lineTo(w*.54,h*.66);c.lineTo(w*.84,h*.66);c.fill();c.beginPath();c.moveTo(w*.06,h*.72);c.lineTo(w*.94,h*.72);c.lineTo(w*.76,h*.9);c.lineTo(w*.24,h*.9);c.fill()},
-  browser(c,w,h){c.lineWidth=w*.035;c.strokeRect(w*.06,h*.14,w*.88,h*.72);c.fillRect(w*.06,h*.14,w*.88,h*.13);c.fillRect(w*.14,h*.36,w*.32,h*.4);c.fillRect(w*.54,h*.36,w*.32,h*.06);c.fillRect(w*.54,h*.5,w*.32,h*.06);c.fillRect(w*.54,h*.64,w*.2,h*.06)},
+  // La brújula entera, sin partes (solo si su hueco no se puede medir; lo normal es compassTargets, más abajo)
+  compass(c,w){COMPASS_PARTS.forEach(p=>p[2](c,w))},
   arrow(c,w,h){c.beginPath();[[.26,.04],[.26,.84],[.44,.67],[.57,.97],[.69,.91],[.56,.62],[.8,.6]].forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]*w,q[1]*h));c.fill()},
   route(c,w,h){c.lineWidth=h*.024;c.beginPath();c.moveTo(0,h*.8);c.bezierCurveTo(w*.3,h*.2,w*.42,h*1.05,w*.66,h*.55);c.bezierCurveTo(w*.78,h*.3,w*.9,h*.3,w,h*.14);c.stroke();[[.16,.56],[.42,.67],[.66,.55],[.88,.32]].forEach(q=>{c.beginPath();c.arc(q[0]*w,q[1]*h,h*.04,0,6.3);c.fill()})},
   wave(c,w,h){c.lineWidth=h*.022;for(let r=0;r<5;r++){c.beginPath();for(let x=0;x<=w;x+=6){const y=h*(.62+r*.08)+Math.sin(x/w*12+r)*h*.035;x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}},
@@ -364,8 +366,10 @@ function stopRange(st){
   if(st.shape==='portrait'){st.s=scene.top+scene.len*PORTRAIT_IN;st.e=scene.top+scene.len*PORTRAIT_OUT;return}
   const r=st.el.getBoundingClientRect();
   // En móvil, el velero o el móvil de Zalapp (encima del texto) quedan completos justo debajo de la barra de arriba
-  const slot=st.data&&small()&&st.el.querySelector(SLOTS);
-  if(slot){st.s=st.e=slot.getBoundingClientRect().top+scrollY-58;return}
+  const slot=(st.data||st.shape==='compass')&&st.el.querySelector(SLOTS);
+  if(slot&&small()){st.s=st.e=slot.getBoundingClientRect().top+scrollY-58;return}
+  // La brújula, en ordenador, completa en el centro de la pantalla
+  if(slot&&st.shape==='compass'){const q=slot.getBoundingClientRect();st.s=st.e=q.top+scrollY+q.height/2-vh/2;return}
   st.s=st.e=r.top+scrollY+r.height/2-vh/2;
 }
 /* Imágenes en puntos (public/retrato-puntos.json, public/apreton-puntos.json…): {ratio, desktop:[x,y,s,...], mobile:[...]}.
@@ -422,7 +426,7 @@ function chapterBox(st,ratio){
 }
 /* Proyecto con velero: ocupa su hueco (.boat-slot: la columna derecha en ordenador, arriba en móvil) con su
    proporción. Va anclado al contenido, así que se mide en la página y se pasa a la pantalla en la posición de la parada */
-const SLOTS='.boat-slot,.phone-slot';
+const SLOTS='.boat-slot,.phone-slot,.compass-slot';
 function boatBox(st,ratio){
   const r=st.el.querySelector(SLOTS).getBoundingClientRect(),off=scrollY-st.s;
   const H=Math.min(r.height,r.width/ratio),W=H*ratio;
@@ -481,6 +485,8 @@ function layout(){
     if(st.shape==='hero'){st.t=toTargets(heroPts(),0,0,2,2);continue}
     const pt=imageTargets(st);
     if(pt){st.t=pt.t;st.z=pt.z;st.alpha=st.imgAlpha;st.anchor=!!st.box;continue}
+    // La brújula: en su hueco y anclada al contenido, como el velero
+    if(st.shape==='compass'){const t=compassTargets(st);if(t){st.t=t;st.anchor=true;continue}}
     // Sin imagen (no hay data-points o el archivo no llegó): la forma dibujada, o la de reserva
     const shape=st.form=SHAPES[st.shape]?st.shape:SHAPES[st.fallback]?st.fallback:'scatter';
     if(FULL[shape]){st.t=toTargets(sample(320,180,SHAPES[shape]),0,0,vw/320,vh/180);continue}
@@ -555,8 +561,14 @@ function stepDust(f,now){
   // Junto al velero los puntos no huyen del ratón: se inclinan hacia él (boat.pull, de 0 a 1, lo calcula stepBoat)
   // Lo mismo junto al móvil de Zalapp (phone.pull)
   phone.w=a===phone.st?1-t:b===phone.st?t:0;
+  // La brújula: la aguja (grupos 5 y 6 de comp.g) gira alrededor del centro con comp.ang; el resto se queda quieto
+  comp.w=a===comp.st?1-t:b===comp.st?t:0;
+  const cbox=comp.st?.box,cpA=!!cbox&&a===comp.st,cpB=!!cbox&&b===comp.st,cg=comp.g;
+  const cc=Math.cos(comp.ang.x),cs=Math.sin(comp.ang.x),ccx=comp.cx,ccy=comp.cy;
   const atBoat=boat.w>.5&&!!boat.st?.shot,atPhone=phone.w>.5&&!!phone.st?.box,pull=atBoat&&!bm?boat.pull:atPhone?phone.pull:0;
-  const repel=atBoat||atPhone?0:bm?1-clamp(boat.m*4):1;
+  // Encima de la brújula los puntos tampoco huyen del ratón: la aguja lo sigue
+  const atComp=comp.w>.5&&!!cbox;
+  const repel=atBoat||atPhone||atComp?0:bm?1-clamp(boat.m*4):1;
   // Pantalla encendida: los puntos de dentro se apartan hacia los bordes (phone.p, de 0 a 1, en unos 220 ms)
   const pp=phone.p?smooth(phone.p):0,peA=pp&&a===phone.st?a.edge:null,peB=pp&&b===phone.st?b.edge:null,pe=peA||peB;
   // El velero se mece en reposo: ±1,5° alrededor de la base y 2 px arriba y abajo, cada 4 s (sobre las dianas)
@@ -574,6 +586,8 @@ function stepDust(f,now){
     let ax=ta[k],ay=ta[k+1],bx=tb[k],by=tb[k+1];
     if(rkA){const u=ax-rpx,v=ay-rpy;ax=rpx+u*rc-v*rs;ay=rpy+u*rs+v*rc+rdy}
     if(rkB){const u=bx-rpx,v=by-rpy;bx=rpx+u*rc-v*rs;by=rpy+u*rs+v*rc+rdy}
+    if(cpA&&cg[n]>=5){const u=ax-ccx,v=ay-ccy;ax=ccx+u*cc-v*cs;ay=ccy+u*cs+v*cc}
+    if(cpB&&cg[n]>=5){const u=bx-ccx,v=by-ccy;bx=ccx+u*cc-v*cs;by=ccy+u*cs+v*cc}
     if(peA){ax+=peA[k]*pp;ay+=peA[k+1]*pp}
     if(peB){bx+=peB[k]*pp;by+=peB[k+1]*pp}
     let gx=ax+(bx-ax)*t,gy=ay+oa+(by+ob-ay-oa)*t;
@@ -604,10 +618,24 @@ function stepDust(f,now){
   const lift=c=>Math.min(255,dustNow[c]*.72+90)|0;
   ctx.fillStyle=`rgb(${lift(0)},${lift(1)},${lift(2)})`;
   const za=a.z,zb=b.z,mz=bm&&bm.st.shot.z;
-  if(za||zb){for(let n=0;n<N;n++){const s0=za?za[n]:ps[n];let s=s0+((zb?zb[n]:ps[n])-s0)*t;
-    if(mz)s+=(mz[n]-s)*clamp(bm.mb[(n*MBN)|0]);
-    ctx.fillRect(px[n],py[n],s,s)}}
-  else for(let n=0;n<N;n++)ctx.fillRect(px[n],py[n],ps[n],ps[n]);
+  // Con la brújula delante, la punta norte de la aguja (grupo 5) y la letra encendida (1-4) van en una segunda
+  // pasada con su color: en la primera se saltan y se guarda su tamaño (dsz)
+  const cw=cpA||cpB?comp.w:0,hl=cw>.01,glow=comp.glow;
+  for(let n=0;n<N;n++){
+    let s=ps[n];
+    if(za||zb){const s0=za?za[n]:ps[n];s=s0+((zb?zb[n]:ps[n])-s0)*t;if(mz)s+=(mz[n]-s)*clamp(bm.mb[(n*MBN)|0])}
+    if(hl){const g=cg[n];if(g===5||(g>=1&&g<=4&&glow[g-1]>.01)){dsz[n]=s;continue}}
+    ctx.fillRect(px[n],py[n],s,s);
+  }
+  if(hl){
+    const base=[lift(0),lift(1),lift(2)],mix=(c,k)=>`rgb(${base.map((v,i)=>Math.round(v+(c[i]-v)*k)).join(',')})`;
+    ctx.fillStyle=mix(comp.hot,cw);
+    for(let n=0;n<N;n++)if(cg[n]===5)ctx.fillRect(px[n],py[n],dsz[n],dsz[n]);
+    // La letra se ilumina: hacia el color del texto y un poco más gruesa
+    for(let k=0;k<4;k++){const q=glow[k]*cw;if(glow[k]<=.01)continue;
+      ctx.fillStyle=mix(comp.ink,q);const g=k+1,m=1+.45*q;
+      for(let n=0;n<N;n++)if(cg[n]===g){const s=dsz[n]*m;ctx.fillRect(px[n]-(s-dsz[n])/2,py[n]-(s-dsz[n])/2,s,s)}}
+  }
   ctx.globalAlpha=1;
 }
 
@@ -1409,6 +1437,158 @@ nSteps.forEach((s,i)=>{
 });
 document.addEventListener('pointerdown',e=>{if(buoyOpen>=0&&!e.target.closest?.('#nBuoys'))closeBuoys()});
 
+/* ---------- Explora Natura: la brújula y el diario ----------
+   La brújula es una parada de #dust (data-shape="compass") anclada a su hueco, .compass-slot. Se dibuja por partes
+   en un lienzo cuadrado (COMPASS_PARTS, en fracciones del lado) y cada punto recuerda de qué parte es (comp.g):
+   0 esfera (anillos y graduación), 1-4 letras N, E, S, O, 5 mitad norte de la aguja, 6 mitad sur y punto central.
+   Solo los grupos 5 y 6 giran (stepDust), con el ángulo comp.ang, un muelle hacia su destino: el punto cardinal
+   activo, el ratón si pasa libre por encima o, si no, el norte. Encima de cada letra, un botón invisible */
+const COMPASS_RES=360,CP_RING=.36,CP_INNER=.29,CP_LETTER=.44,CP_NEEDLE=.25;
+const COMPASS_DIRS=[[0,-1],[1,0],[0,1],[-1,0]];
+const compassLetter=k=>(c,w)=>{const[dx,dy]=COMPASS_DIRS[k];c.font=ART_FONT(w*.14);c.textAlign='center';c.textBaseline='middle';
+  c.fillText(T.explora.points[k].k,w/2+dx*w*CP_LETTER,w/2+dy*w*CP_LETTER)};
+// Media aguja: un triángulo alargado desde el centro (sgn -1, hacia el norte; 1, hacia el sur) con un hueco
+// redondo en el centro. El punto central va con la mitad sur
+const needleHalf=sgn=>(c,w)=>{const o=w/2;
+  c.beginPath();c.moveTo(o,o+sgn*w*CP_NEEDLE);c.lineTo(o+w*.045,o);c.lineTo(o-w*.045,o);c.closePath();c.fill();
+  c.globalCompositeOperation='destination-out';c.beginPath();c.arc(o,o,w*.036,0,6.283);c.fill();c.globalCompositeOperation='source-over';
+  if(sgn>0){c.beginPath();c.arc(o,o,w*.021,0,6.283);c.fill()}};
+// [grupo, peso, dibujo]. El peso multiplica los puntos de esa parte: la graduación, las letras y la aguja se
+// llevan más de los que les tocarían por superficie, para que se lean bien entre tanto anillo
+const COMPASS_PARTS=[
+  // Anillo exterior grueso e interior fino
+  [0,1,(c,w)=>{const o=w/2;c.lineWidth=w*.02;c.beginPath();c.arc(o,o,w*CP_RING,0,6.283);c.stroke();
+    c.lineWidth=w*.009;c.beginPath();c.arc(o,o,w*CP_INNER,0,6.283);c.stroke()}],
+  // Entre los dos, la graduación: larga cada 90°, media cada 30° y corta cada 5°
+  [0,2,(c,w)=>{const o=w/2;c.lineCap='butt';
+    for(let d=0;d<360;d+=5){const a=d*Math.PI/180,big=d%90===0,mid=d%30===0,r0=w*(CP_INNER+.004),r1=w*(big?CP_RING:mid?.337:.318);
+      c.lineWidth=w*(big?.018:mid?.012:.009);c.beginPath();c.moveTo(o+Math.sin(a)*r0,o-Math.cos(a)*r0);c.lineTo(o+Math.sin(a)*r1,o-Math.cos(a)*r1);c.stroke()}}],
+  [1,2,compassLetter(0)],[2,2,compassLetter(1)],[3,2,compassLetter(2)],[4,2,compassLetter(3)],
+  [5,2.5,needleHalf(-1)],[6,2.5,needleHalf(1)],
+];
+const comp={st:stops.find(s=>s.shape==='compass')||null,g:new Uint8Array(N),w:0,live:false,cx:0,cy:0,
+  ang:{x:0,v:0},active:-1,via:'',at:0,ptype:'',follow:false,glow:new Float32Array(4),
+  hot:[138,150,255],hotHex:'',ink:[255,255,255],wrap:$('#ePts'),read:$('#eRead'),btns:[],pos:[],
+  pieces:[],piece:-1,seen:false,used:false,park:parker(fine?T.explora.cueMouse:T.explora.cueTouch,'#3A3AD0')};
+const COMPASS_SEEN='explora-brujula-vista';
+try{comp.seen=sessionStorage.getItem(COMPASS_SEEN)==='1'}catch(e){}
+/* Dianas de la brújula: el cuadrado más grande que cabe centrado en su hueco, medido con el scroll en la parada
+   (como el velero). Cada punto elige un punto de la figura con su azar fijo (pick), así que su grupo no cambia
+   al recolocar la web */
+function compassTargets(st){
+  const slot=st.el.querySelector('.compass-slot');if(!slot)return null;
+  const r=slot.getBoundingClientRect(),S=Math.min(r.width,r.height);
+  if(!(S>=80))return null;
+  const x0=r.left+(r.width-S)/2,y0=r.top+scrollY-st.s+(r.height-S)/2,W=COMPASS_RES,sc=S/W;
+  const P=[],G=[];
+  COMPASS_PARTS.forEach(([g,wt,draw])=>{
+    const p=sample(W,W,draw);
+    for(let k=0;k<p.length;k+=2){const rep=Math.floor(wt)+((k/2)%2<(wt%1)*2?1:0);for(let j=0;j<rep;j++){P.push(p[k],p[k+1]);G.push(g)}}
+  });
+  const n=G.length;if(!n)return null;
+  const t=new Float32Array(N*2);
+  for(let i=0;i<N;i++){const k=Math.min(n-1,Math.floor(pick[i]*n));t[i*2]=x0+(P[k*2]+jx[i]*2)*sc;t[i*2+1]=y0+(P[k*2+1]+jy[i]*2)*sc;comp.g[i]=G[k]}
+  st.box=[x0,y0,S,S];comp.cx=x0+S/2;comp.cy=y0+S/2;
+  return t;
+}
+// El cuadro de texto: una frase (con su etiqueta en negrita) y, si la pieza tiene url, el enlace a Nautes
+function compassSay(label,text,url){
+  const p=document.createElement('p');
+  if(label){const b=document.createElement('b');b.textContent=label;p.append(b)}
+  p.append(text);
+  const out=[p];
+  if(url){const a=document.createElement('a');a.href=url;a.target='_blank';a.rel='noopener';a.textContent=T.explora.read;out.push(a)}
+  comp.read.replaceChildren(...out);
+}
+function markPiece(i){comp.piece=i;comp.pieces.forEach((b,k)=>{b.setAttribute('aria-pressed',k===i);b.parentElement.classList.toggle('on',k===i)})}
+function compassPoint(k,via){
+  const was=comp.active;comp.active=k;comp.via=via;comp.at=performance.now();comp.used=true;
+  if(k===was)return;
+  const p=T.explora.points[k];
+  markPiece(-1);compassSay(`${p.k} · ${p.name}`,p.text);
+  track('explora-brujula',{punto:ES.explora.points[k].k});
+  if(!comp.seen){comp.seen=true;try{sessionStorage.setItem(COMPASS_SEEN,'1')}catch(e){}}
+}
+// Suelta el punto k (o el que esté, sin k): la aguja vuelve al norte o al ratón. El texto del cuadro se queda
+function compassFree(k){if(comp.active>=0&&(k==null||comp.active===k)){comp.active=-1;comp.via=''}}
+// Clic en N: hasta el velero de Nautes. En S: hasta el escaparate del videomapping. Con teclado, el foco va detrás
+function compassGo(k,kbd){
+  const b=rm?'auto':'smooth';
+  if(k===0){if(boat.st)scrollTo({top:boat.st.s,behavior:b});else $('#proyectos').scrollIntoView({behavior:b});if(kbd)$('#nBuoy0')?.focus({preventScroll:true})}
+  else if(k===2){$('#stage').scrollIntoView({behavior:b,block:'center'});if(kbd)$('#stage .h')?.focus({preventScroll:true})}
+}
+if(comp.st&&comp.wrap){
+  comp.ink=hexRgb(TONES[comp.st.el.dataset.tone][1]);
+  compassSay('',fine?T.explora.hintMouse:T.explora.hintTouch);
+  addEventListener('pointerdown',e=>{comp.ptype=e.pointerType},true);
+  addEventListener('keydown',()=>{comp.ptype='key'},true);
+  T.explora.points.forEach((p,k)=>{
+    const b=document.createElement('button');b.type='button';b.className='compass-pt';
+    b.setAttribute('aria-label',`${p.dir} · ${p.name}`);b.setAttribute('aria-describedby','eRead');
+    // Ratón: al pasar por encima. Teclado: al enfocar (si la brújula no está en pantalla, se baja hasta ella)
+    b.addEventListener('pointerenter',e=>{if(e.pointerType==='mouse'&&comp.live)compassPoint(k,'mouse')});
+    b.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse'&&document.activeElement!==b)compassFree(k)});
+    b.addEventListener('focus',()=>{if(!comp.live)scrollTo({top:comp.st.s,behavior:rm?'auto':'smooth'});if(comp.active!==k)compassPoint(k,'focus')});
+    b.addEventListener('blur',()=>compassFree(k));
+    // Táctil: el primer toque la gira hacia ese punto (y el foco que trae el toque no cuenta); el segundo, en N o S, lleva allí
+    b.addEventListener('click',e=>{
+      const touch=e.detail>0&&(comp.ptype==='touch'||comp.ptype==='pen');
+      if(comp.active!==k||(touch&&performance.now()-comp.at<450)){compassPoint(k,touch?'touch':'mouse');return}
+      compassGo(k,!e.detail);
+    });
+    comp.wrap.appendChild(b);comp.btns.push(b);comp.pos.push('');
+  });
+  // Tocar fuera de los puntos cardinales devuelve la aguja al norte
+  document.addEventListener('pointerdown',e=>{if(comp.active>=0&&!e.target.closest?.('.compass-pt'))compassFree()});
+  // El diario: cinco piezas con su fecha. Al pulsar una, se marca y el cuadro dice qué se entregó ese día
+  const L=LANG==='en'?'en':'es';
+  ENTREGAS.forEach((p,i)=>{
+    const d=p[L],li=document.createElement('li'),b=document.createElement('button'),f=document.createElement('span'),t=document.createElement('span');
+    b.type='button';b.className='piece';b.setAttribute('aria-pressed','false');b.setAttribute('aria-describedby','eRead');
+    f.className='piece-date';f.textContent=d.fecha;t.className='piece-title';t.textContent=d.titulo;
+    b.append(f,t);li.append(b);$('#ePieces').appendChild(li);comp.pieces.push(b);
+    b.addEventListener('click',()=>{
+      compassFree();markPiece(i);compassSay('',T.explora.piece(d.dia),p.url);
+      track('explora-pieza',{fecha:p.es.fecha});
+    });
+  });
+}
+// Ángulo equivalente a g (en radianes) más cercano a a: la aguja gira siempre por el camino más corto
+const nearAngle=(g,a)=>a+(((g-a)%6.2832)+6.2832*1.5)%6.2832-Math.PI;
+function stepCompass(f,now){
+  const st=comp.st;if(!st||!comp.wrap)return;
+  const box=st.box,live=!!box&&comp.w>.9;
+  if(live!==comp.live){comp.live=live;comp.wrap.classList.toggle('live',live);if(!live)compassFree()}
+  // La punta norte, en el acento del tono (o en el del bote, si el jefe de obra ha pintado el fondo)
+  const h=paint?paint[1]:TONES[st.el.dataset.tone][2];if(h!==comp.hotHex){comp.hotHex=h;comp.hot=hexRgb(h)}
+  let cx=0,cy=0,S=0;
+  if(box){S=box[2];cx=box[0]+S/2;cy=box[1]+S/2+st.s-SY}
+  // Ratón libre encima de la brújula (dentro del círculo de las letras): la aguja lo sigue. Sin animaciones, no
+  const dx=mouse.x-cx,dy=mouse.y-cy,dist=Math.hypot(dx,dy),over=live&&fine&&mouse.x>0&&dist<S*.5;
+  comp.follow=over&&!rm&&comp.active<0;
+  if(over&&now-scrollT>250)comp.used=true;
+  let goal=0,resp=.6,damp=.55;
+  if(comp.active>=0){goal=comp.active*Math.PI/2;resp=.5;damp=.6}
+  else if(comp.follow){goal=dist>S*.05?Math.atan2(dx,-dy):comp.goal||0;resp=.3;damp=.95}
+  comp.goal=goal;goal=nearAngle(goal,comp.ang.x);
+  if(rm){comp.ang.x=goal;comp.ang.v=0}
+  else if(Math.abs(goal-comp.ang.x)>1e-4||Math.abs(comp.ang.v)>1e-4)springStep(comp.ang,goal,Math.min(f/60,.04),resp,damp);
+  // La letra del punto activo se ilumina (y se apaga) en unos 150 ms
+  const kg=rm?1:1-Math.pow(.8,f);
+  for(let k=0;k<4;k++){const g=comp.active===k?1:0;comp.glow[k]+=(g-comp.glow[k])*kg;if(Math.abs(g-comp.glow[k])<.005)comp.glow[k]=g}
+  // Los botones, sobre cada letra (se recolocan con el scroll y al redimensionar)
+  if(box){
+    const bs=Math.round(Math.max(44,S*.14)),r=S*CP_LETTER;
+    comp.btns.forEach((b,k)=>{const[ux,uy]=COMPASS_DIRS[k],x=Math.round(cx+ux*r-bs/2),y=Math.round(cy+uy*r-bs/2),q=`${x},${y},${bs}`;
+      if(q!==comp.pos[k]){comp.pos[k]=q;b.style.transform=`translate(${x}px,${y}px)`;b.style.width=b.style.height=bs+'px'}});
+  }
+  // Invitación: un cursor del equipo junto a la brújula hasta que alguien la usa (una vez por sesión)
+  const vis=!!box&&comp.w>.5&&cy+S/2>40&&cy-S/2<vh-40;
+  if(!vis)comp.used=false;
+  const inv=vis&&introDone&&!comp.seen&&comp.active<0&&!comp.used;
+  stepPark(comp.park,inv,Math.min(cx+S*.34+4,vw-28),cy+S*.34+4,now);
+}
+
 
 /* ---------- Alcar: del plano a la obra ----------
    Cuando el proyecto entra en pantalla, tres cursores del equipo trazan a regla el plano de la web nueva
@@ -1763,7 +1943,7 @@ async function atHero(){if(scrollY>vh*.2){scrollTo({top:0,behavior:rm?'auto':'sm
 /* ---------- Jefe de obra ---------- */
 const boss=$('#boss'),bossIn=$('#bossIn'),bossReply=$('#bossReply'),bBoss=$('#bBoss');
 const PAINT={red:['#1E0708','#FF4D4D'],blue:['#080D24','#6C8BFF'],green:['#07170E','#3DDC84'],pink:['#1C0713','#FF5FB0'],yellow:['#161204','#FFD60A'],orange:['#1B0D04','#FF9234'],purple:['#110822','#B47CFF'],black:['#050506','#F0F0F0']};
-const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zPhone',nautes:'#nRoute',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
+const PLACES={projects:'#proyectos',contact:'#contacto',tools:'#herramientas',home:'#inicio',zalapp:'#zPhone',nautes:'#nRoute',explora:'#explora',alcar:'#portal',mapping:'#stage',formacion:'#open',sellos:'#open'};
 function command(raw){
   const B=T.boss,t=strip(raw);if(!t)return B.empty;
   let m;
@@ -1781,6 +1961,8 @@ function command(raw){
     else if(id==='nautes'&&boat.st?.shot)scrollTo({top:boat.st.s,behavior:rm?'auto':'smooth'});
     // Zalapp: hasta donde el móvil está formado
     else if(id==='zalapp'&&phone.st?.box)scrollTo({top:phone.st.s,behavior:rm?'auto':'smooth'});
+    // Explora Natura: hasta donde la brújula está completa
+    else if(id==='explora'&&comp.st)scrollTo({top:comp.st.s,behavior:rm?'auto':'smooth'});
     else $(PLACES[id]).scrollIntoView({behavior:rm?'auto':'smooth',block:'center'});
     return B.goTo(name)}
   if(B.reDance.test(t)){setOrder('dance');return B.dance}
@@ -1802,7 +1984,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();phoneOff();planDown()}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();compassFree();phoneOff();planDown()}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -1845,8 +2027,9 @@ function orderTarget(c,i,n,now){
 }
 
 /* ---------- Auditar esta web ---------- */
-// En el orden de la página: portada, menú, retrato y sellos, Nautes, Zalapp, Alcar, videomapping, herramientas y contacto
-const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#nautesBoat','#nRoute','#zPhone','#portal','#stage','#tool','#mail'];
+// En el orden de la página: portada, menú, retrato y sellos, Nautes, Explora Natura, Zalapp, Alcar, videomapping,
+// herramientas y contacto
+const NOTE_TARGETS=['#word','.tag','#hint','.top ul','#open','#stamps','#nautesBoat','#nRoute','#eCompass','#zPhone','#portal','#stage','#tool','#mail'];
 const NOTES=T.notes.map(([title,text],i)=>[NOTE_TARGETS[i],title,text]);
 const pinsEl=$('#pins'),note=$('#note'),bAudit=$('#bAudit');
 let auditOn=false,noteI=0;
@@ -1862,6 +2045,8 @@ function showNote(i,go){
     if(scene.el.contains(el)){goScene(el===scene.el?.4:.9);return}
     // El botón del velero solo existe con su parada activa: se baja hasta ella
     if(boat.st&&(!el||el===boat.btn)){scrollTo({top:boat.st.s,behavior:rm?'auto':'smooth'});return}
+    // La brújula, completa
+    if(comp.st&&el.id==='eCompass'){scrollTo({top:comp.st.s,behavior:rm?'auto':'smooth'});return}
     el.style.scrollMarginTop='76px';el.scrollIntoView({behavior:rm?'auto':'smooth',block:small()?'start':'center'})}
 }
 function closeNote(){const had=note.contains(document.activeElement);note.hidden=true;if(had)bAudit.focus()}
@@ -1886,7 +2071,7 @@ addEventListener('pointermove',e=>{mouse.x=e.clientX;mouse.y=e.clientY;
 document.addEventListener('pointerleave',()=>{mouse.x=mouse.y=-999;you.style.opacity=0});
 let last=performance.now();
 // Lista fija de pasos: no se crean funciones nuevas en cada frame (menos trabajo para el recolector)
-const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepPhone,stepPit,stepPlan,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
+const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepCompass,stepPhone,stepPit,stepPlan,(f,now)=>stepStrike(now),stepPins,(f,now)=>{if(mapOn){stepMapSprings(f);drawMap(now)}}];
 let scrolled=false;
 function loop(now){
   const f=clamp((now-last)/16.67,.2,2.4);last=now;

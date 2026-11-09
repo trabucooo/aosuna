@@ -167,12 +167,41 @@
     </div></noscript>
   </div></article>
 
-  <article class="ch" data-tone="cobalt" data-shape="browser" data-alpha="1"><div class="wrap"><div class="ch-text">
-    <p class="eyebrow">Marzo–mayo de 2026 · Prácticas</p>
-    <h3>Explora Natura</h3>
-    <p>Ahí se juntó todo: web y contenidos para el sector náutico, investigación de palabras clave, prompts, proyecciones y captación. Hoy estudio Marketing y Publicidad en Córdoba. Ahí trabajé en Nautes y en las pruebas de videomapping.</p>
-    <p class="kept">Aprendí que lo comercial, lo técnico y lo visual pueden ser el mismo trabajo.</p>
-  </div></div></article>
+  <!-- Explora Natura: la brújula la dibuja #dust en .compass-slot (main.js pone encima un botón invisible por
+       punto cardinal, dentro de #ePts). El diario lo rellena main.js con ENTREGAS (i18n.js). Sin JavaScript,
+       las dos listas del <noscript> -->
+  <article class="ch ch-explora" id="explora" data-tone="cobalt" data-shape="compass" data-alpha="1"><div class="wrap explora-grid">
+    <div class="compass-slot" id="eCompass" aria-hidden="true"></div>
+    <div class="ch-text">
+      <p class="eyebrow">Marzo–mayo de 2026 · Prácticas</p>
+      <h3>Explora Natura</h3>
+      <p>Ahí se juntó todo: web y contenidos para el sector náutico, investigación de palabras clave, prompts, proyecciones y captación. Hoy estudio Marketing y Publicidad en Córdoba. Ahí trabajé en Nautes y en las pruebas de videomapping.</p>
+      <div class="compass-pts needs-js" id="ePts" role="group" aria-label="Brújula de Explora Natura"></div>
+      <div class="compass-read needs-js" id="eRead" aria-live="polite"><p>Pasa el cursor por un punto cardinal.</p></div>
+      <p class="kept">Aprendí que lo comercial, lo técnico y lo visual pueden ser el mismo trabajo.</p>
+    </div>
+    <div class="explora-log needs-js">
+      <p class="route-label" id="eLogLabel">Diario de prácticas · piezas entregadas</p>
+      <ol class="pieces" id="ePieces" aria-labelledby="eLogLabel"></ol>
+    </div>
+    <noscript><div class="static">
+      <p class="eyebrow">Brújula</p>
+      <ul class="static-list">
+        <li><b>N · Nautes</b>Web y contenidos náuticos en WordPress. Lo has visto justo arriba.</li>
+        <li><b>E · IA y GEO</b>Prompts y contenidos pensados para buscadores con IA.</li>
+        <li><b>S · Videomapping</b>Montaje y visuales con IA para escaparates. Lo verás al final.</li>
+        <li><b>O · Captación</b>La parte comercial: llegar a clientes del sector.</li>
+      </ul>
+      <p class="eyebrow">Diario de prácticas · piezas entregadas</p>
+      <ol class="static-list">
+        <li><b>19 mar</b>Guía de costes reales según eslora y uso</li>
+        <li><b>26 mar</b>Propietarios a distancia: gestionar tu barco desde otra ciudad</li>
+        <li><b>7 abr</b>Cuánto cuesta mantener un barco: 5, 8 y 10 m</li>
+        <li><b>9 abr</b>¿Cuánto cuesta realmente un varadero?</li>
+        <li><b>13 abr</b>El mantenimiento oculto al comprar de segunda mano</li>
+      </ol>
+    </div></noscript>
+  </div></article>
 
   <article class="proj" data-tone="asphalt" data-shape="points" data-points="/zalapp/movil-puntos.json" data-fallback="route" data-alpha=".3" data-alpha-points=".9"><div class="wrap proj-grid">
     <div class="proj-copy">

@@ -214,6 +214,54 @@ main{position:relative;z-index:2}
 .c.flip span{left:auto;right:5px}
 /* Sin animaciones no hay equipo: un cursor fijo hace de invitación */
 .c.park-cue{position:fixed;z-index:30;display:block;pointer-events:none}
+/* ---------- Explora Natura: la brújula y el diario de prácticas ---------- */
+/* La brújula la dibuja #dust en .compass-slot (a la derecha en ordenador, arriba en móvil). Encima, un botón
+   invisible por punto cardinal que main.js coloca sobre su letra; debajo del texto, el diario a todo el ancho */
+.ch.ch-explora{padding-block:64px}
+.explora-grid{display:grid;grid-template-columns:minmax(0,5fr) minmax(0,6fr);grid-template-areas:"text slot" "log log";gap:clamp(28px,5vh,52px) clamp(24px,5vw,72px);align-items:center}
+.ch-explora .ch-text{grid-area:text;max-width:31rem}
+.compass-slot{grid-area:slot;min-width:0;height:58vh}
+.explora-log{grid-area:log;min-width:0}
+/* Los botones van con position:fixed; su contenedor no ocupa sitio (está ahí por el orden del Tab y el nombre del grupo) */
+.compass-pts{position:absolute;width:0;height:0}
+.compass-pt{position:fixed;left:0;top:0;z-index:3;margin:0;padding:0;border:0;border-radius:50%;background:transparent;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.compass-pts:not(.live) .compass-pt{pointer-events:none}
+.compass-pt:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.compass-read{min-height:3.1em;border:1px solid color-mix(in srgb,currentColor 40%,transparent);padding:10px 12px;font:400 12px/1.55 var(--mono)}
+.compass-read b{margin-right:.5em;font-weight:600;color:var(--accent)}
+.compass-read a{display:inline-block;margin-top:6px;color:var(--accent);text-underline-offset:3px}
+/* El diario: cinco piezas sobre una línea discontinua, con una boya en la línea bajo cada una (la de Nautes) */
+.explora-log .route-label{margin-bottom:14px}
+.pieces{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.pieces>li{position:relative;display:flex;padding-bottom:24px}
+.pieces>li::before{content:"";position:absolute;left:0;right:-12px;bottom:7px;border-top:1.5px dashed color-mix(in srgb,currentColor 55%,transparent)}
+.pieces>li:last-child::before{right:0}
+.pieces>li::after{content:"";position:absolute;left:14px;bottom:2px;width:12px;height:12px;box-sizing:border-box;border-radius:50%;border:2px solid var(--accent);background:var(--ground);transition:background-color .2s,scale .2s}
+.pieces>li.on::after{background:var(--accent);scale:1.15}
+.piece{display:flex;flex-direction:column;gap:8px;width:100%;margin:0;padding:12px 12px 14px;border:1px solid color-mix(in srgb,currentColor 40%,transparent);background:none;color:inherit;text-align:left;font:600 14px/1.3 var(--body);cursor:pointer;transition:border-color .2s,box-shadow .2s}
+.piece-date{font:600 10px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--accent)}
+.piece-title{text-wrap:pretty}
+.piece:hover{border-color:var(--accent)}
+.piece[aria-pressed="true"]{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+html:not(.js) .compass-slot{display:none}
+html:not(.js) .ch-explora .static{grid-area:slot}
+@media (max-width:860px){
+  .ch.ch-explora{align-items:center;min-height:100vh;padding-block:48px}
+  .explora-grid{grid-template-columns:minmax(0,1fr);grid-template-areas:"slot" "text" "log";gap:18px}
+  .ch-explora .ch-text{max-width:none;background:none;padding:0}
+  .compass-slot{height:40svh}
+  html:not(.js) .ch-explora .static{grid-area:auto}
+  /* En móvil, el diario es una fila que se desliza con imán; cada tramo de línea va con su pieza */
+  .pieces{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;overscroll-behavior-x:contain;scrollbar-width:none;padding:4px 4px 0;margin-inline:-4px;scroll-padding-inline:4px}
+  .pieces::-webkit-scrollbar{display:none}
+  .pieces>li{flex:0 0 min(70%,15rem);scroll-snap-align:start}
+  .pieces>li::before{right:-10px}
+}
+/* Móvil en horizontal: la brújula vuelve al lado del texto (arriba quedaría diminuta) */
+@media (max-width:860px) and (orientation:landscape){
+  .explora-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr);grid-template-areas:"text slot" "log log";align-items:start}
+  .compass-slot{height:min(74svh,340px)}
+}
 /* ---------- Zalapp: el móvil de puntos y el cuaderno de ruta ---------- */
 /* Colores de la app (azul petróleo, naranja). Fuera del cuaderno solo los usan los botones que imitan la app */
 :root{--z-petrol:#102D3C;--z-orange:#F26B2C}

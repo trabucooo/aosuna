@@ -167,12 +167,41 @@
     </div></noscript>
   </div></article>
 
-  <article class="ch" data-tone="cobalt" data-shape="browser" data-alpha="1"><div class="wrap"><div class="ch-text">
-    <p class="eyebrow">March–May 2026 · Work placement</p>
-    <h3>Explora Natura</h3>
-    <p>This is where it all came together: web and content for the boating industry, keyword research, prompts, projection mapping and lead generation. Today I study Marketing and Advertising in Córdoba. That’s where I worked on Nautes and the video mapping tests.</p>
-    <p class="kept">What I learnt: sales, tech and visuals can all be the same job.</p>
-  </div></div></article>
+  <!-- Explora Natura: la brújula la dibuja #dust en .compass-slot (main.js pone encima un botón invisible por
+       punto cardinal, dentro de #ePts). El diario lo rellena main.js con ENTREGAS (i18n.js). Sin JavaScript,
+       las dos listas del <noscript> -->
+  <article class="ch ch-explora" id="explora" data-tone="cobalt" data-shape="compass" data-alpha="1"><div class="wrap explora-grid">
+    <div class="compass-slot" id="eCompass" aria-hidden="true"></div>
+    <div class="ch-text">
+      <p class="eyebrow">March–May 2026 · Work placement</p>
+      <h3>Explora Natura</h3>
+      <p>This is where it all came together: web and content for the boating industry, keyword research, prompts, projection mapping and lead generation. Today I study Marketing and Advertising in Córdoba. That’s where I worked on Nautes and the video mapping tests.</p>
+      <div class="compass-pts needs-js" id="ePts" role="group" aria-label="Explora Natura compass"></div>
+      <div class="compass-read needs-js" id="eRead" aria-live="polite"><p>Hover over a compass point.</p></div>
+      <p class="kept">What I learnt: sales, tech and visuals can all be the same job.</p>
+    </div>
+    <div class="explora-log needs-js">
+      <p class="route-label" id="eLogLabel">Placement log · pieces delivered</p>
+      <ol class="pieces" id="ePieces" aria-labelledby="eLogLabel"></ol>
+    </div>
+    <noscript><div class="static">
+      <p class="eyebrow">Compass</p>
+      <ul class="static-list">
+        <li><b>N · Nautes</b>Website and boating content in WordPress. You’ve just seen it above.</li>
+        <li><b>E · AI and GEO</b>Prompts and content written for AI search engines.</li>
+        <li><b>S · Videomapping</b>Set-up and AI visuals for shop windows. You’ll find it at the end.</li>
+        <li><b>W · Lead generation</b>The sales side: reaching clients in the sector.</li>
+      </ul>
+      <p class="eyebrow">Placement log · pieces delivered</p>
+      <ol class="static-list">
+        <li><b>19 Mar</b>A guide to real costs by boat length and use</li>
+        <li><b>26 Mar</b>Owning from afar: managing your boat from another city</li>
+        <li><b>7 Apr</b>What it costs to keep a boat: 5, 8 and 10 m</li>
+        <li><b>9 Apr</b>What does a boatyard really cost?</li>
+        <li><b>13 Apr</b>The hidden upkeep of buying second-hand</li>
+      </ol>
+    </div></noscript>
+  </div></article>
 
   <article class="proj" data-tone="asphalt" data-shape="points" data-points="/zalapp/movil-puntos.json" data-fallback="route" data-alpha=".3" data-alpha-points=".9"><div class="wrap proj-grid">
     <div class="proj-copy">
