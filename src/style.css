@@ -74,6 +74,8 @@ main{position:relative;z-index:2}
    pone fitName() (48 % del bloque / interlineado 0,84; en móvil, 34 %). Así fitName() solo hace el ajuste fino y el
    primer pintado no salta (antes, de 200 px al tamaño final: CLS 0,14 en escritorio) */
 .js .name{font-size:min(calc((100vw - 32px) / 2.95),57svh)}
+/* El nombre para lectores y buscadores (S-01), sin mayúsculas forzadas: algunos lectores deletrean lo que va en mayúsculas */
+.name .sr-only{text-transform:none}
 @media (max-width:860px){.js .name{font-size:min(calc((100vw - 32px) / 2.95),40.5svh)}}
 .word{display:flex;justify-content:center;white-space:nowrap}
 .l{position:relative;display:inline-block;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
