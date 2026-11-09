@@ -397,11 +397,29 @@ function readPoints(d){
 }
 const loadPoints=src=>pointFiles[src]||(pointFiles[src]=fetch(import.meta.env.BASE_URL+src.replace(/^\//,''))
   .then(r=>r.ok?r.json():null).then(readPoints).catch(()=>null));
-const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>{
-  st.data=d;st.failed=!d;
-  // Con el móvil en puntos, la captura fija de reserva se esconde (style.css: .has-phone)
-  if(d&&st.el.querySelector('.phone-slot'))st.el.classList.add('has-phone');
-})));
+/* Cada JSON se pide cuando su sección está a una pantalla de distancia (P-04), no al cargar: así no compiten con
+   las fuentes ni con el primer pintado. Mientras no llega, la parada usa su forma de reserva (data-fallback); al
+   llegar, se recoloca todo (pointsReady) */
+let pointsT=0;
+const pointsObs=new IntersectionObserver(es=>es.forEach(e=>{
+  if(!e.isIntersecting)return;
+  pointsObs.unobserve(e.target);
+  for(const st of stops)if(st.el===e.target&&st.src)loadPoints(st.src).then(d=>{
+    st.data=d;st.failed=!d;
+    // Con el móvil en puntos, la captura fija de reserva se esconde (style.css: .has-phone)
+    if(d&&st.el.querySelector('.phone-slot'))st.el.classList.add('has-phone');
+    pointsReady();
+  });
+}),{rootMargin:'100% 0px'});
+stops.forEach(st=>{if(st.src)pointsObs.observe(st.el)});
+// Recoloca cuando llega un JSON, pero no a mitad de un scroll (daría un tirón): espera a que se pare, como relayout()
+function pointsReady(){
+  clearTimeout(pointsT);
+  pointsT=setTimeout(function go(){
+    if(performance.now()-scrollT<250){pointsT=setTimeout(go,200);return}
+    if(ready){layout();wake()}
+  },0);
+}
 // Tamaño del punto: base + luz × rango, en ordenador (d) y en móvil (m)
 const DOT={portrait:{d:[1.1,2.6],m:[1.3,2.4]},points:{d:[1,2.6],m:[1.2,2.3]},morph:{d:[1,2.4],m:[1.2,2.2]},phone:{d:[1,2.4],m:[1,2.4]}};
 function pointTargets(data,[x0,y0,W,H],dot){
@@ -2221,8 +2239,7 @@ async function boot(){
   }catch(e){console.error(e);clearTimeout(guard);rescue();return}
   // Google Fonts puede llegar tarde: recoloca si cambia la medida
   document.fonts.ready.then(()=>{layout();warp();sizePlan();wake()});
-  // Si las imágenes en puntos llegan tarde, se recalculan las dianas; si no llegan, se queda la forma de reserva
-  pointsLoad.then(()=>{if(stops.some(st=>st.data&&!st.z)){layout();wake()}});
+  // Las imágenes en puntos llegan después (pointsReady); si alguna llegó antes de boot, layout() ya la ha usado
   // Sin intro (ya vista en esta sesión o con «reducir movimiento»: boot.js no puso la clase), la página abre montada
   if(!root.classList.contains('intro')){introDone=true;skipped=true;clearTimeout(guard);$('#skip').remove();return}
   surEl.textContent='';
