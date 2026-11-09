@@ -15,6 +15,12 @@ function springStep(s,target,dt,response=.35,damping=1){
   s.v+=(w*w*(target-s.x)-2*damping*w*s.v)*dt;s.x+=s.v*dt;
 }
 const root=document.documentElement;
+/* roundRect del canvas llegó en Safari 16 (C-06): en iOS 15 el cuaderno lanzaba un TypeError. Este respaldo dibuja
+   el mismo rectángulo redondeado con arcTo (radio único; si llega una lista, el primero) */
+if(!CanvasRenderingContext2D.prototype.roundRect)CanvasRenderingContext2D.prototype.roundRect=function(x,y,w,h,r=0){
+  r=Math.max(0,Math.min(Array.isArray(r)?+r[0]||0:+r||0,Math.abs(w)/2,Math.abs(h)/2));
+  this.moveTo(x+r,y);this.arcTo(x+w,y,x+w,y+h,r);this.arcTo(x+w,y+h,x,y+h,r);this.arcTo(x,y+h,x,y,r);this.arcTo(x,y,x+w,y,r);this.closePath();
+};
 // «Reducir movimiento» se puede cambiar con la página abierta: rm se actualiza (ver «Pausa», más abajo)
 const rmQuery=matchMedia('(prefers-reduced-motion: reduce)');
 let rm=rmQuery.matches;
@@ -38,7 +44,6 @@ function track(name,data){try{window.umami?.track(name,data)}catch(e){}}
 /* ---------- Tonos por sección ---------- */
 const TONES={
   paper:['#0E1014','#EEF0F4','#7D8BFF'],
-  olive:['#10130A','#EEF0D0','#C7D34A'],
   night:['#0B0D12','#E8ECF5','#FFB300'],
   rust:['#170C08','#FFF1E6','#FF7A45'],
   sea:['#07141F','#E6F2FF','#6FD3F2'],
@@ -331,10 +336,7 @@ let scrollT=0;
 let dustNow=[125,139,255],dustTarget=[125,139,255],inkRgb=[238,240,244],layer=T.layerHome;
 const aura=$('#aura');let auraX=-1,auraY=-1;
 const SHAPES={
-  bolt(c,w,h){c.beginPath();const p=[[.58,.02],[.2,.56],[.46,.56],[.36,.98],[.82,.38],[.54,.38],[.72,.02]];p.forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]*w,q[1]*h));c.fill()},
-  olive(c,w,h){c.save();c.translate(w*.5,h*.54);c.rotate(-.5);c.beginPath();c.ellipse(0,0,w*.3,h*.38,0,0,6.3);c.fill();c.globalCompositeOperation='destination-out';c.beginPath();c.ellipse(-w*.1,-h*.14,w*.05,h*.09,.4,0,6.3);c.fill();c.restore();c.globalCompositeOperation='source-over';c.save();c.translate(w*.72,h*.13);c.rotate(.55);c.beginPath();c.ellipse(0,0,w*.2,h*.07,0,0,6.3);c.fill();c.restore()},
   bubble(c,w,h){c.beginPath();c.roundRect(w*.06,h*.12,w*.88,h*.58,w*.09);c.fill();c.beginPath();c.moveTo(w*.26,h*.66);c.lineTo(w*.22,h*.92);c.lineTo(w*.5,h*.66);c.fill();c.globalCompositeOperation='destination-out';[.3,.5,.7].forEach(x=>{c.beginPath();c.arc(w*x,h*.41,w*.058,0,6.3);c.fill()});c.globalCompositeOperation='source-over'},
-  boat(c,w,h){c.beginPath();c.moveTo(w*.48,h*.04);c.lineTo(w*.48,h*.66);c.lineTo(w*.12,h*.66);c.fill();c.beginPath();c.moveTo(w*.54,h*.14);c.lineTo(w*.54,h*.66);c.lineTo(w*.84,h*.66);c.fill();c.beginPath();c.moveTo(w*.06,h*.72);c.lineTo(w*.94,h*.72);c.lineTo(w*.76,h*.9);c.lineTo(w*.24,h*.9);c.fill()},
   // La brújula entera, sin partes (solo si su hueco no se puede medir; lo normal es compassTargets, más abajo)
   compass(c,w){COMPASS_PARTS.forEach(p=>p[2](c,w))},
   arrow(c,w,h){c.beginPath();[[.26,.04],[.26,.84],[.44,.67],[.57,.97],[.69,.91],[.56,.62],[.8,.6]].forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]*w,q[1]*h));c.fill()},
@@ -543,12 +545,6 @@ function drawField(now){
     ctx.strokeStyle=c.col;ctx.globalAlpha=SY>vh*.3?.2:.42;ctx.beginPath();ctx.moveTo(t[0],t[1]);
     for(let i=2;i<t.length;i+=2)ctx.lineTo(t[i],t[i+1]);ctx.stroke();
   }
-  ctx.globalAlpha=.16;ctx.strokeStyle=`rgb(${dustNow[0]|0},${dustNow[1]|0},${dustNow[2]|0})`;ctx.lineWidth=1.4;
-  signs.slice(-40).forEach((f,k)=>{
-    let h=7;for(const ch of f.id)h=(h*31+ch.charCodeAt(0))>>>0;
-    const ox=(h%1000)/1000*(vw-130),oy=((h>>10)%1000)/1000*(vh-90);
-    for(const a of f.strokes){ctx.beginPath();for(let i=0;i+1<a.length;i+=2)ctx[i?'lineTo':'moveTo'](ox+a[i]*1.3,oy+a[i+1]*.86);ctx.stroke()}
-  });
   ctx.globalAlpha=1;ctx.lineWidth=1;
   if(fine&&mouse.x>0){
     ctx.strokeStyle=`rgba(${r},${g},${b},.16)`;ctx.setLineDash([3,6]);ctx.beginPath();
@@ -2202,8 +2198,6 @@ function stepPins(){
     b.style.display=vis?'':'none';if(vis)b.style.transform=`translate(${clamp(r.left+Math.min(r.width,vw)*.02,16,vw-16)}px,${clamp(r.top,52,vh-20)}px)`});
 }
 
-/* El muro de firmas llegará en una segunda fase */
-const signs=[];
 
 /* ---------- Bucle ---------- */
 const you=$('#you');
@@ -2305,7 +2299,7 @@ async function boot(){
     for(let n=0;n<N;n++){px[n]=stops[0].t[n*2];py[n]=stops[0].t[n*2+1]}
     ready=true;wake();
   }catch(e){console.error(e);clearTimeout(guard);rescue();return}
-  // Google Fonts puede llegar tarde: recoloca si cambia la medida
+  // Las fuentes propias (fonts.js, con font-display:swap) pueden llegar tarde: recoloca si cambia la medida
   document.fonts.ready.then(()=>{layout();warp();sizePlan();wake()});
   // Las imágenes en puntos llegan después (pointsReady); si alguna llegó antes de boot, layout() ya la ha usado
   // Sin intro (ya vista en esta sesión o con «reducir movimiento»: boot.js no puso la clase), la página abre montada
