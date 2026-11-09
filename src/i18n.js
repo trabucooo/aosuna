@@ -33,7 +33,7 @@ const es = {
   ],
   // Velero del proyecto Nautes: botón que lo transforma en la web, texto alternativo de la captura
   // y etiqueta del cursor que se queda junto a la proa (con ratón / en táctil)
-  nautesBoat: { label: 'Ver la web de Nautes', alt: 'Portada de la web de Nautes', cueMouse: 'Pásame por encima', cueTouch: 'Toca el velero' },
+  nautesBoat: { label: 'Ver la web de Nautes', alt: 'Portada de la web de Nautes', cueMouse: 'Pásame por encima', cueTouch: 'Toca el velero', go: 'Visitar nautes.es ↗' },
   // Alcar, del plano a la obra: aviso bajo el marco (con ratón / en táctil), texto con la obra levantada
   // (con enlace / sin él) y etiqueta del cursor que espera junto al marco
   portal: {
@@ -173,7 +173,7 @@ const en = {
     ['Structure', 'An outline before writing a word', ['H1 and H2 sections', 'FAQs', 'Suggested internal links']],
     ['Metadata', 'Ready for search engines', ['Meta title', 'Meta description', 'Slug']],
   ],
-  nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage', cueMouse: 'Hover over me', cueTouch: 'Tap the boat' },
+  nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage', cueMouse: 'Hover over me', cueTouch: 'Tap the boat', go: 'Visit nautes.es ↗' },
   portal: {
     hintMouse: 'Hover to build it',
     hintTouch: 'Tap to build it',

@@ -71,7 +71,10 @@ main{position:relative;z-index:2}
 /* Portada */
 .hero{position:relative}
 .js .hero{height:175vh}
-.stick{position:sticky;top:0;height:100vh;height:100svh;overflow:clip;display:flex;flex-direction:column;justify-content:center;gap:clamp(10px,2vh,20px);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:64px 44px}
+/* --dock-clear: hueco abajo para que el dock (Auditar / Jefe de obra) no tape el texto.
+   «safe center»: si aun así no cabe, desborda hacia abajo y no por debajo de la barra de arriba */
+:root{--dock-clear:calc(56px + env(safe-area-inset-bottom,0px))}
+.stick{position:sticky;top:0;height:100vh;height:100svh;box-sizing:border-box;overflow:clip;display:flex;flex-direction:column;justify-content:safe center;gap:clamp(10px,2vh,20px);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:64px var(--dock-clear)}
 .name{font:900 200px/.84 var(--display);text-transform:uppercase;letter-spacing:-.01em;display:flex;flex-direction:column;align-items:center}
 .word{display:flex;justify-content:center;white-space:nowrap}
 .l{position:relative;display:inline-block;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
@@ -171,6 +174,13 @@ main{position:relative;z-index:2}
 .nautes-on #crew{z-index:23}
 .nautes-shot{position:fixed;z-index:26;box-sizing:border-box;border-radius:6px;object-fit:cover;opacity:0;pointer-events:none;transition:opacity .35s;box-shadow:0 20px 60px rgba(0,0,0,.55)}
 .nautes-shot.on{opacity:1}
+/* «Visitar nautes.es ↗»: sigue al cursor sobre la web (main.js lo coloca con transform). Sobre la captura, el
+   puntero se esconde y este botón hace de cursor */
+.nautes-go{position:fixed;left:0;top:0;z-index:28;pointer-events:none;white-space:nowrap;background:var(--accent);color:var(--ground);font:600 12px/1 var(--mono);padding:11px 14px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.35);opacity:0;transition:opacity .2s}
+.nautes-go.on{opacity:1}
+.boat-hit.go-cursor{cursor:none}
+/* La etiqueta «Tú» del puntero se esconde mientras el botón hace de cursor */
+.go-follow .you{visibility:hidden}
 /* Columna del velero: el hueco (.boat-slot) lo ocupa el velero de puntos; debajo, el rumbo con las cuatro boyas */
 .boat-col{display:flex;flex-direction:column;gap:18px;min-width:0}
 .boat-slot{height:62vh}
@@ -541,12 +551,13 @@ html:not(.js) .plan{cursor:default}
   /* Las etiquetas de las boyas ocupan el ancho del rumbo: centradas en su boya se saldrían de la pantalla */
   .buoys>li{position:static}
   .buoy-tag,.buoys>li:first-child .buoy-tag,.buoys>li:last-child .buoy-tag{left:0;right:0;translate:none;width:auto;max-width:none}
-  .stick{padding-block:58px 56px}
+  .stick{padding-top:58px}
   #pit{min-height:440px}
   .js .open{height:300vh}
   .open-grid{grid-template-columns:minmax(0,1fr)}
-  .js .open-stick{padding-block:50px 16px}
-  .js .open-grid{grid-template-rows:42svh minmax(0,1fr);align-items:start;gap:12px}
+  .js .open-stick{padding-block:50px var(--dock-clear)}
+  /* El retrato llega al 42 % del alto si sobra sitio; si no, cede espacio para que los sellos quepan */
+  .js .open-grid{grid-template-rows:minmax(0,42svh) auto;align-content:start;align-items:start;gap:12px}
   .open-copy{gap:16px}
   .open .big{font-size:clamp(34px,9vw,64px)}
   .open-text p:not(.eyebrow){font-size:16px;margin-top:10px}
@@ -554,6 +565,32 @@ html:not(.js) .plan{cursor:default}
   .stamp::before{border-radius:13px}
   .stamp-title{font-size:clamp(14px,3.9vw,19px)}
   .stamp-school,.stamp-foot{font-size:8.5px}
+}
+/* Móvil en horizontal: retrato a la izquierda y texto con sellos a la derecha, como en ordenador */
+@media (max-width:860px) and (orientation:landscape){
+  .open-grid{grid-template-columns:minmax(0,2fr) minmax(0,3fr)}
+  .js .open-grid{grid-template-rows:none;align-content:normal;align-items:center}
+}
+/* Pantallas bajas (móvil en horizontal, zoom al 200 %): todo más compacto para que quepa entre la barra y el dock */
+@media (orientation:landscape) and (max-height:520px){
+  :root{--dock-clear:calc(50px + env(safe-area-inset-bottom,0px))}
+  .stick{gap:6px;padding-top:46px}
+  .sur{font-size:clamp(22px,min(6.4vw,9svh),76px)}
+  .tag{font-size:clamp(18px,min(4.2vw,7svh),50px)}
+  .lead{font-size:15px;line-height:1.4}
+  .js .open-stick{padding-top:44px}
+  .open-copy{gap:12px}
+  .open .big{font-size:clamp(26px,min(7vw,10svh),100px)}
+  .open-text p:not(.eyebrow){font-size:15px;line-height:1.4;margin-top:8px}
+}
+/* Móviles pequeños en horizontal (unos 320 px de alto): más columna para el texto y sellos más apretados */
+@media (orientation:landscape) and (max-height:340px){
+  .open-grid{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
+  .open-copy{gap:10px}
+  .open-text p:not(.eyebrow){font-size:14px;margin-top:6px}
+  .stamp-face{padding:7px 6px 6px;gap:4px}
+  .stamp-title{font-size:14px}
+  .stamp-school,.stamp-foot{font-size:8px}
 }
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}.c,#crew{display:none}.ring,.pin{animation:none}

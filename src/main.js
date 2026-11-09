@@ -68,12 +68,18 @@ const word=$('#word'),nameEl=$('#name'),surEl=$('#sur'),hint=$('#hint');
 const letters=$$('.l').map(el=>({el,x:0,y:0,r:0,vx:0,vy:0,vr:0,mode:'rest',cx:0,cy:0,w:0,h:0,box:null,done:null,sc:{x:1,v:0},held:false,dvx:0,hist:[]}));
 function fitName(){
   letters.forEach(L=>{L.el.style.transform='';L.t=''});
-  const avail=Math.max(0,nameEl.parentElement.clientWidth-parseFloat(getComputedStyle(nameEl.parentElement).paddingLeft)-parseFloat(getComputedStyle(nameEl.parentElement).paddingRight));
+  const box=nameEl.parentElement,cs=getComputedStyle(box);
+  const avail=Math.max(0,box.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight));
   nameEl.style.fontSize='100px';
-  const w=word.scrollWidth||1;
+  const w=word.scrollWidth||1,wh=word.offsetHeight||84;
   // Alto del bloque sticky (100svh): no cambia cuando la barra del navegador móvil aparece o se esconde
-  const maxH=(nameEl.parentElement.clientHeight||vh)*(small()?.3:.42);
-  const fs=Math.min(avail/w*100*.98,maxH/.84);
+  const H=box.clientHeight||vh,maxH=H*(small()?.34:.48);
+  // El nombre se queda con el alto que dejan libre apellido, lema, entradilla y pista: en pantallas bajas
+  // (o con zoom) encoge antes que empujar el texto fuera de la pantalla o debajo del dock
+  let rest=(parseFloat(cs.rowGap)||0)*(box.children.length-1)-wh;
+  for(const el of box.children)rest+=el.offsetHeight;
+  const free=H-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-rest;
+  const fs=Math.max(36,Math.min(avail/w*100*.98,maxH/.84,free/wh*100));
   nameEl.style.fontSize=fs+'px';
   letters.forEach(L=>{const r=L.el.getBoundingClientRect();L.cx=r.left+r.width/2;L.cy=r.top+r.height/2;L.w=r.width;L.h=r.height;L.box={left:r.left,top:r.top,width:r.width,height:r.height}});
   surEl.style.fontSize='';
@@ -607,7 +613,7 @@ function stepDust(f,now){
 
 /* ---------- Nautes: del velero a la web ---------- */
 // Si tiene valor, el clic sobre la captura abre la web en otra pestaña; vacía, no hay enlace
-const NAUTES_URL='';
+const NAUTES_URL='https://nautes.es';
 // Retardo según el índice del punto: MB grupos, el grupo g sale g·MB_MS ms más tarde (de 0 a 120 ms)
 const MB=16,MB_MS=8;
 // Muelle del progreso m (rad/s y amortiguación): ni lineal ni con duración fija, y se puede dar la vuelta a medias
@@ -617,7 +623,9 @@ const BOAT_ROCK_DEG=1.5,BOAT_BOB_PX=2,BOAT_ROCK_MS=4000,BOAT_NEAR=140,BOAT_PULL=
 const boat={st:stops.find(s=>s.shape==='morph')||null,w:0,want:0,m:0,v:0,mb:new Float32Array(MB),moving:false,
   hT:new Float64Array(64),hM:new Float32Array(64),hN:0,shown:false,holdT:0,closeAt:0,openY:0,done:false,cx:0,cy:0,arc:0,rect:'',btn:null,veil:null,img:null,
   // Invitación: atracción (pull), sonar, cursor aparcado (park) o, sin animaciones, uno fijo (cue). seen: ya se completó
-  pull:0,seen:false,used:false,sonar:null,sonarOn:false,sonarT:'',park:null};
+  pull:0,seen:false,used:false,sonar:null,sonarOn:false,sonarT:'',park:null,
+  // Botón «Visitar nautes.es» que sigue al cursor sobre la web (go): posición, si se ve, y si se abrió con teclado
+  go:null,gx:0,gy:0,goVis:false,goT:'',key:false};
 // Cuando alguien completa la transformación, el sonar y el cursor de la proa dejan de salir en esta sesión
 const SEEN_KEY='nautes-velero-visto';
 try{boat.seen=sessionStorage.getItem(SEEN_KEY)==='1'}catch(e){}
@@ -632,7 +640,11 @@ if(boat.st){
   boat.st.el.querySelector('.proj-copy').after(b); // en el orden del teclado, entre el texto y las boyas
   boat.veil=document.createElement('div');boat.veil.className='nautes-veil';
   boat.img=document.createElement('img');boat.img.className='nautes-shot';boat.img.alt=T.nautesBoat.alt;boat.img.decoding='async';
-  document.body.append(boat.veil,boat.img);
+  // Con la web puesta, un botón que sigue al cursor sobre ella (decorativo: el clic lo recoge boat.btn, que lleva el nombre)
+  boat.go=document.createElement('span');boat.go.className='nautes-go';boat.go.setAttribute('aria-hidden','true');boat.go.textContent=T.nautesBoat.go;
+  document.body.append(boat.veil,boat.img,boat.go);
+  addEventListener('keydown',()=>{boat.key=true},true);addEventListener('pointerdown',()=>{boat.key=false},true);
+  addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&(e.movementX||e.movementY))boat.key=false},{passive:true}); // mover el ratón también cuenta
   // Ratón: entrar o enfocar transforma; salir del área (velero + web) o perder el foco lo deshace.
   // Justo después de un scroll no: la web aparecería sola al pasar el velero por debajo del puntero
   const hover=e=>{if(e.pointerType==='mouse'&&performance.now()-scrollT>250)openBoat()};
@@ -643,7 +655,7 @@ if(boat.st){
   b.addEventListener('click',e=>{
     if(!boat.want||boat.closeAt){openBoat();return}
     const[x,y,w,h]=boat.st.shotBox,kbd=!e.detail;
-    if(boat.shown&&NAUTES_URL&&(kbd||e.clientX>=x&&e.clientX<=x+w&&e.clientY>=y&&e.clientY<=y+h))window.open(NAUTES_URL,'_blank','noopener');
+    if(boat.shown&&NAUTES_URL&&(kbd||e.clientX>=x&&e.clientX<=x+w&&e.clientY>=y&&e.clientY<=y+h)){track('nautes-web');window.open(NAUTES_URL,'_blank','noopener')}
   });
   document.addEventListener('pointerdown',e=>{if(boat.want&&e.target!==b)closeBoat()});
   // Si se hace scroll con la web montada, se deshace sola
@@ -705,12 +717,33 @@ function stepBoat(f,now){
     }
   }else boat.holdT=0;
   stepInvite(f,now,live);
+  stepGo(f);
   if(!live)return;
   // El botón tapa el velero (que se mueve con el scroll); abierto, también la web, para que salir de ella lo deshaga
   let[x,y,w,h]=st.box;y+=st.s-SY;
   if(boat.want){const[sx,sy,sw,sh]=st.shotBox,x2=Math.max(x+w,sx+sw),y2=Math.max(y+h,sy+sh);x=Math.min(x,sx);y=Math.min(y,sy);w=x2-x;h=y2-y}
   const r=`${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}`;
   if(r!==boat.rect){boat.rect=r;const s=boat.btn.style;s.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;s.width=Math.round(w)+'px';s.height=Math.round(h)+'px'}
+}
+/* «Visitar nautes.es ↗»: con la web puesta, el botón va pegado al cursor mientras está encima de la captura (y el
+   puntero se esconde: el botón hace de cursor). Fuera de la captura se oculta. En táctil o con teclado, que no hay
+   cursor, se queda abajo en el centro de la web */
+function stepGo(f){
+  const on=boat.shown&&!!NAUTES_URL,[x,y,w,h]=boat.st.shotBox;
+  let vis=false,tx=0,ty=0,follow=false;
+  if(on){
+    if(fine&&!boat.key){if(mouse.x>=x&&mouse.x<=x+w&&mouse.y>=y&&mouse.y<=y+h){vis=follow=true;tx=mouse.x;ty=mouse.y}}
+    else{vis=true;tx=x+w/2;ty=y+h-36}
+  }
+  if(vis!==boat.goVis){
+    boat.goVis=vis;boat.go.classList.toggle('on',vis);boat.btn.classList.toggle('go-cursor',vis&&follow);root.classList.toggle('go-follow',vis&&follow);
+    if(vis){boat.gx=tx;boat.gy=ty} // aparece donde está el cursor, sin viajar desde la otra punta
+  }
+  if(!vis)return;
+  // Sigue al cursor con un poco de retraso (se nota que lo arrastras); sin animaciones, pegado
+  const k=rm?1:1-Math.pow(.62,f);boat.gx+=(tx-boat.gx)*k;boat.gy+=(ty-boat.gy)*k;
+  const t=`translate(${boat.gx.toFixed(1)}px,${boat.gy.toFixed(1)}px) translate(-50%,-50%)`;
+  if(t!==boat.goT){boat.goT=t;boat.go.style.transform=t}
 }
 /* Invitación a pasar por el velero: mientras el proyecto está en pantalla y nadie lo ha usado todavía,
    un cursor del equipo espera junto a la proa con su etiqueta y sale un pulso de sonar cada 2,5 s.
