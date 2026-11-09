@@ -98,7 +98,7 @@ function paintLetter(L){const s=L.sc.x,t=(L.x||L.y||L.r||s!==1)?`translate(${L.x
 
 /* ---------- Cursores ---------- */
 const LABELS=T.crew;
-const COLORS=['#2A3FF0','#D6264F','#0A8A5C','#B3470F','#7A2BD6','#00788C','#B81F8A','#7A8500','#3A3AD0','#A8341A','#006B4F','#C03030'];
+const COLORS=['#2A3FF0','#D6264F','#087A50','#B3470F','#7A2BD6','#00788C','#B81F8A','#667000','#3A3AD0','#A8341A','#006B4F','#C03030'];
 const crew=$('#crew'),cursors=[];
 const CURSOR_SVG='<svg viewBox="0 0 20 24"><path d="M1.5 1.5v18.6l5-4.5 3.4 7.6 3.5-1.6-3.4-7.4 7-.6z"/></svg>';
 function makeCursors(){
@@ -1961,7 +1961,7 @@ function drawMap(now){
 }
 
 /* ---------- Caja de herramientas ---------- */
-const TOOL_COLORS=['#2A3FF0','#0A8A5C','#00788C','#7A2BD6','#B81F8A','#D6264F','#B3470F','#C03030','#A8341A','#3A3AD0','#3A3F55','#006B4F','#7A8500','#3D6B00','#5B2BB5','#B3470F'];
+const TOOL_COLORS=['#2A3FF0','#087A50','#00788C','#7A2BD6','#B81F8A','#D6264F','#B3470F','#C03030','#A8341A','#3A3AD0','#3A3F55','#006B4F','#667000','#3D6B00','#5B2BB5','#B3470F'];
 const TOOLS=T.tools.map(([name,where,level],i)=>[name,TOOL_COLORS[i],where,level]);
 const pit=$('#pit'),chips=[];
 function pickTool(i){const t=TOOLS[i];$('#tName').textContent=t[0];$('#tWhere').textContent=t[2];$('#tLevel').textContent=t[3];chips.forEach((c,k)=>c.el.setAttribute('aria-pressed',k===i))}
