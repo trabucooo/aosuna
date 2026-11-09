@@ -4,7 +4,6 @@
 const es = {
   layerHome: 'Portada',
   layerLabel: 'capa',
-  loading: p => `Cargando ${p} %`,
   repairs: n => n < 3 ? `Arreglos: ${n}. Puedes seguir, cobran por horas.` : n < 6 ? `Arreglos: ${n}. Ni una queja.` : `Arreglos: ${n}. Baja, que te presento al equipo.`,
   // Etiquetas de los cursores del equipo
   crew: ['WordPress', 'Redactor SEO', 'Comercial', 'Investigador', 'Videomapping', 'Coordinador Zalapp', 'Moderador', 'Newsletter', 'Prompts con IA', 'Diseño web', 'Captación', 'Atención al cliente'],
@@ -167,7 +166,6 @@ const es = {
 const en = {
   layerHome: 'Home',
   layerLabel: 'layer',
-  loading: p => `Loading ${p}%`,
   repairs: n => n < 3 ? `Repairs: ${n}. Carry on, they’re paid by the hour.` : n < 6 ? `Repairs: ${n}. Not a single complaint.` : `Repairs: ${n}. Scroll down and meet the crew.`,
   crew: ['WordPress', 'SEO writer', 'Sales', 'Researcher', 'Videomapping', 'Zalapp lead', 'Moderator', 'Newsletter', 'AI prompts', 'Web design', 'Lead generation', 'Customer service'],
   zalapp: ['47 responses', '41 drivers', '36 employed', '5 self-employed', '4 fleet managers', '2 other profiles'],

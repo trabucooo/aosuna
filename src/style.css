@@ -56,15 +56,7 @@ main{position:relative;z-index:2}
 .selbox::before,.selbox::after{content:"";position:absolute;width:7px;height:7px;background:#fff;border:1.5px solid var(--c);top:-4px;left:-4px}
 .selbox::after{left:auto;top:auto;right:-4px;bottom:-4px}
 
-/* Carga */
-#loader{position:fixed;inset:0;z-index:25;display:none;place-items:center;background:var(--ground)}
-.js.intro #loader{display:grid}
-#loader.pop{background:transparent;pointer-events:none}
-.ring{width:64px;height:64px;border-radius:50%;border:5px solid color-mix(in srgb,var(--ink) 15%,transparent);border-top-color:var(--ink);animation:spin .7s linear infinite;transition:transform .25s cubic-bezier(.5,-.6,.8,.4),opacity .25s}
-#loader.pop .ring{transform:scale(2.6);opacity:0}
-.pct{position:absolute;top:calc(50% + 54px);left:0;right:0;text-align:center;font:600 11px var(--mono);font-variant-numeric:tabular-nums;transition:opacity .2s}
-#loader.pop .pct{opacity:0}
-@keyframes spin{to{rotate:360deg}}
+/* Intro (sin pantalla de carga: el lema y la entradilla se ven desde el primer pintado) */
 #skip{position:fixed;z-index:32;right:var(--gutter-r);bottom:calc(14px + env(safe-area-inset-bottom,0px));display:none;background:var(--ink);color:var(--ground);border:0;font:600 11px var(--mono);padding:10px 12px}
 .js.intro #skip{display:block}
 
@@ -91,7 +83,8 @@ main{position:relative;z-index:2}
 .lead{max-width:40rem;margin-inline:auto;text-align:center;text-wrap:pretty}
 .hint{font:400 11px/1.5 var(--mono);text-align:center}
 .js .reveal{transition:opacity .5s,translate .5s}
-.js.intro .reveal{opacity:0;translate:0 10px}
+/* Durante la intro solo espera la pista («Arrastra una letra…»): el lema y la entradilla ya se leen (P-01) */
+.js.intro .hint.reveal{opacity:0;translate:0 10px}
 .js.intro .reveal.shown{opacity:1;translate:0 0}
 
 /* Historia */
@@ -647,7 +640,7 @@ html:not(.js) .plan{cursor:default}
   .stamp-school,.stamp-foot{font-size:8px}
 }
 @media (prefers-reduced-motion:reduce){
-  html{scroll-behavior:auto}.c,#crew{display:none}.ring,.pin{animation:none}
+  html{scroll-behavior:auto}.c,#crew{display:none}.pin{animation:none}
   .js .open{height:140vh}
 }
 

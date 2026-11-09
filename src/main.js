@@ -140,7 +140,8 @@ function stepLetters(f){
       if(nx<20||nx>vw-20){L.vx*=-.6;L.x=clamp(nx,20,vw-20)-L.cx}
       if(ny<40||ny>vh-30){L.vy*=-.6;L.y=clamp(ny,40,vh-30)-L.cy}
     }else if(L.mode==='carry'){
-      const e=.1*f;L.x+=-L.x*e;L.y+=-L.y*e;L.r+=-L.r*e;
+      // En la intro, más deprisa (fast)
+      const e=(L.fast?.2:.1)*f;L.x+=-L.x*e;L.y+=-L.y*e;L.r+=-L.r*e;
       if(Math.abs(L.x)+Math.abs(L.y)<1.2){
         L.x=L.y=L.r=0;L.mode='rest';
         cursors.forEach(c=>{if(c.job&&c.job.L===L){c.job=null;c.next=0}});
@@ -235,71 +236,65 @@ function bindLetters(){
   });
 }
 
-/* ---------- Intro ---------- */
+/* ---------- Intro ----------
+   Solo la primera vez en la sesión (boot.js pone la clase intro; aquí se apunta INTRO_KEY al empezar) y corta:
+   unos 2,2 s. El lema y la entradilla ya se ven desde el principio; aquí solo se monta el nombre. Los cursores
+   dibujan la casilla de cada letra, la traen, la pintan en cuanto llega y escriben el apellido. Si un equipo lento
+   la alarga, a los INTRO_MAX ms se termina de golpe. Scroll, toque, tecla o «Saltar intro» la cortan (boot) */
+const INTRO_KEY='intro-vista',INTRO_MAX=2400;
 let skipped=false,introDone=false;
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 const slots=[];
 async function intro(){
-  const loader=$('#loader'),pct=$('#pct');
-  const t0=performance.now();
-  (function count(){if(skipped)return;const p=clamp((performance.now()-t0)/1050);pct.textContent=T.loading(Math.round(p*100));if(p<1)setTimeout(count,40)})();
-  await pause(520);if(skipped)return;
-  cursors.forEach((c,i)=>{const a=i/cursors.length*6.283;c.tx=vw/2+Math.cos(a)*rand(46,120);c.ty=vh/2+Math.sin(a)*rand(46,110)});
-  await pause(620);if(skipped)return;
-  loader.classList.add('pop');
-  cursors.forEach(c=>{const a=Math.atan2(c.y-vh/2,c.x-vw/2);c.vx+=Math.cos(a)*22;c.vy+=Math.sin(a)*22;wanderTarget(c)});
-  await pause(260);if(skipped)return;
+  try{sessionStorage.setItem(INTRO_KEY,'1')}catch(e){}
+  performance.mark('intro');
+  setTimeout(finish,INTRO_MAX);
+  // Los que no dibujan casillas se acercan al nombre: así llegan pronto a por las letras
+  const builders=cursors.slice(0,6),carriers=cursors.slice(6);
+  carriers.forEach((c,i)=>{const a=i/carriers.length*6.283;c.tx=vw/2+Math.cos(a)*rand(120,260);c.ty=vh/2+Math.sin(a)*rand(80,200)});
   // Dibujan las casillas de cada letra
-  const builders=cursors.slice(0,12);
   const draw=letters.map(async(L,i)=>{
-    await pause(i*110);if(skipped)return;
-    const c=builders[i],b=L.box;
+    await pause(i*50);if(skipped)return;
+    const c=builders[i],b=L.box;if(!c)return;
     c.tx=b.left;c.ty=b.top;
-    await pause(300);if(skipped)return;
+    await pause(260);if(skipped)return;
     const s=document.createElement('div');s.className='slot';s.style.left=b.left+'px';s.style.top=b.top+'px';s.style.width=s.style.height='0';document.body.appendChild(s);slots.push(s);
     c.x=b.left;c.y=b.top;c.vx=c.vy=0;c.sx=b.left;c.sy=b.top;c.slot=s;
     c.tx=b.left+b.width;c.ty=b.top+b.height;
-    await pause(430);if(skipped)return;
+    await pause(240);if(skipped)return;
     c.slot=null;s.style.width=b.width+'px';s.style.height=b.height+'px';wanderTarget(c);
   });
-  await Promise.all(draw);if(skipped)return;
-  // Traen las letras
+  await pause(450);if(skipped)return;
+  // Traen las letras (mientras se terminan las últimas casillas); cada una se pinta en cuanto llega
   letters.forEach(L=>{
-    L.x=rand(.08,.92)*vw-L.cx;L.y=(Math.random()<.5?rand(.1,.22):rand(.78,.92))*vh-L.cy;L.r=rand(-28,28);
+    L.x=rand(.12,.88)*vw-L.cx;L.y=(Math.random()<.5?rand(.14,.24):rand(.76,.86))*vh-L.cy;L.r=rand(-24,24);L.fast=true;
     L.el.classList.add('on');paintLetter(L);
   });
-  await pause(130);if(skipped)return;
-  const carriers=cursors.slice(4);
   const carry=letters.map(async(L,i)=>{
-    await pause(i*90);if(skipped)return;
-    const list=[carriers[i*2%carriers.length],carriers[(i*2+1)%carriers.length]].filter(Boolean);
-    await fetchLetter(L,list);
-    if(!skipped&&slots[i])slots[i].style.opacity=0;
-  });
-  await Promise.all(carry);if(skipped)return;
-  // Pintan
-  await Promise.all(letters.map(async(L,i)=>{
-    await pause(i*75);if(skipped)return;
-    const c=cursors[i%cursors.length];
-    c.x=L.cx;c.y=L.box.top;c.vx=c.vy=0;c.tx=L.cx;c.ty=L.box.top+L.box.height;
+    await pause(i*35);if(skipped)return;
+    // Dos cursores por letra si hay bastantes (en móvil hay 12: uno por letra; repetir uno le quitaría la letra al otro)
+    const two=carriers.length>=letters.length*2,list=(two?[carriers[i*2],carriers[i*2+1]]:[carriers[i%carriers.length]]).filter(Boolean);
+    await fetchLetter(L,list);if(skipped)return;
+    if(slots[i])slots[i].style.opacity=0;
+    const c=builders[i];if(c){c.x=L.cx;c.y=L.box.top;c.vx=c.vy=0;c.tx=L.cx;c.ty=L.box.top+L.box.height}
     L.el.classList.add('painted');
-    await pause(380);if(!skipped)wanderTarget(c);
-  }));
-  if(skipped)return;
+    await pause(200);if(!skipped&&c)wanderTarget(c);
+  });
+  await Promise.all([...draw,...carry]);if(skipped)return;
   // Escriben el apellido
   const full='OSUNA SOTO';surEl.textContent='';
-  for(let i=1;i<=full.length;i++){surEl.textContent=full.slice(0,i);await pause(34);if(skipped)return}
-  for(const el of $$('.reveal')){el.classList.add('shown');await pause(130);if(skipped)return}
+  for(let i=1;i<=full.length;i++){surEl.textContent=full.slice(0,i);await pause(20);if(skipped)return}
   finish();
 }
 function rescue(){if(!introDone)finish();root.classList.remove('intro','locked');$$('.l').forEach(l=>l.style.transform='')}
 function finish(){
   if(introDone)return;introDone=true;skipped=true;
-  letters.forEach(L=>{L.x=L.y=L.r=0;L.mode='rest';L.done=null;paintLetter(L)});
+  letters.forEach(L=>{L.x=L.y=L.r=0;L.mode='rest';L.done=null;L.fast=false;paintLetter(L)});
   slots.forEach(s=>s.remove());
   surEl.textContent='OSUNA SOTO';
+  $$('.reveal').forEach(el=>el.classList.add('shown'));
   root.classList.remove('intro','locked');
-  $('#loader')?.remove();$('#skip')?.remove();
+  $('#skip')?.remove();
   cursors.forEach(c=>{c.job=null;c.slot=null;c.script=false;c.next=0});
   lastAct=performance.now();
   removeEventListener('wheel',finish);removeEventListener('touchmove',finish);removeEventListener('keydown',finish);
@@ -2139,9 +2134,10 @@ addEventListener('scroll',()=>{scrollT=performance.now();scrolled=true},{passive
 async function boot(){
   for(let i=0;i<60&&(!innerWidth||!innerHeight);i++)await pause(100);
   vw=viewW();vh=innerHeight;
-  try{await Promise.race([Promise.all([document.fonts.load('900 100px "Big Shoulders Display"'),document.fonts.load('600 11px "Martian Mono"'),pointsLoad]),pause(1400)])}catch(e){}
+  // Solo se espera la fuente del nombre, como mucho 600 ms (P-01): los puntos y lo demás llegan después y recolocan
+  try{await Promise.race([document.fonts.load('900 100px "Big Shoulders Display"'),pause(600)])}catch(e){}
   // Si algo falla o el visor frena la animación, la web se abre igualmente
-  const guard=setTimeout(rescue,11000);
+  const guard=setTimeout(rescue,6000);
   try{
     makeCursors();layout();warp();sizePlan();bindLetters();updateTeam();
     for(let n=0;n<N;n++){px[n]=stops[0].t[n*2];py[n]=stops[0].t[n*2+1]}
@@ -2151,7 +2147,8 @@ async function boot(){
   document.fonts.ready.then(()=>{layout();warp();sizePlan()});
   // Si las imágenes en puntos llegan tarde, se recalculan las dianas; si no llegan, se queda la forma de reserva
   pointsLoad.then(()=>{if(stops.some(st=>st.data&&!st.z))layout()});
-  if(rm){introDone=true;skipped=true;$('#loader').remove();$('#skip').remove();return}
+  // Sin intro (ya vista en esta sesión o con «reducir movimiento»: boot.js no puso la clase), la página abre montada
+  if(!root.classList.contains('intro')){introDone=true;skipped=true;clearTimeout(guard);$('#skip').remove();return}
   surEl.textContent='';
   $('#skip').onclick=()=>{track('intro-saltada');finish()};
   addEventListener('wheel',finish,{passive:true});addEventListener('touchmove',finish,{passive:true});addEventListener('keydown',finish);
