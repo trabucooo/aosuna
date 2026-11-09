@@ -149,6 +149,8 @@ main{position:relative;z-index:2}
 .facts{display:grid;gap:10px;margin-top:6px;font-size:15px}
 .facts div{display:grid;grid-template-columns:5.6rem minmax(0,1fr);gap:12px;border-top:1px solid color-mix(in srgb,currentColor 35%,transparent);padding-top:8px}
 .facts dt{font:600 10px/1.9 var(--mono);text-transform:uppercase}
+/* Enlace de texto de cada ficha (A-01): siempre a la vista, también sin JavaScript y con teclado */
+.more{display:inline-block;padding-block:6px;font:600 12px/1.4 var(--mono);color:var(--accent);text-underline-offset:4px}
 .toy{min-width:0;display:flex;flex-direction:column;gap:12px}
 .pills{display:flex;flex-wrap:wrap;gap:6px}
 .pill{background:transparent;border:1px solid currentColor;padding:7px 10px;font:600 11px/1 var(--mono)}
@@ -162,6 +164,8 @@ main{position:relative;z-index:2}
    al transformarse, el velo oscurece la página, los puntos pasan por encima y al final se funde la captura real */
 .boat-hit{position:fixed;left:0;top:0;z-index:27;margin:0;padding:0;border:0;border-radius:6px;background:transparent;cursor:pointer}
 .boat-hit.open:not(.link){cursor:default}
+/* Fuera de su escena, el botón del velero y el del móvil siguen en el orden del Tab, pero no tapan nada al puntero */
+.boat-hit.idle,.phone-hit.idle{pointer-events:none}
 .boat-hit:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
 .nautes-veil{position:fixed;inset:0;z-index:24;background:rgba(3,9,15,.86);opacity:0;pointer-events:none;transition:opacity .45s}
 .nautes-veil.on{opacity:1;pointer-events:auto}

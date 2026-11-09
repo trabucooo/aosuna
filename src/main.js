@@ -389,7 +389,7 @@ function readPoints(d){
 const loadPoints=src=>pointFiles[src]||(pointFiles[src]=fetch(import.meta.env.BASE_URL+src.replace(/^\//,''))
   .then(r=>r.ok?r.json():null).then(readPoints).catch(()=>null));
 const pointsLoad=Promise.all(stops.filter(st=>st.src).map(st=>loadPoints(st.src).then(d=>{
-  st.data=d;
+  st.data=d;st.failed=!d;
   // Con el móvil en puntos, la captura fija de reserva se esconde (style.css: .has-phone)
   if(d&&st.el.querySelector('.phone-slot'))st.el.classList.add('has-phone');
 })));
@@ -639,6 +639,9 @@ function stepDust(f,now){
   ctx.globalAlpha=1;
 }
 
+// Lleva la página hasta una parada (donde su forma está completa), salvo que ya esté ahí
+function toStop(st){if(Math.abs(scrollY-st.s)<=40)return false;scrollTo({top:st.s,behavior:rm?'auto':'smooth'});return true}
+
 /* ---------- Nautes: del velero a la web ---------- */
 // Si tiene valor, el clic sobre la captura abre la web en otra pestaña; vacía, no hay enlace
 const NAUTES_URL='https://nautes.es';
@@ -653,18 +656,21 @@ const boat={st:stops.find(s=>s.shape==='morph')||null,w:0,want:0,m:0,v:0,mb:new 
   // Invitación: atracción (pull), sonar, cursor aparcado (park) o, sin animaciones, uno fijo (cue). seen: ya se completó
   pull:0,seen:false,used:false,sonar:null,sonarOn:false,sonarT:'',park:null,
   // Botón «Visitar nautes.es» que sigue al cursor sobre la web (go): posición, si se ve, y si se abrió con teclado
-  go:null,gx:0,gy:0,goVis:false,goT:'',key:false};
+  go:null,gx:0,gy:0,goVis:false,goT:'',key:false,live:false,arrive:false};
 // Cuando alguien completa la transformación, el sonar y el cursor de la proa dejan de salir en esta sesión
 const SEEN_KEY='nautes-velero-visto';
 try{boat.seen=sessionStorage.getItem(SEEN_KEY)==='1'}catch(e){}
 const CUE=fine?T.nautesBoat.cueMouse:T.nautesBoat.cueTouch;
+$('#nautesLink').addEventListener('click',()=>track('nautes-web'));
 if(boat.st){
   // Sonar: un anillo que sale de la base del barco (el aro interior lo anima el CSS; este solo se coloca)
   boat.sonar=document.createElement('div');boat.sonar.className='sonar';boat.sonar.setAttribute('aria-hidden','true');boat.sonar.appendChild(document.createElement('i'));
   document.body.appendChild(boat.sonar);
   boat.park=parker(CUE,'#00788C');
+  // El botón está siempre en el orden del Tab (A-01). Fuera de su escena no recibe el puntero (.idle) y, al
+  // enfocarlo, la página baja hasta el velero; al llegar, se transforma. Solo se quita si el JSON no llega
   const b=boat.btn=document.createElement('button');
-  b.type='button';b.id='nautesBoat';b.className='boat-hit';b.hidden=true;b.setAttribute('aria-label',T.nautesBoat.label);
+  b.type='button';b.id='nautesBoat';b.className='boat-hit idle';b.setAttribute('aria-label',T.nautesBoat.label);
   boat.st.el.querySelector('.proj-copy').after(b); // en el orden del teclado, entre el texto y las boyas
   boat.veil=document.createElement('div');boat.veil.className='nautes-veil';
   boat.img=document.createElement('img');boat.img.className='nautes-shot';boat.img.alt=T.nautesBoat.alt;boat.img.decoding='async';
@@ -678,7 +684,10 @@ if(boat.st){
   const hover=e=>{if(e.pointerType==='mouse'&&performance.now()-scrollT>250)openBoat()};
   b.addEventListener('pointerenter',hover);b.addEventListener('pointermove',e=>{if(!boat.want)hover(e)});
   b.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')closeBoat()});
-  b.addEventListener('focus',openBoat);b.addEventListener('blur',closeBoat);
+  // Al enfocarlo, la página va hasta donde el velero está entero (aunque ya cuente como activo, puede quedar a medias)
+  // Si hay que bajar, se transforma al llegar (arrive): abrirlo antes lo cerraría el propio scroll
+  b.addEventListener('focus',()=>{if(toStop(boat.st))boat.arrive=true;else openBoat()});
+  b.addEventListener('blur',()=>{boat.arrive=false;closeBoat()});
   // Táctil: tocar transforma (y tocar fuera, más abajo, deshace). Con la captura ya puesta, el clic encima abre la web
   b.addEventListener('click',e=>{
     if(!boat.want||boat.closeAt){openBoat();return}
@@ -690,7 +699,7 @@ if(boat.st){
   addEventListener('scroll',()=>{if(boat.want&&!boat.closeAt&&Math.abs(scrollY-boat.openY)>6)closeBoat()},{passive:true});
 }
 function openBoat(){
-  if(!boat.st?.shot||boat.btn.hidden)return;
+  if(!boat.st?.shot||!boat.live)return;
   if(boat.want&&!boat.closeAt)return;
   if(!boat.img.src)boat.img.src=import.meta.env.BASE_URL+(boat.st.el.dataset.shot||'').replace(/^\//,'');
   boat.closeAt=0;boat.want=1;boat.openY=scrollY;boat.used=true;
@@ -721,9 +730,13 @@ function boatPast(now,ms){
 }
 function stepBoat(f,now){
   const st=boat.st;if(!st)return;
-  // El botón solo existe con la parada activa (t > 0,9) y si el JSON llegó
-  const live=!!st.shot&&boat.w>.9;
-  if(boat.btn.hidden===live){boat.btn.hidden=!live;if(!live)closeBoat()}
+  // El botón solo actúa con la parada activa (t > 0,9) y si el JSON llegó. Si se enfocó antes de llegar, se
+  // transforma al llegar
+  const live=!!st.shot&&boat.w>.9,b=boat.btn;
+  if(live!==boat.live){boat.live=live;b.classList.toggle('idle',!live);if(!live)closeBoat()}
+  // Ha llegado: en la parada y sin scroll desde hace 150 ms (el scroll suave tarda un frame en dar su primer evento)
+  if(boat.arrive&&live&&Math.abs(SY-st.s)<=40&&now-scrollT>150){boat.arrive=false;if(document.activeElement===b)openBoat()}
+  if(b.hidden!==!!st.failed)b.hidden=!!st.failed;
   if(boat.closeAt&&now>=boat.closeAt){boat.closeAt=0;boat.want=0;boat.veil.classList.remove('on')}
   if(boat.want||boat.moving){
     if(rm){boat.m=boat.want;boat.v=0}
@@ -746,10 +759,13 @@ function stepBoat(f,now){
   }else boat.holdT=0;
   stepInvite(f,now,live);
   stepGo(f);
-  if(!live)return;
-  // El botón tapa el velero (que se mueve con el scroll); abierto, también la web, para que salir de ella lo deshaga
-  let[x,y,w,h]=st.box;y+=st.s-SY;
-  if(boat.want){const[sx,sy,sw,sh]=st.shotBox,x2=Math.max(x+w,sx+sw),y2=Math.max(y+h,sy+sh);x=Math.min(x,sx);y=Math.min(y,sy);w=x2-x;h=y2-y}
+  // Fuera de la escena solo se coloca si tiene el foco (para que el anillo del foco vaya con el velero mientras
+  // la página baja); sin los puntos todavía, sobre su hueco
+  if(!live&&document.activeElement!==b)return;
+  let x,y,w,h;
+  if(st.box){[x,y,w,h]=st.box;y+=st.s-SY}
+  else{const q=st.el.querySelector('.boat-slot').getBoundingClientRect();x=q.left;y=q.top;w=q.width;h=q.height}
+  if(boat.want&&st.shotBox){const[sx,sy,sw,sh]=st.shotBox,x2=Math.max(x+w,sx+sw),y2=Math.max(y+h,sy+sh);x=Math.min(x,sx);y=Math.min(y,sy);w=x2-x;h=y2-y}
   const r=`${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}`;
   if(r!==boat.rect){boat.rect=r;const s=boat.btn.style;s.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;s.width=Math.round(w)+'px';s.height=Math.round(h)+'px'}
 }
@@ -757,6 +773,7 @@ function stepBoat(f,now){
    puntero se esconde: el botón hace de cursor). Fuera de la captura se oculta. En táctil o con teclado, que no hay
    cursor, se queda abajo en el centro de la web */
 function stepGo(f){
+  if(!boat.st.shotBox)return; // sin el JSON todavía no hay web (antes lanzaba un TypeError en cada frame)
   const on=boat.shown&&!!NAUTES_URL,[x,y,w,h]=boat.st.shotBox;
   let vis=false,tx=0,ty=0,follow=false;
   if(on){
@@ -1309,6 +1326,8 @@ function zalappWeb(msg){
 // Captura fija (sin el JSON del móvil): el enlace abre el cuaderno y el botón hace lo mismo que en la hoja
 $('#zStaticLog').addEventListener('click',e=>{e.preventDefault();track('zalapp-movil',{accion:'cuaderno'});openLog(e.currentTarget)});
 $('#zStaticWeb').addEventListener('click',()=>zalappWeb($('#zMsg')));
+// Enlace de texto de la ficha (A-01): siempre a la vista. Sin JavaScript lleva al cuaderno, que se ve abierto
+$('#zLogLink').addEventListener('click',e=>{e.preventDefault();track('zalapp-movil',{accion:'cuaderno'});openLog(e.currentTarget)});
 
 /* Zalapp: el móvil de puntos (public/zalapp/movil-puntos.json; screen = rectángulo de la pantalla dentro del móvil).
    Al pasar el ratón, con foco o con un toque, la pantalla se enciende: los puntos de dentro se apartan a los bordes
@@ -1322,7 +1341,8 @@ const phone={st:stops.find(s=>s.src&&s.el.querySelector('.phone-slot'))||null,w:
 try{phone.seen=sessionStorage.getItem(PHONE_SEEN)==='1'}catch(e){}
 if(phone.st){
   const b=phone.hit=document.createElement('button');
-  b.type='button';b.id='zalappPhone';b.className='phone-hit';b.hidden=true;b.setAttribute('aria-label',T.zalappPhone.label);
+  // Como el del velero: siempre en el orden del Tab; al enfocarlo fuera de su escena, la página baja hasta el móvil
+  b.type='button';b.id='zalappPhone';b.className='phone-hit idle';b.setAttribute('aria-label',T.zalappPhone.label);
   // La pantalla: captura + hoja. Va justo detrás del botón para que el Tab pase del móvil a los dos botones de la hoja
   const scr=phone.scr=document.createElement('div');scr.className='phone-screen';
   scr.innerHTML='<img decoding="async"><div class="app-sheet"><span class="app-grip" aria-hidden="true"></span><button type="button" class="app-btn app-btn-main"></button><button type="button" class="app-btn app-btn-ghost"></button><p class="app-msg" role="status"></p></div>';
@@ -1337,7 +1357,7 @@ if(phone.st){
   const hover=e=>{if(e.pointerType==='mouse'&&!phone.on&&performance.now()-scrollT>250)phoneOn('mouse')};
   b.addEventListener('pointerenter',hover);b.addEventListener('pointermove',hover);
   // El foco cuenta como teclado solo si lo último fue una tecla: al volver del cuaderno tras un clic, sigue mandando el ratón
-  b.addEventListener('focus',()=>phoneOn(phone.key?'focus':fine?'mouse':'touch'));
+  b.addEventListener('focus',()=>{toStop(phone.st);phoneOn(phone.key?'focus':fine?'mouse':'touch')});
   addEventListener('keydown',()=>{phone.key=true},true);
   addEventListener('pointerdown',()=>{phone.key=false},true);
   // Encendido con teclado y luego se mueve el ratón: manda el ratón (al salir del móvil, se apaga)
@@ -1368,8 +1388,9 @@ function placePhone(){
 }
 function stepPhone(f,now){
   const st=phone.st;if(!st)return;
-  const live=!!(st.box&&st.data?.screen)&&phone.w>.9;phone.live=live;
-  if(phone.hit.hidden===live){phone.hit.hidden=!live;if(!live)phoneOff()}
+  const live=!!(st.box&&st.data?.screen)&&phone.w>.9,b=phone.hit;
+  if(live!==phone.live){phone.live=live;b.classList.toggle('idle',!live);if(!live)phoneOff();else if(document.activeElement===b)phoneOn(phone.key?'focus':fine?'mouse':'touch')}
+  if(b.hidden!==!!st.failed)b.hidden=!!st.failed;
   let x=0,y=0,w=0,h=0;if(st.box){[x,y,w,h]=st.box;y+=st.s-SY}
   // Con el ratón: fuera del móvil (más 24 px de margen) se apaga
   if(phone.on&&phone.via==='mouse'){const m=PHONE_MARGIN;if(mouse.x<x-m||mouse.x>x+w+m||mouse.y<y-m||mouse.y>y+h+m)phoneOff()}
@@ -1388,7 +1409,8 @@ function stepPhone(f,now){
     if(u!==phone.sheetT){phone.sheetT=u;phone.sheet.style.transform=u}
   }
   stepPhoneInvite(f,now,live,x,y,w,h);
-  if(!live)return;
+  if(!live&&document.activeElement!==b)return;
+  if(!st.box){const q=st.el.querySelector('.phone-slot').getBoundingClientRect();x=q.left;y=q.top;w=q.width;h=q.height}
   const r=`${Math.round(x)},${Math.round(y)},${Math.round(w)},${Math.round(h)}`;
   if(r!==phone.rect){phone.rect=r;const s=phone.hit.style;s.transform=`translate(${Math.round(x)}px,${Math.round(y)}px)`;s.width=Math.round(w)+'px';s.height=Math.round(h)+'px'}
 }
