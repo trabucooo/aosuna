@@ -68,6 +68,11 @@ main{position:relative;z-index:2}
 :root{--dock-clear:calc(56px + env(safe-area-inset-bottom,0px))}
 .stick{position:sticky;top:0;height:100vh;height:100svh;box-sizing:border-box;overflow:clip;display:flex;flex-direction:column;justify-content:safe center;gap:clamp(10px,2vh,20px);padding-left:var(--gutter-l);padding-right:var(--gutter-r);padding-block:64px var(--dock-clear)}
 .name{font:900 200px/.84 var(--display);text-transform:uppercase;letter-spacing:-.01em;display:flex;flex-direction:column;align-items:center}
+/* Tamaño inicial del nombre ya en CSS (P-03): el ancho, como en la versión sin JavaScript, y el mismo tope de alto que
+   pone fitName() (48 % del bloque / interlineado 0,84; en móvil, 34 %). Así fitName() solo hace el ajuste fino y el
+   primer pintado no salta (antes, de 200 px al tamaño final: CLS 0,14 en escritorio) */
+.js .name{font-size:min(calc((100vw - 32px) / 2.95),57svh)}
+@media (max-width:860px){.js .name{font-size:min(calc((100vw - 32px) / 2.95),40.5svh)}}
 .word{display:flex;justify-content:center;white-space:nowrap}
 .l{position:relative;display:inline-block;cursor:grab;touch-action:pan-y;user-select:none;-webkit-user-select:none;will-change:transform}
 .l:active{cursor:grabbing}
