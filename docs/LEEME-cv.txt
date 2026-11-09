@@ -1,7 +1,8 @@
-Pon aquí los dos PDF del CV, con estos nombres exactos:
+Los dos PDF del CV van en public/cv/, con estos nombres exactos:
 
   alonso-osuna-cv-es.pdf   (CV en español; lo descarga el botón «Descargar CV» de https://aosuna.es/)
   alonso-osuna-cv-en.pdf   (CV en inglés; lo descarga el botón «Download CV» de https://aosuna.es/en/)
 
 Para actualizar el CV, sustituye el archivo, haz commit y vuelve a desplegar.
-nginx sirve esta carpeta con «Cache-Control: no-cache», así que nadie se queda con una versión antigua.
+nginx sirve esa carpeta con «Cache-Control: no-cache», así que nadie se queda con una versión antigua.
+Este archivo está aquí, fuera de public/, para que no se publique en https://aosuna.es/cv/ (SEC-02).
