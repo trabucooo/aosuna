@@ -1023,7 +1023,12 @@ const zDlg=$('#zDialog'),zSheet=$('#zSheet'),zLive=$('#zLive');
 const zPages=$$('.log-page',zDlg),zMarks=$$('.tacho-mark',zDlg),zPrev=$('#zPrev'),zNext=$('#zNext'),zTacho=$('.tacho',zDlg);
 const zLog={cur:-1,swipe:null,from:null};
 const NF=new Intl.NumberFormat(LANG==='en'?'en-GB':'es-ES');
-function openLog(from){zLog.from=from||null;root.classList.add('log-open');zDlg.showModal();artOpen();zGo(0,0,true)}
+function openLog(from){
+  // Antes de abrir, solo la etapa 0 maquetada: showModal() enfoca «Cerrar cuaderno» y eso obliga a maquetar el diálogo
+  // entero en el mismo clic (con las nueve etapas, unos 200 ms en móvil). Las otras se maquetan después (zLayout)
+  zLayout(0,false);
+  zLog.from=from||null;root.classList.add('log-open');zDlg.showModal();artOpen();zGo(0,0,true);
+}
 // Al cerrar (botón o Escape), el foco vuelve a lo que abrió el cuaderno
 zDlg.addEventListener('close',()=>{artClose();root.classList.remove('log-open');wake();const f=zLog.from;if(f&&!f.hidden&&f.getClientRects().length)f.focus()});
 $('#zClose').addEventListener('click',()=>zDlg.close());
@@ -1033,9 +1038,8 @@ function zGo(i,dir,first){
   // Con las ilustraciones, las páginas que no tocan no se ocultan con hidden: se quedan maquetadas, pintadas y casi
   // transparentes, e inert (fuera del Tab, de los clics y del lector de pantalla). Así la que llega no se maqueta ni
   // se pinta de golpe en ese frame
-  const keep=art.ok&&art.on;
-  zPages.forEach((p,k)=>{const off=k!==i;p.hidden=!keep&&off;p.inert=keep&&off;
-    p.classList.toggle('near',keep&&Math.abs(k-i)===1);p.classList.toggle('off',keep&&Math.abs(k-i)>1);p.classList.remove('turn-fwd','turn-back')});
+  // Recién abierto (art.defer), solo se maqueta la etapa actual: las otras ocho, en el frame siguiente (P-05)
+  zLayout(i,art.ok&&art.on&&!art.defer);
   const p=zPages[i];
   // La hoja gira un poco al pasar (con movimiento reducido, el CSS lo cambia por un fundido). Con las
   // ilustraciones de partículas, el texto entra cuando el 80 % de los puntos ha llegado a su sitio
@@ -1051,6 +1055,10 @@ function zGo(i,dir,first){
   zLive.textContent=T.zalappLog.stage(i+1,n,p.querySelector('.log-km').textContent,p.querySelector('.log-h').textContent);
   track('zalapp-etapa',{etapa:p.dataset.etapa});
   $$('[data-count]',p).forEach(countUp);
+}
+function zLayout(i,keep){
+  zPages.forEach((p,k)=>{const off=k!==i;p.hidden=!keep&&off;p.inert=keep&&off;
+    p.classList.toggle('near',keep&&Math.abs(k-i)===1);p.classList.toggle('off',keep&&Math.abs(k-i)>1);p.classList.remove('turn-fwd','turn-back')});
 }
 zPrev.addEventListener('click',()=>zGo(zLog.cur-1,-1));
 zNext.addEventListener('click',()=>zGo(zLog.cur+1,1));
@@ -1256,6 +1264,12 @@ function artSize(){
 function artGo(si,ready){
   art.stage=si;art.onReady=ready;art.ready=false;art.t0=performance.now();art.pulse=[];
   if(si!==2)art.marks.clear();
+  // Recién abierto el cuaderno (P-05): repartir y ordenar los 2.400 puntos cuesta. Se hace después del primer
+  // pintado (dos rAF: el primero aún va antes de pintar), para que el clic responda con el diálogo ya abierto
+  if(art.defer){art.defer=false;requestAnimationFrame(()=>requestAnimationFrame(()=>{if(art.on&&art.stage===si){art.t0=performance.now();zLayout(zLog.cur,true);artPlace(si);artWarm()}}));return}
+  artPlace(si);
+}
+function artPlace(si){
   artTarget(si,!rm);
   if(rm){
     // Sin animaciones: la figura aparece formada, con un fundido del lienzo
@@ -1271,8 +1285,9 @@ function artOpen(){
   artSize();
   // Los puntos salen de una nube alrededor del centro, como en la intro
   for(let i=0;i<ART_N;i++){const a=rand(0,6.283),r=Math.sqrt(Math.random())*Math.min(art.w,art.h)*.5;art.x[i]=art.w/2+Math.cos(a)*r;art.y[i]=art.h/2+Math.sin(a)*r;art.vx[i]=art.vy[i]=0}
+  // Hasta que lleguen sus dianas (artGo las pone en diferido), los puntos se quedan donde están, en la nube
+  art.tx.set(art.x);art.ty.set(art.y);art.go.fill(0);art.al.fill(1);art.defer=true;
   art.on=true;art.last=performance.now();cancelAnimationFrame(art.raf);art.raf=requestAnimationFrame(artLoop);
-  artWarm();
   if(!art.loaded){
     art.loaded=true;
     // La Z de z.svg (como Path2D) y el móvil de su JSON: al llegar, se rehacen esas dos etapas
@@ -1359,6 +1374,10 @@ function zalappWeb(msg){
   if(ZALAPP_URL){window.open(ZALAPP_URL,'_blank','noopener');return}
   msg.textContent=T.zalappLog.pending;clearTimeout(phone.msgT);phone.msgT=setTimeout(()=>{msg.textContent=''},6000);
 }
+// La etapa 0 del cuaderno, muestreada por adelantado cuando el móvil de Zalapp entra en pantalla (P-05)
+const artPre=new IntersectionObserver(es=>{if(!es.some(e=>e.isIntersecting))return;artPre.disconnect();
+  idle(()=>ART[0].parts.forEach((_,pi)=>artPartPts(0,pi)))},{rootMargin:'50% 0px'});
+if(art.cv)artPre.observe($('#zPhone'));
 // Captura fija (sin el JSON del móvil): el enlace abre el cuaderno y el botón hace lo mismo que en la hoja
 $('#zStaticLog').addEventListener('click',e=>{e.preventDefault();track('zalapp-movil',{accion:'cuaderno'});openLog(e.currentTarget)});
 $('#zStaticWeb').addEventListener('click',()=>zalappWeb($('#zMsg')));
