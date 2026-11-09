@@ -556,6 +556,8 @@ html:not(.js) .plan{cursor:default}
 /* El asa crece en cuanto la tocas (respuesta inmediata) y cada esquina se pone verde al encajar, con un latido corto */
 .h{transition:scale 150ms var(--ease-out),background-color 150ms ease,border-color 150ms ease}
 .h.grab{scale:1.25;cursor:grabbing}
+/* Asa seleccionada para llevarla de un toque (A-03): anillo blanco alrededor */
+.h[aria-pressed="true"]{background:rgba(255,61,154,.95);box-shadow:0 0 0 4px rgba(255,255,255,.45)}
 .h.ok{background:#39E08A;border-color:#39E08A;animation:seat 320ms var(--ease-out)}
 @keyframes seat{from{scale:1.45}}
 @media (prefers-reduced-motion:reduce){.h{transition:background-color 150ms ease,border-color 150ms ease}.h.grab{scale:1}.h.ok{animation:none}}
