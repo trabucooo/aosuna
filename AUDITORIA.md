@@ -422,3 +422,115 @@ HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO /dev/null http:
 - **C-06** y prueba real en Safari iOS, Chrome Android y Firefox, sobre todo el arrastre de esquinas, que acabas de cambiar.
 - HSTS: de 300 s a 31536000 cuando todo vaya bien. Sin `preload`.
 - Volver a medir con Lighthouse y axe y actualizar las notas de esta auditoría.
+
+---
+
+## 7. Correcciones aplicadas (9 de noviembre de 2026)
+
+Rama `correcciones-auditoria`, creada desde `explora-brujula` (sin push ni merge). Primero, un commit con lo que había sin commitear (`8de9609`, «Estado previo a las correcciones», con los dos CV) y otro con esta auditoría (`1b65de8`). Después, un commit por ID o por grupo pequeño de IDs.
+
+**Cómo se ha verificado:** `npm run build` sin errores (`node_modules` de Windows, sin `npm ci`). `dist/` servido con un servidor local que manda la CSP de `nginx/security-headers.conf`. Chrome 153 sin pantalla por CDP con scripts propios y Lighthouse 13.6. No he usado axe por separado: Lighthouse ya pasa las reglas de axe en su categoría de accesibilidad. No he probado en Safari iOS, Chrome Android ni Firefox reales, ni el build de Docker (el daemon no estaba en marcha).
+
+### Estado de cada ID
+
+| ID | Estado | Commit | Nota |
+| --- | --- | --- | --- |
+| B1 | parcial | `dd7f507` | `data-domains="aosuna.es"` en los dos HTML. Falta el Website ID: sigue `UMAMI_WEBSITE_ID`. |
+| B2 | hecho | `8de9609` | `public/cv/alonso-osuna-cv-en.pdf` en el commit de estado previo. |
+| B3 | hecho | `8de9609` | `public/cv/alonso-osuna-cv-es.pdf` (la versión sin teléfono) en git. |
+| B4 | hecho | `640e5cd` | Ver A-01. |
+| B5 | no hecho | — | `ZALAPP_URL`, `PORTAL_URL` y las `url` de `ENTREGAS` siguen vacías: hacen falta las direcciones. |
+| A-01 | hecho | `640e5cd` | «Ver nautes.es ↗» y «Abrir el cuaderno de ruta» en las fichas (también sin JavaScript). `#nautesBoat` y `#zalappPhone` siempre en el Tab: al enfocarlos, la página baja a su parada y se activan al llegar. Arreglado de paso un `TypeError` en cada frame de `stepGo` mientras no llegaba el JSON de Nautes. |
+| P-01 | hecho | `84c2dc9` | Lema y entradilla desde el primer pintado. Sin «Cargando N %». `boot()` solo espera la fuente del nombre (600 ms como mucho). |
+| E-01 | hecho | `84c2dc9` | Intro de unos 1,7 s (tope de 2,4 s), solo la primera vez en la sesión. |
+| A-02 | hecho | `7bdf62f` | «Pausar animaciones» en el dock, con `aria-pressed` y guardado en `localStorage`. En pausa: sin cursores, sin ruido, sin sonar, sin huelga, sin intro y el videomapping quieto. |
+| P-02 | hecho | `7bdf62f`, `09baa7a` | El bucle duerme en reposo. Inventario de qué mantiene vivo cada paso en el comentario de `STEPS`. |
+| A-03 | hecho | `b915320` | Tocar un asa la selecciona y el siguiente toque la lleva allí (con imán). «Pruébalo» lo explica. |
+| P-03 | hecho | `1f87a10` | Tamaño inicial del nombre en CSS; queda a menos del 3 % del final de `fitName()`. |
+| S-01 | hecho | `57d9254`, `b23e60e` | El h1 empieza por «Alonso Osuna Soto» en `dist/`; nombre accesible sin mayúsculas forzadas. |
+| A-04 | hecho | `8c6b217` | `#087A50` (5,37:1) y `#667000` (5,41:1). |
+| A-05 | hecho | `6483578`, `ad0c92c` | `pointerleave` en el `<li>` y puente sobre el hueco. Además, la mitad de arriba de la etiqueta quedaba tapada por `#nautesBoat`: ahora va por encima. |
+| A-06 | hecho | `9be8d2c` | Sin URL: «Levantar la captura de la web nueva de Alcar», con `aria-describedby="portalNote"`. |
+| P-04 | parcial | `8785a99`, `09baa7a` | Cada JSON se pide a una pantalla de distancia. No he separado `desktop` y `mobile` en dos archivos: pediste no cambiar el formato. |
+| P-05 | hecho | `acf1ec8` | Diálogo y etapa 0 en un frame (antes de `showModal()` solo queda maquetada esa); el arte y las otras etapas, después. La etapa 0 se precalcula al acercarse el móvil. |
+| P-06 | no hecho | — | Fuera de alcance. |
+| C-01 | no hecho | — | Fuera de alcance. |
+| C-02 | no hecho | — | Fuera de alcance. |
+| AN-01 | hecho | `39c7321` | Tabla de eventos rehecha desde el código, notas 1-14 y «Embudo de contacto». |
+| AN-02 | hecho | `0d2350c` | `email-clic`, `email-copiado` con `modo`, `menu` y `zalapp-cerrar`. |
+| AN-03 | hecho | `0d2350c` | `jefe-orden` solo envía la orden reconocida o `desconocida`. |
+| SEO-01 | hecho | `e64c19c` | Título, descripción, og/twitter:title y JSON-LD en los dos idiomas. |
+| UX-01 | hecho | `5657ac8` | «Escríbeme» / «Get in touch». Por debajo de 540 px, los secundarios van en «Más». No he repetido «Escríbeme» al final del cuaderno (era opcional). |
+| D-01 | hecho | `6629db9` | `absolute_redirect off;`. Falta comprobarlo en producción con `curl`. |
+| A-07 | hecho | `ae5c7c3` | 24×36 px en móvil. |
+| A-08 | hecho | `ae5c7c3` | Región «Herramientas de la página» / «Page tools»; `#pins` después de `#note`. |
+| A-09 | hecho | `ae5c7c3` | `aria-live` solo en los textos de `#note` y `#tool`. |
+| A-10 | hecho | `ae5c7c3` | Alt distintos para iPhone y Android. |
+| A-11 | hecho | `7bdf62f` | `rm` se actualiza con `matchMedia('change')`, sin recargar. |
+| A-12 | no hecho | — | No estaba en la lista; la auditoría ya lo daba por aceptable. |
+| P-07 | hecho | `4dc3e91` | `loading="lazy"`; con JavaScript se pide al estar a una pantalla (recortada del todo, Chrome no la pedía hasta levantarla). |
+| P-08 | no hecho | — | Fuera de alcance. |
+| P-09 | — | — | Se mantiene, como recomendaba la auditoría. |
+| C-03 | hecho | `a2dd2ef` | Fuera `signs`, `bolt`, `olive`, `boat` y el tono `olive`. |
+| C-04 | hecho | `a2dd2ef` | |
+| C-05 | — | — | Correcto; depende de B1. |
+| C-06 | hecho | `a2dd2ef` | Respaldo de `roundRect` con `arcTo`; probado quitando el nativo. |
+| S-02 | hecho | `40fde85` | «Proyectos» y «Id a proyectos» llevan a `#trabajo`. |
+| S-03 | no hecho | — | No estaba en la lista. |
+| SEC-01 | hecho | `6629db9` | |
+| SEC-02 | hecho | `6629db9` | Ahora en `docs/LEEME-cv.txt`. |
+| SEC-03 | parcial | `6629db9` | `HEALTHCHECK` y rotación de logs. Las versiones de las imágenes no están fijadas (hay un comentario). `compose.yaml` validado con `docker compose config`; sin probar el build. |
+| SEC-04 | — | — | No requiere cambios en el repositorio. |
+
+### Métricas antes y después
+
+Mismo método antes (sobre `1b65de8`) y después (sobre `09baa7a`). Son mis medidas en este equipo, así que los números absolutos no coinciden con los del apartado 4 (otra máquina y Playwright), pero la comparación entre las dos columnas sí vale. El Chrome sin pantalla no va sincronizado con la pantalla: el bucle corre a unos 180 frames/s en vez de 60.
+
+| Métrica | Antes | Después |
+| --- | --- | --- |
+| Móvil (412×823, 150 ms, 1,6 Mbps, CPU ×4): LCP | 9.860 ms (`p.lead`) | 1.204–1.344 ms (`p.lead`) |
+| Móvil: FCP | 1.472 ms | 1.204–1.344 ms |
+| Móvil: CLS | 0,034 | 0,045–0,048 (el cambio de fuente del nombre) |
+| Móvil: TBT | 308 ms | 332–383 ms |
+| Escritorio (1350×940, 40 ms, 10 Mbps): LCP | 3.604 ms | 844–1.088 ms |
+| Escritorio: CLS | 0,135 | 0,027–0,029 |
+| Escritorio: TBT | 0 ms | 1–11 ms |
+| Fin de la intro, desde la navegación (escritorio / móvil) | 7.060 / 9.400 ms | ~2.100 / ~4.000 ms (la intro en sí dura ~1,7 s) |
+| Reposo 4 s con «reducir movimiento», arriba / en el videomapping | 180 frames/s y 148 / 364 ms/s de tareas | 0 frames/s y 0 ms/s |
+| Reposo 4 s en pausa, arriba / en el videomapping | — | 0 frames/s y 0 ms/s |
+| Reposo 4 s con animaciones, arriba / en contacto | 180 frames/s, 366 / 543 ms/s | 144 frames/s, 290 / 457 ms/s (los cursores siguen a la vista: es lo esperado) |
+| INP al abrir el cuaderno (móvil, CPU ×4, 3 intentos) | 472–736 ms | 224–296 ms |
+| JSON de puntos pedidos al cargar | 4 | 1 (`retrato-puntos.json`) |
+| `alcar.webp` al cargar | sí (a los 81 ms) | no |
+
+Lighthouse 13.6 después (antes no se pudo pasar):
+
+| Página | Rendimiento | Accesibilidad | Buenas prácticas | SEO | LCP | CLS | TBT |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `/`, móvil | 98 | 97 | 96 | 100 | 1,9 s | 0,042 | 30 ms |
+| `/`, escritorio | 100 | 97 | 96 | 100 | 0,7 s | 0,023 | 0 ms |
+| `/en/`, móvil | 96 | 97 | 96 | 100 | 2,1 s | 0,012 | 100 ms |
+| `/en/`, escritorio | 99 | 97 | 96 | 100 | 0,7 s | 0,009 | 0 ms |
+
+Lo que baja la nota en buenas prácticas es el script de Umami, que en local no resuelve. Las cabeceras de caché son las del servidor de pruebas, no las de nginx.
+
+### Comprobaciones
+
+- **Consola:** sin errores en un recorrido completo (scroll de arriba abajo, Jefe de obra, Auditar con las 14 notas, el cuaderno entero y la pausa), salvo Umami bloqueado. Sin violaciones de CSP. En `/` y en `/en/`.
+- **Tab de principio a fin:** 57 paradas desde el enlace de salto hasta «Descargar CV», todas con foco visible. Orden: «Ver nautes.es ↗», el velero (se transforma al llegar), las boyas, la brújula, el diario, «Abrir el cuaderno de ruta», el móvil (se enciende) y sus dos botones, y luego Alcar. Igual en `/en/` y en móvil.
+- **Cuaderno:** se abre con Intro y el foco va a «Cerrar cuaderno». El Tab no sale del diálogo, las flechas cambian de etapa (se anuncian) y Escape cierra y devuelve el foco. También con «reducir movimiento».
+- **Reducir movimiento:** 0 frames/s en reposo, videomapping quieto y sin cursores; las esquinas se siguen moviendo.
+- **Sin scroll horizontal** a 320 px ni al 200 % (675×470), recorriendo toda la página, en los dos idiomas.
+- **Sin JavaScript:** se lee entera (10.643 caracteres en `main`), con «Ver nautes.es ↗», «Abrir el cuaderno de ruta», las 9 etapas y el CV. El h1 empieza por «Alonso Osuna Soto».
+
+### Pendientes para Alonso
+
+1. **ID de Umami:** cambiar `UMAMI_WEBSITE_ID` en `index.html` y `en/index.html` (ver `ANALITICA.md`) y crear en Umami el embudo de contacto.
+2. **Comprobar en producción** con los `curl` del apartado 6, sobre todo `/en` (D-01), `/cv/alonso-osuna-cv-en.pdf` (200) y que `/cv/LEEME.txt` ya da 404.
+3. **Probar en Safari iOS, Chrome Android y Firefox reales:** el arrastre y los toques del videomapping, el botón de pausa, el cuaderno y el velero o el móvil con teclado.
+4. **Fijar las versiones de las imágenes de Docker** (`Dockerfile`) y hacer un `docker compose build` para comprobar el `HEALTHCHECK` y `nginx -t`.
+5. **Enlaces pendientes (B5):** `ZALAPP_URL`, `PORTAL_URL` y las `url` de las entregas del diario.
+6. **Encontrado con Lighthouse, sin tocar porque no estaba en la lista:**
+   - El botón naranja de Zalapp («Ver cuaderno de ruta», `.app-btn-main`) tiene un contraste de 3,04:1 (blanco sobre `#F26B2C`). Sale en la captura de reserva, en la hoja del móvil y sin JavaScript. Opciones: texto azul petróleo `#102D3C` sobre el mismo naranja (4,73:1, los dos colores de la marca) o un naranja más oscuro como `#C2410C` con texto blanco (5,18:1).
+   - Lighthouse marca el enlace de idioma porque su nombre («English version (EN)») no empieza por el texto visible («EN»). La auditoría lo daba por bueno (2.5.3); si quieres que pase la regla de axe, «EN · English version».
+7. **Rendimiento en móvil que sigue alto:** el TBT con CPU ×4 (332-383 ms) y el INP al abrir el cuaderno (224-296 ms) siguen por encima de 200 ms. El siguiente paso son P-06 y C-01: cargar las escenas con `import()`.
