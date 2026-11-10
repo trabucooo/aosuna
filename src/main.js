@@ -256,18 +256,21 @@ function bindLetters(){
 }
 
 /* ---------- Intro ----------
-   Solo la primera vez en la sesión (boot.js pone la clase intro; aquí se apunta INTRO_KEY al empezar) y corta:
+   Solo en la primera visita (boot.js pone la clase intro; aquí se apunta INTRO_KEY en localStorage al empezar) y corta:
    unos 2,2 s. El lema y la entradilla ya se ven desde el principio; aquí solo se monta el nombre. Los cursores
    dibujan la casilla de cada letra, la traen, la pintan en cuanto llega y escriben el apellido. Si un equipo lento
    la alarga, a los INTRO_MAX ms se termina de golpe. Scroll, toque, tecla o «Saltar intro» la cortan (boot) */
 const INTRO_KEY='intro-vista',INTRO_MAX=2400;
-let skipped=false,introDone=false;
+let skipped=false,introDone=false,introRan=false;
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 const slots=[];
+// Cómo se corta la intro, para el evento intro-saltada (el tipo del evento del navegador → dato «modo»)
+const SKIP_MODE={click:'boton',wheel:'scroll',touchmove:'toque',keydown:'tecla'};
 async function intro(){
-  try{sessionStorage.setItem(INTRO_KEY,'1')}catch(e){}
+  introRan=true;
+  try{localStorage.setItem(INTRO_KEY,'1')}catch(e){}
   performance.mark('intro');
-  setTimeout(finish,INTRO_MAX);
+  setTimeout(()=>finish('fin'),INTRO_MAX);
   // Los que no dibujan casillas se acercan al nombre: así llegan pronto a por las letras
   const builders=cursors.slice(0,6),carriers=cursors.slice(6);
   carriers.forEach((c,i)=>{const a=i/carriers.length*6.283;c.tx=vw/2+Math.cos(a)*rand(120,260);c.ty=vh/2+Math.sin(a)*rand(80,200)});
@@ -303,11 +306,17 @@ async function intro(){
   // Escriben el apellido
   const full='OSUNA SOTO';surEl.textContent='';
   for(let i=1;i<=full.length;i++){surEl.textContent=full.slice(0,i);await pause(20);if(skipped)return}
-  finish();
+  finish('fin');
 }
 function rescue(){if(!introDone)finish();root.classList.remove('intro','locked');$$('.l').forEach(l=>l.style.transform='')}
-function finish(){
+/* how: 'fin' si la intro llega al final (o al tope de INTRO_MAX), o el evento que la corta (clic en «Saltar intro»,
+   scroll, toque o tecla). Sin how (rescue, «reducir movimiento» activado a mitad) no se mide nada */
+function finish(how){
   if(introDone)return;introDone=true;skipped=true;
+  if(introRan){
+    if(how==='fin')track('intro-completa');
+    else if(how&&SKIP_MODE[how.type])track('intro-saltada',{modo:SKIP_MODE[how.type]});
+  }
   letters.forEach(L=>{L.x=L.y=L.r=0;L.mode='rest';L.done=null;L.fast=false;paintLetter(L)});
   slots.forEach(s=>s.remove());
   surEl.textContent='OSUNA SOTO';
@@ -2306,7 +2315,7 @@ async function boot(){
   // Sin intro (ya vista en esta sesión o con «reducir movimiento»: boot.js no puso la clase), la página abre montada
   if(!root.classList.contains('intro')){introDone=true;skipped=true;clearTimeout(guard);$('#skip').remove();return}
   surEl.textContent='';
-  $('#skip').onclick=()=>{track('intro-saltada');finish()};
+  $('#skip').onclick=finish;
   addEventListener('wheel',finish,{passive:true});addEventListener('touchmove',finish,{passive:true});addEventListener('keydown',finish);
   await intro();clearTimeout(guard);
 }

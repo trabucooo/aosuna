@@ -37,7 +37,8 @@ Los valores de los datos van siempre en español, aunque la visita sea en la ver
 | --- | --- | --- | --- |
 | `menu` | Clic en un enlace del menú de arriba | `a`: `#inicio`, `#historia`, `#herramientas`, `#trabajo` o `#contacto` | `#trabajo` es «Proyectos». |
 | `idioma` | Clic en el selector ES / EN | `a`: el idioma al que se cambia, `es` o `en` | |
-| `intro-saltada` | Clic en «Saltar intro» (`#skip`) | — | La intro solo sale la primera vez en la sesión. Cortarla con scroll, toque o tecla no cuenta. |
+| `intro-completa` | La intro llega al final sin que nadie la corte (o al tope de 2,4 s en un equipo lento) | — | La intro solo sale en la primera visita (se recuerda en `localStorage`), así que cuenta visitantes nuevos. Compárala con `intro-saltada`. |
+| `intro-saltada` | La intro se corta antes de acabar | `modo`: `boton` («Saltar intro»), `scroll` (rueda), `toque` (deslizar en táctil) o `tecla` | Con «reducir movimiento» o con las animaciones en pausa no hay intro y no llega ninguno de los dos. |
 | `pausa` | Clic en «Pausar animaciones» (`#bPause`) | `activa`: `si` al pausar, `no` al reanudar | |
 | `auditar-abierto` | Al activar «Auditar esta web» (`#bAudit`) | — | |
 | `auditar-nota` | Cada vez que se abre una nota de la auditoría (también la primera, al activar el modo) | `nota`: de 1 a 14 (ver la lista de abajo) | |
