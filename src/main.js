@@ -1625,120 +1625,22 @@ function stepPlan(f,now){
   stepPark(plan.park,on,Math.min(plan.left+plan.w+4,vw-28),y+plan.h*.45,now);
 }
 
-/* ---------- Videomapping ---------- */
-const stage=$('#stage'),map=$('#map'),mctx=map.getContext('2d'),mRead=$('#mRead');
-// Navegadores sin overflow:clip (style.css): si algo desplaza el escaparate, vuelve a su sitio
-stage.addEventListener('scroll',()=>{stage.scrollTop=stage.scrollLeft=0});
-const goal=[[.28,.22],[.76,.16],[.78,.72],[.26,.66]];
-const pts=[[.08,.1],[.56,.05],[.66,.58],[.16,.52]];
-let fitted=false;
-const hs=pts.map((p,i)=>{const b=document.createElement('button');b.type='button';b.className='h';b.setAttribute('aria-label',T.mapping.corner(i+1));b.setAttribute('aria-pressed','false');stage.appendChild(b);return b});
-function warp(){
-  const W=stage.clientWidth,H=stage.clientHeight;if(!W)return;
-  const q=pts.map(p=>[p[0]*W,p[1]*H]);
-  const[x0,y0]=q[0],[x1,y1]=q[1],[x2,y2]=q[2],[x3,y3]=q[3];
-  const dx1=x1-x2,dx2=x3-x2,sx=x0-x1+x2-x3,dy1=y1-y2,dy2=y3-y2,sy=y0-y1+y2-y3;
-  const den=dx1*dy2-dx2*dy1||1e-6,g=(sx*dy2-dx2*sy)/den,h=(dx1*sy-sx*dy1)/den;
-  const a=x1-x0+g*x1,b=x3-x0+h*x3,d=y1-y0+g*y1,e=y3-y0+h*y3;
-  const w=400,hh=300;
-  map.style.transform=`matrix3d(${a/w},${d/w},0,${g/w},${b/hh},${e/hh},0,${h/hh},0,0,1,0,${x0},${y0},0,1)`;
-  // Con la propiedad translate y no con transform: el scale del asa al cogerla (style.css, .h.grab) se aplica por
-  // encima de transform, y escalaba también la posición desde la esquina del escaparate: el asa saltaba lejos del dedo
-  hs.forEach((el,i)=>el.style.translate=`${q[i][0]}px ${q[i][1]}px`);
-  // Cada esquina en su sitio se pone verde por separado: se ve el progreso, no solo el final
-  const seated=pts.map((p,i)=>p[0]===goal[i][0]&&p[1]===goal[i][1]);
-  hs.forEach((el,i)=>el.classList.toggle('ok',seated[i]));
-  const ok=seated.every(Boolean);
-  stage.classList.toggle('done',ok);
-  if(ok){if(!fitted){fitted=true;track('videomapping-encajado')}mRead.textContent=T.mapping.done}
-  else mRead.textContent=T.mapping.left(seated.filter(s=>!s).length);
+/* ---------- Videomapping ----------
+   El código vive en scenes/mapping.js y se carga aparte (ver «Carga en diferido»). mapApi es null hasta que llega.
+   Aquí queda lo que usa el bucle: si el escaparate está en pantalla (mapOn) y si ya se pintó el fotograma fijo */
+const stage=$('#stage');
+let mapApi=null,mapLoad=null;
+function loadMap(){
+  return mapLoad||(mapLoad=import('./scenes/mapping.js').then(m=>{
+    mapApi=m.createMapping({$,clamp,springStep,isRm:()=>rm,track,T,wake,keep:()=>{busy=true}});
+    mapApi.warp();mapDrawn=false;wake();
+  }).catch(e=>console.error(e)));
 }
-/* Esquinas con imán. Cerca de su sitio (MAG) tiran de la esquina hacia él; muy cerca (SEAT) encaja de golpe
-   y no se suelta hasta alejarla un poco más (UNSEAT): se nota el «clic». Al soltar cerca, llega sola con un muelle */
-const MAG=.07,SEAT=.03,UNSEAT=.05;
-const corners=pts.map(()=>({grab:null,sx:{x:0,v:0},sy:{x:0,v:0},anim:false}));
-function placeCorner(i,x,y,kb){
-  const g=goal[i],d=Math.hypot(x-g[0],y-g[1]),was=pts[i][0]===g[0]&&pts[i][1]===g[1];
-  // Con teclado no hay imán (atraparía la esquina con pasos de 0,01): encaja solo al caer justo en su sitio
-  if(d<(kb?.006:was?UNSEAT:SEAT)){pts[i][0]=g[0];pts[i][1]=g[1];return}
-  const pull=!kb&&d<MAG?Math.pow(1-d/MAG,2)*.6:0;
-  pts[i][0]=clamp(x+(g[0]-x)*pull);pts[i][1]=clamp(y+(g[1]-y)*pull);
-}
-function stepMapSprings(f){
-  let moved=false;
-  corners.forEach((c,i)=>{
-    if(!c.anim)return;
-    springStep(c.sx,goal[i][0],f/60,.25);springStep(c.sy,goal[i][1],f/60,.25);
-    pts[i][0]=c.sx.x;pts[i][1]=c.sy.x;moved=true;
-    if(Math.hypot(c.sx.x-goal[i][0],c.sy.x-goal[i][1])<.002&&Math.hypot(c.sx.v,c.sy.v)<.01){c.anim=false;pts[i][0]=goal[i][0];pts[i][1]=goal[i][1]}
-  });
-  if(moved){warp();busy=true}
-}
-/* Toques sueltos (A-03, WCAG 2.5.7): tocar un asa la selecciona (aria-pressed) y el siguiente toque dentro del
-   escaparate la lleva a ese punto, con el imán de placeCorner. Arrastrar y las flechas siguen igual */
-let mapSel=-1;
-function mapSelect(i){mapSel=i;hs.forEach((h,k)=>h.setAttribute('aria-pressed',k===i))}
-// Al soltar (o al llevarla de un toque) cerca de su sitio, termina el camino sola, desde donde está y sin rebote
-function settleCorner(i){
-  const c=corners[i],g=goal[i],d=Math.hypot(pts[i][0]-g[0],pts[i][1]-g[1]);
-  if(d>0&&d<MAG){if(rm){pts[i][0]=g[0];pts[i][1]=g[1];warp()}else{c.sx={x:pts[i][0],v:0};c.sy={x:pts[i][1],v:0};c.anim=true;wake()}}
-}
-const TAP_PX=8,TAP_MS=600; // un toque: el dedo se mueve menos de 8 px y lo levanta antes de 0,6 s
-let stageTap=null;
-stage.addEventListener('pointerdown',e=>{stageTap=e.target.classList.contains('h')?null:{id:e.pointerId,x:e.clientX,y:e.clientY,t:e.timeStamp}});
-stage.addEventListener('pointerup',e=>{
-  const s=stageTap;stageTap=null;
-  if(!s||s.id!==e.pointerId||mapSel<0||Math.hypot(e.clientX-s.x,e.clientY-s.y)>TAP_PX||e.timeStamp-s.t>TAP_MS)return;
-  const r=stage.getBoundingClientRect(),i=mapSel;
-  corners[i].anim=false;placeCorner(i,(e.clientX-r.left)/r.width,(e.clientY-r.top)/r.height);warp();settleCorner(i);mapSelect(-1);
-});
-/* Arrastre: la esquina se mueve exactamente lo que se mueve el dedo desde que tocó el asa (x0, y0 y la esquina
-   de partida), no según dónde está el dedo respecto al escaparate. Así, si la página se mueve a mitad del gesto
-   (Safari en iOS que hace scroll, el navegador que enseña el asa enfocada, la barra que aparece), la esquina no salta */
-hs.forEach((b,i)=>{
-  const c=corners[i];
-  // Táctil: tocar un asa no hace scroll, ni zoom, ni la enfoca (enfocarla puede desplazar la página bajo el dedo)
-  b.addEventListener('touchstart',e=>e.preventDefault(),{passive:false});
-  b.addEventListener('pointerdown',e=>{
-    // Si otro dedo ya la lleva, se queda con él. Un arrastre que no terminó bien (sin pointerup) no bloquea el nuevo
-    if(c.grab&&c.grab.id!==e.pointerId&&b.hasPointerCapture(c.grab.id))return;
-    const r=stage.getBoundingClientRect();
-    c.grab={id:e.pointerId,x0:e.clientX,y0:e.clientY,t:e.timeStamp,w:r.width||1,h:r.height||1,px:pts[i][0],py:pts[i][1],far:false};c.anim=false;
-    try{b.setPointerCapture(e.pointerId)}catch(err){}
-    b.classList.add('grab');
-  });
-  b.addEventListener('pointermove',e=>{
-    const g=c.grab;if(!g||e.pointerId!==g.id)return;
-    if(Math.hypot(e.clientX-g.x0,e.clientY-g.y0)>TAP_PX)g.far=true;
-    placeCorner(i,g.px+(e.clientX-g.x0)/g.w,g.py+(e.clientY-g.y0)/g.h);warp();
-  });
-  const up=e=>{
-    const g=c.grab;if(!g||e.pointerId!==g.id)return;c.grab=null;b.classList.remove('grab');
-    // Un toque (sin arrastrar) la selecciona, o la deselecciona si ya lo estaba
-    if(e.type==='pointerup'&&!g.far&&e.timeStamp-g.t<=TAP_MS)mapSelect(mapSel===i?-1:i);
-    settleCorner(i);
-  };
-  b.addEventListener('pointerup',up);b.addEventListener('pointercancel',up);b.addEventListener('lostpointercapture',up);
-  // Con teclado (Intro o Espacio, sin puntero: detail 0) también se selecciona
-  b.addEventListener('click',e=>{if(!e.detail)mapSelect(mapSel===i?-1:i)});
-  // Flechas: un paso pequeño; con Mayúsculas, uno grande. El imán también funciona con teclado
-  b.addEventListener('keydown',e=>{const k={ArrowLeft:[-1,0],ArrowRight:[1,0],ArrowUp:[0,-1],ArrowDown:[0,1]}[e.key];if(!k)return;e.preventDefault();
-    const s=e.shiftKey?.05:.01;c.anim=false;placeCorner(i,pts[i][0]+k[0]*s,pts[i][1]+k[1]*s,true);warp()});
-});
-// Mientras se arrastra una esquina, el dedo no hace scroll (touch-action:none no basta en todos los Safari)
-stage.addEventListener('touchmove',e=>{if(corners.some(c=>c.grab))e.preventDefault()},{passive:false});
+function warp(){mapApi?.warp()}
 let mapOn=false,mapDrawn=false;new IntersectionObserver(es=>{mapOn=es[0].isIntersecting;wake()}).observe(stage);
-function drawMap(now){
-  const t=now*.0006;
-  mctx.fillStyle='#10061C';mctx.fillRect(0,0,400,300);
-  for(let i=0;i<14;i++){
-    const y=((i*34+now*.03)%340)-30,hue=(300+i*14+now*.02)%360;
-    mctx.fillStyle=`hsl(${hue} 95% 58%)`;mctx.beginPath();
-    mctx.moveTo(0,y);for(let x=0;x<=400;x+=20)mctx.lineTo(x,y+Math.sin(x*.016+t*3+i)*16);
-    mctx.lineTo(400,y+12);for(let x=400;x>=0;x-=20)mctx.lineTo(x,y+12+Math.sin(x*.016+t*3+i)*16);
-    mctx.fill();
-  }
-}
+near(stage,loadMap,'150% 0px');
+// Con teclado se puede llegar a las asas de un salto (Tab desde lejos): a la primera tecla Tab se piden ya
+addEventListener('keydown',e=>{if(e.key==='Tab')loadMap()},true);
 
 /* ---------- Caja de herramientas ---------- */
 const TOOL_COLORS=['#2A3FF0','#087A50','#00788C','#7A2BD6','#B81F8A','#D6264F','#B3470F','#C03030','#A8341A','#3A3AD0','#3A3F55','#006B4F','#667000','#3D6B00','#5B2BB5','#B3470F'];
@@ -1747,67 +1649,22 @@ const pit=$('#pit'),chips=[];
 function pickTool(i){const t=TOOLS[i];$('#tName').textContent=t[0];$('#tWhere').textContent=t[2];$('#tLevel').textContent=t[3];chips.forEach((c,k)=>c.el.setAttribute('aria-pressed',k===i))}
 TOOLS.forEach((t,i)=>{const b=document.createElement('button');b.type='button';b.className='chip';b.textContent=t[0];b.style.setProperty('--f',t[1]);b.onclick=()=>{track('herramienta',{nombre:ES.tools[i][0]});pickTool(i)};pit.appendChild(b);chips.push({el:b})});
 pickTool(0);
-let pitOn=false,pitBuilt=false,pW=0,pH=0;
-function startPit(){
-  if(pitBuilt||rm)return;pitBuilt=true;
-  chips.forEach(c=>{c.w=c.el.offsetWidth;c.h=c.el.offsetHeight});
-  pit.classList.add('phys');pW=pit.clientWidth;pH=pit.clientHeight;
-  chips.forEach((c,i)=>{
-    c.x=rand(c.w/2+4,Math.max(c.w/2+5,pW-c.w/2-4));c.y=-40-i*52;c.vx=rand(-1,1);c.vy=0;c.rot=0;c.hold=null;
-    const at=e=>{const r=pit.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top}};
-    c.el.addEventListener('pointerdown',e=>{c.el.setPointerCapture(e.pointerId);c.hold=at(e)});
-    c.el.addEventListener('pointermove',e=>{if(c.hold)c.hold=at(e)});
-    const up=()=>c.hold=null;
-    c.el.addEventListener('pointerup',up);c.el.addEventListener('pointercancel',up);
-  });
+// La física (caer, chocar, agarrar) vive en scenes/toolbox.js y se carga aparte. pitApi es null hasta que llega
+let pitOn=false,pitApi=null,pitLoad=null;
+function loadPit(){
+  return pitLoad||(pitLoad=import('./scenes/toolbox.js').then(m=>{
+    pitApi=m.createPit({pit,chips,rand,clamp,isRm:()=>rm,keep:()=>{busy=true}});
+    if(pitOn){pitApi.start();wake()}
+  }).catch(e=>console.error(e)));
 }
-/* Física de ladrillos: gravedad, choques y agarre con muelle */
-function stepPit(){
-  if(!pitBuilt||!pitOn)return;
-  for(const c of chips){
-    if(c.hold){c.vx+=(c.hold.x-c.x)*.16;c.vy+=(c.hold.y-c.y)*.16;c.vx*=.72;c.vy*=.72}
-    else{c.vy+=.55;c.vx*=.992}
-    c.vx=clamp(c.vx,-34,34);c.vy=clamp(c.vy,-34,34);
-    c.x+=c.vx;c.y+=c.vy;
-  }
-  for(let it=0;it<5;it++){
-    for(let i=0;i<chips.length;i++)for(let j=i+1;j<chips.length;j++){
-      const a=chips[i],b=chips[j];
-      const ox=(a.w+b.w)/2-Math.abs(a.x-b.x),oy=(a.h+b.h)/2-Math.abs(a.y-b.y);
-      if(ox<=0||oy<=0)continue;
-      const ma=a.hold?0:1,mb=b.hold?0:1,sum=ma+mb||1;
-      if(oy<ox){
-        const s=a.y<b.y?-1:1;a.y+=s*oy*ma/sum;b.y-=s*oy*mb/sum;
-        const v=(a.vy*ma+b.vy*mb)/sum;
-        if(ma)a.vy=v-(a.vy-v)*.12;if(mb)b.vy=v-(b.vy-v)*.12;
-        const f=(a.vx-b.vx)*.09;a.vx-=f;b.vx+=f;
-      }else{
-        const s=a.x<b.x?-1:1;a.x+=s*ox*ma/sum;b.x-=s*ox*mb/sum;
-        const v=(a.vx*ma+b.vx*mb)/sum;
-        if(ma)a.vx=v-(a.vx-v)*.2;if(mb)b.vx=v-(b.vx-v)*.2;
-      }
-    }
-    for(const c of chips){
-      if(c.y>pH-c.h/2){c.y=pH-c.h/2;c.vy*=c.vy>3?-.28:0;c.vx*=.86}
-      if(c.x<c.w/2){c.x=c.w/2;c.vx=Math.abs(c.vx)*.4}
-      if(c.x>pW-c.w/2){c.x=pW-c.w/2;c.vx=-Math.abs(c.vx)*.4}
-    }
-  }
-  for(const c of chips){
-    if(c.hold||Math.abs(c.vx)>.05||Math.abs(c.vy)>.6||Math.abs(clamp(c.vx*1.6,-16,16)-c.rot)>.05)busy=true;
-    const goal=clamp(c.vx*1.6,-16,16);c.rot+=(goal-c.rot)*.14;
-    c.el.style.transform=`translate(${c.x-c.w/2}px,${c.y-c.h/2}px) rotate(${c.rot}deg)`;
-  }
-}
+function stepPit(){if(pitOn)pitApi?.step()}
+near(pit,loadPit);
 // La primera vez que la caja entra en pantalla se apunta la entrada al laboratorio
 let labSeen=false;
-new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn){startPit();if(!labSeen){labSeen=true;track('laboratorio-visto')}}wake()},{threshold:.15}).observe(pit);
-// El tamaño de la caja se lee solo cuando cambia, no en cada frame
-new ResizeObserver(()=>{if(pitBuilt){pW=pit.clientWidth;pH=pit.clientHeight}}).observe(pit);
+new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn){pitApi?.start();if(!labSeen){labSeen=true;track('laboratorio-visto')}}wake()},{threshold:.15}).observe(pit);
+new ResizeObserver(()=>pitApi?.resize()).observe(pit);
 $('#dump').onclick=()=>{
-  track('caja-volcada');
-  if(!pitBuilt)return;
-  chips.forEach(c=>{c.vx=rand(-12,12);c.vy=rand(-30,-14)});
+  track('caja-volcada');pitApi?.dump();
 };
 
 /* ---------- Contacto ---------- */
@@ -1904,7 +1761,7 @@ bBoss.onclick=()=>boss.hidden?openBoss():closeBoss();
 boss.addEventListener('submit',e=>{e.preventDefault();giveOrder(bossIn.value);bossIn.value=''});
 addEventListener('keydown',e=>{
   const typing=/INPUT|TEXTAREA/.test(document.activeElement?.tagName||'');
-  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();compassFree();phoneOff();planDown();mapSelect(-1);setMore(false)}
+  if(e.key==='Escape'){closeBoss();closeNote();setAudit(false);closeStamps();closeBoat();closeBuoys();compassFree();phoneOff();planDown();mapApi?.select(-1);setMore(false)}
   if(e.key==='/'&&!typing&&introDone){e.preventDefault();openBoss()}
 });
 
@@ -2006,7 +1863,7 @@ let last=performance.now();
    Además: la intro y las órdenes del jefe de obra. Lo despiertan scroll, puntero, teclado, foco, cambio de tamaño
    y lo que llega más tarde (JSON, fuentes, recolocar) */
 const STEPS=[(f,now)=>stepScene(now),f=>stepLetters(f),stepCursors,stepDust,stepBoat,stepCompass,stepPhone,stepPit,stepPlan,(f,now)=>stepStrike(now),stepPins,
-  (f,now)=>{if(!mapOn)return;stepMapSprings(f);if(!calm()){drawMap(now);busy=true}else if(!mapDrawn){drawMap(0);mapDrawn=true}}];
+  (f,now)=>{if(!mapOn||!mapApi)return;mapApi.stepSprings(f);if(!calm()){mapApi.draw(now);busy=true}else if(!mapDrawn){mapApi.draw(0);mapDrawn=true}}];
 let scrolled=false,awake=false,wakeT=0,strikeT=0,ready=false; // ready: boot() ya ha colocado las formas
 const IDLE_MS=400; // margen tras el último evento antes de dormir
 function wake(){wakeT=performance.now();if(ready&&!awake){awake=true;last=wakeT;requestAnimationFrame(loop)}}
