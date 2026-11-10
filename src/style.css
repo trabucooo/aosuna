@@ -294,9 +294,14 @@ html:not(.js) .ch-explora .static{grid-area:slot}
 .phone-msg{min-height:1.5em;margin:0;font:400 12px/1.5 var(--mono);text-align:center}
 /* Botones como los de la app: «Avisar» (naranja) y «Usar mi ubicación» (borde gris, texto azul petróleo) */
 .app-btn{display:block;box-sizing:border-box;width:100%;margin:0;padding:.8em 1em;border-radius:12px;font:600 1em/1.2 var(--body);text-align:center;text-decoration:none;cursor:pointer}
-.app-btn-main{border:0;background:var(--z-orange);color:#fff}
+/* Texto azul petróleo y no blanco: blanco sobre este naranja da 3,04:1 y AA pide 4,5:1; el petróleo da 4,73:1
+   (y son los dos colores del manual de marca). No hay estilos de :hover ni :active: el contraste es el mismo */
+.app-btn-main{border:0;background:var(--z-orange);color:var(--z-petrol)}
 .app-btn-ghost{border:1px solid #D9DEE2;background:#fff;color:var(--z-petrol)}
 .app-btn:focus-visible{outline:2px solid var(--z-petrol);outline-offset:2px}
+/* El anillo petróleo se ve sobre la hoja blanca del móvil, pero no sobre el fondo oscuro de la página (1,3:1):
+   en la captura fija, que va directamente sobre el fondo, el anillo usa el color del texto */
+.phone-links .app-btn:focus-visible{outline-color:var(--ink)}
 /* Encima del móvil: el botón invisible y la pantalla (captura + hoja), colocados por main.js sobre «screen» */
 .phone-hit{position:fixed;left:0;top:0;z-index:3;margin:0;padding:0;border:0;border-radius:14%/7%;background:transparent;cursor:pointer}
 .phone-hit:focus-visible{outline:2px solid var(--accent);outline-offset:6px}
