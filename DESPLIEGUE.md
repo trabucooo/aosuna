@@ -1,6 +1,6 @@
 # Despliegue en el VPS (Docker + Caddy)
 
-> **Estado de esta guía:** los archivos están escritos y revisados, pero **no se han probado contra un VPS real ni con Docker en local** (Docker Desktop estaba apagado al escribirla). Sigue los pasos en orden y, si algo no coincide con lo que ves, para y mira el apartado «Si algo falla». La guía supone un VPS con **Ubuntu o Debian**; si ya tienes Docker o Caddy instalados, sáltate esos pasos.
+> **Estado de esta guía:** el contenedor del portfolio y Caddy delante de él **están probados en local con Docker** (11-11-2026: build, salud, redirecciones, caché, compresión, cabeceras, el ID de Umami y un recorrido completo de la web sin errores). **Lo que no se ha podido probar sin el VPS:** el HTTPS de Let's Encrypt, el DNS, el cortafuegos y el script `deploy.ps1` de principio a fin. Sigue los pasos en orden y, si algo no coincide con lo que ves, para y mira el apartado «Si algo falla». La guía supone un VPS con **Ubuntu o Debian**; si ya tienes Docker o Caddy instalados, sáltate esos pasos.
 
 ## Cómo queda montado
 
@@ -70,7 +70,7 @@ mkdir -p ~/apps
 
 ```sh
 cd ~/apps
-git clone https://github.com/USUARIO/REPO.git aosuna    # la dirección de tu repositorio
+git clone https://github.com/trabucooo/aosuna.git aosuna
 ```
 
 Si el repositorio es **privado**, GitHub pedirá permiso. Lo más limpio es una *deploy key* (una llave que solo sirve para leer este repositorio):
@@ -84,7 +84,7 @@ En GitHub: el repositorio → Settings → Deploy keys → Add deploy key → pe
 
 ```sh
 printf 'Host github.com\n  IdentityFile ~/.ssh/aosuna_deploy\n  IdentitiesOnly yes\n' >> ~/.ssh/config
-cd ~/apps && git clone git@github.com:USUARIO/REPO.git aosuna
+cd ~/apps && git clone git@github.com:trabucooo/aosuna.git aosuna
 ```
 
 ## 3. Arrancar el portfolio
