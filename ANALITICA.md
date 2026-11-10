@@ -6,13 +6,23 @@ Si Umami está caído, bloqueado por un bloqueador de anuncios o todavía no est
 
 ## Qué tienes que rellenar
 
-En `index.html` y en `en/index.html`, cambia `UMAMI_WEBSITE_ID` por el ID que te da Umami al dar de alta la web (Settings → Websites → Add website → copia el *Website ID*).
+El ID que te da Umami al dar de alta la web (Settings → Websites → Add website → copia el *Website ID*) va en el archivo `.env`, no en el HTML:
+
+```
+UMAMI_WEBSITE_ID=el-id-de-36-caracteres
+```
+
+Las cuatro páginas (`index.html`, `en/index.html`, `zalapp/index.html` y `en/zalapp/index.html`) llevan el marcador `UMAMI_WEBSITE_ID` y el build lo cambia por ese valor (`vite.config.js`, plugin `umami-id`). El `.env` no se sube a GitHub; hay una plantilla en `.env.example`. En el VPS va junto a `compose.yaml` (ver `DESPLIEGUE.md`, paso 7).
+
+**Sin el ID, la web se compila sin analítica:** el build quita la etiqueta del script (y avisa en la terminal) en vez de pedir un script que no registraría nada. Con `npm run dev` nunca se incluye.
+
+Así queda la etiqueta en el HTML de origen:
 
 ```html
 <script defer src="https://stats.aosuna.es/script.js" data-website-id="UMAMI_WEBSITE_ID" data-domains="aosuna.es"></script>
 ```
 
-Las visitas a páginas (`/` y `/en/`) se cuentan solas. Los eventos de abajo se ven en Umami → la web → *Events*.
+Las visitas a páginas (`/`, `/en/`, `/zalapp/` y `/en/zalapp/`) se cuentan solas. Los eventos de abajo se ven en Umami → la web → *Events*.
 
 ## Eventos
 
@@ -206,8 +216,8 @@ Caddy saca el certificado HTTPS solo.
 
 1. Entra en `https://stats.aosuna.es`. El usuario inicial es `admin` y la contraseña `umami`: **cámbiala nada más entrar**.
 2. Settings → Websites → Add website: nombre «Portfolio», dominio `aosuna.es`.
-3. Copia el *Website ID* y ponlo en lugar de `UMAMI_WEBSITE_ID` en `index.html` y `en/index.html`.
-4. Vuelve a desplegar el portfolio.
+3. Copia el *Website ID* y ponlo en el `.env` del servidor (`~/apps/aosuna/.env`): `UMAMI_WEBSITE_ID=…`.
+4. Reconstruye el portfolio: `cd ~/apps/aosuna && docker compose up -d --build` (ver `DESPLIEGUE.md`, paso 7).
 
 ## Recomendaciones
 

@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { fileURLToPath } from 'node:url';
 import { readFileSync } from 'node:fs';
 
@@ -60,8 +60,32 @@ const zalappPage = () => ({
   },
 });
 
-export default defineConfig({
-  plugins: [zalappPage(), preloadNameFont()],
+/* El ID de Umami no se escribe en el HTML: las cuatro páginas llevan el marcador UMAMI_WEBSITE_ID y aquí se cambia
+   por el valor de la variable de entorno del mismo nombre (archivo .env en tu ordenador o en el VPS; ver
+   .env.example y DESPLIEGUE.md). Así el ID vive en un solo sitio y no hay que tocar cuatro archivos.
+   Sin la variable (o en `npm run dev`), la etiqueta del script y su preconnect se quitan: no tiene sentido pedir un
+   script que no va a registrar nada, y la web funciona igual porque track() no hace nada si Umami no está */
+const umami = id => ({
+  name: 'umami-id',
+  transformIndexHtml: {
+    order: 'pre',
+    handler(html) {
+      if (!html.includes('UMAMI_WEBSITE_ID')) return html;
+      if (id) return html.replaceAll('UMAMI_WEBSITE_ID', id);
+      return html
+        .replace(/[ \t]*<link rel="preconnect" href="https:\/\/stats\.aosuna\.es">\r?\n/, '')
+        .replace(/[ \t]*<script defer src="https:\/\/stats\.aosuna\.es\/script\.js"[^>]*><\/script>\r?\n/, '');
+    },
+  },
+});
+
+export default defineConfig(({ mode, command }) => {
+  // loadEnv lee .env, .env.local… y también las variables del sistema (así llega en el build de Docker)
+  const id = (loadEnv(mode, process.cwd(), 'UMAMI_').UMAMI_WEBSITE_ID || '').trim();
+  if (id && !/^[0-9a-f-]{36}$/i.test(id)) throw new Error(`UMAMI_WEBSITE_ID no parece un ID de Umami (36 caracteres, como 1a2b3c4d-…): «${id}»`);
+  if (!id && command === 'build') console.warn('\n  Aviso: sin UMAMI_WEBSITE_ID, este build sale SIN analítica (ver .env.example)\n');
+  return {
+  plugins: [umami(command === 'build' ? id : ''), zalappPage(), preloadNameFont()],
   build: {
     // Las fuentes van como archivos, nunca incrustadas, para permitir una CSP estricta
     assetsInlineLimit: 0,
@@ -76,4 +100,5 @@ export default defineConfig({
       },
     },
   },
+  };
 });
