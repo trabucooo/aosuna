@@ -165,151 +165,6 @@ const es = {
   notePin: (i, t) => `Nota ${i}: ${t}`,
 };
 
-const en = {
-  layerHome: 'Home',
-  layerLabel: 'layer',
-  repairs: n => n < 3 ? `Repairs: ${n}. Carry on, they’re paid by the hour.` : n < 6 ? `Repairs: ${n}. Not a single complaint.` : `Repairs: ${n}. Scroll down and meet the crew.`,
-  crew: ['WordPress', 'SEO writer', 'Sales', 'Researcher', 'Videomapping', 'Zalapp lead', 'Moderator', 'Newsletter', 'AI prompts', 'Web design', 'Lead generation', 'Customer service'],
-  zalapp: ['47 responses', '41 drivers', '36 employed', '5 self-employed', '4 fleet managers', '2 other profiles'],
-  zalappPhone: {
-    label: 'See the Zalapp app',
-    alt: 'Map screen from the Zalapp beta',
-    cueMouse: 'Switch me on',
-    cueTouch: 'Tap the screen',
-    log: 'See the route logbook',
-    web: 'See the website',
-  },
-  zalappLog: {
-    pending: 'Under construction: coming soon at zalapp.aosuna.es',
-    stage: (i, n, km, t) => `Stage ${i} of ${n}. ${km}. ${t}`,
-    mark: (i, t) => `Stage ${i}: ${t}`,
-  },
-  nautes: [
-    ['Question', 'How much does it cost to keep a boat?', ['What boat owners, or people thinking of buying one, actually ask.', 'Step one: understand the search intent.']],
-    ['Brief', 'A guide to real costs by boat length and use (2026)', ['Main and secondary keywords', 'Audience', 'Goal of the piece']],
-    ['Structure', 'An outline before writing a word', ['H1 and H2 sections', 'FAQs', 'Suggested internal links']],
-    ['Metadata', 'Ready for search engines', ['Meta title', 'Meta description', 'Slug']],
-  ],
-  nautesBoat: { label: 'See the Nautes website', alt: 'Nautes website homepage', cueMouse: 'Hover over me', cueTouch: 'Tap the boat', go: 'Visit nautes.es ↗' },
-  explora: {
-    points: [
-      { k: 'N', dir: 'North', name: 'Nautes', text: "Website and boating content in WordPress. You've just seen it above." },
-      { k: 'E', dir: 'East', name: 'AI and GEO', text: 'Prompts and content written for AI search engines.' },
-      { k: 'S', dir: 'South', name: 'Videomapping', text: "Set-up and AI visuals for shop windows. You'll find it at the end." },
-      { k: 'W', dir: 'West', name: 'Lead generation', text: 'The sales side: reaching clients in the sector.' },
-    ],
-    hintMouse: 'Hover over a compass point.',
-    hintTouch: 'Tap a compass point.',
-    cueMouse: 'Hover over me',
-    cueTouch: 'Tap me',
-    piece: d => `Piece delivered on ${d}: brief with main keyword, H2s, FAQs and metadata.`,
-    read: 'Read on Nautes ↗',
-  },
-  portal: {
-    hintMouse: 'Hover to build it',
-    hintTouch: 'Tap to build it',
-    enter: 'Enter the website ↗',
-    pending: "Link coming soon: the new website isn’t live yet.",
-    cue: 'Build it',
-    raise: 'Raise the screenshot of the new Alcar website',
-    // Etiquetas del plano (en el JSON van en español, como en la web de Alcar)
-    tags: { 'VOLUMEN SUPERIOR': 'UPPER VOLUME', 'CUBIERTA EN VOLADIZO': 'CANTILEVERED ROOF', 'LAMAS DE MADERA': 'TIMBER SLATS' },
-  },
-  stamps: [
-    {
-      title: 'VOCATIONAL DIPLOMA IN SALES & COMMERCE',
-      school: 'IES Fernando III · Priego de Córdoba',
-      foot: 'Dual VET (school + company) · 2023–2025',
-      lines: ['“This is where I learned there’s a person behind every sale.”', '“Counter, stockroom and invoices: marketing starts with knowing how things get sold.”'],
-      half: false,
-    },
-    {
-      title: 'HIGHER VOCATIONAL DIPLOMA IN MARKETING & ADVERTISING',
-      school: 'IES Luis de Góngora · Córdoba',
-      foot: 'IN PROGRESS · 2025–2027',
-      lines: ['“Learning to turn what I sell into what I communicate.”', '“Running low on ink, but it already prints.”'],
-      half: true,
-    },
-  ],
-  mapping: {
-    corner: i => `Corner ${i}. Use the arrow keys to move it`,
-    done: "Lined up. That’s how it’s done on a real site",
-    left: n => n === 1 ? '1 corner to go' : `${n} corners to go`,
-  },
-  tools: [
-    ['WordPress', 'Nautes, with OceanWP, Directorist, Spectra and Stackable.', 'Hands-on experience from a work placement.'],
-    ['Keywords and SEO', 'Briefs and content structure for a boating website.', 'Hands-on. No measured ranking results.'],
-    ['GEO', 'Generative engine optimisation: content written to be found by AI search tools, at Explora Natura.', 'Exploratory work.'],
-    ['ChatGPT, Gemini, NotebookLM', 'Research, writing and organising information.', 'Regular use, always checking the output.'],
-    ['Runway', 'AI-generated visuals and video.', 'Used in visual projects.'],
-    ['Resolume Arena', 'Video and projection software.', 'Intermediate, by my own assessment.'],
-    ['Canva', 'College and project materials.', 'Regular use.'],
-    ['Affinity Designer', 'Vector design.', 'Intermediate, by my own assessment.'],
-    ['Illustrator', 'Vector design.', 'Intermediate, by my own assessment.'],
-    ['Photoshop', 'Image editing.', 'Basic knowledge.'],
-    ['HTML, CSS and JS', 'Pages and prototypes in VS Code.', "I build and adapt with help from AI. Still learning."],
-    ['Google Docs and Sheets', 'Day-to-day organisation of documents and data, alongside Drive.', 'Regular use.'],
-    ['CRMdelSol', 'A Spanish CRM, used for coursework in sales management.', 'Academic use, intermediate by my own assessment.'],
-    ['Shopify', 'E-commerce.', 'Basic knowledge.'],
-    ['Hostinger', 'Web hosting.', 'Intermediate, by my own assessment.'],
-    ['Customer service', 'Almazaras de la Subbética: advising customers and consultative selling.', 'Real work experience.'],
-  ],
-  copy: { idle: 'Copy email', done: 'Copied', selected: 'Email selected' },
-  boss: {
-    empty: "Give us something to do, we’re just standing here.",
-    reLetter: /\b(?:bring|fetch|throw|toss|chuck|grab|kick|pull|remove)\b.*\b(?:the|an?|letter)\s+([alons])\b/,
-    letter: l => `One ${l}, coming right up.`,
-    notOurs: "That letter isn’t one of ours.",
-    reBreak: /\b(break|smash|wreck|destroy|knock down|demolish|trash)\b.*\b(name|everything|it all|letters)\b/,
-    broken: "We’ll knock it down and put it back up in no time.",
-    reReset: /\b(normal|original|reset|clean|as it was|undo)\b|remove the colou?r/,
-    reset: 'Paint stripped.',
-    colors: [['red', /\bred\b/, 'red'], ['blue', /\bblue\b/, 'blue'], ['green', /\bgreen\b/, 'green'], ['pink', /\bpink\b/, 'pink'], ['yellow', /\byellow\b/, 'yellow'], ['orange', /\borange\b/, 'orange'], ['purple', /\bpurple\b/, 'purple'], ['black', /\bblack\b/, 'black']],
-    painted: c => `Background painted ${c}.`,
-    rePaint: /\b(paint|colou?r)\b/,
-    noColor: "We’re out of that colour. Try red, blue, green, pink or purple.",
-    places: [['projects', /\bprojects?\b/, 'the projects'], ['contact', /\bcontact\b/, 'the contact section'], ['tools', /\b(tools?|toolbox)\b/, 'the toolbox'], ['home', /\b(home|top)\b/, 'the top'], ['zalapp', /zalapp/, 'Zalapp'], ['zalapp', /\b(logbook|notebook)\b/, 'Zalapp'], ['zalapp', /\bapp\b/, 'Zalapp'], ['nautes', /nautes/, 'Nautes'], ['explora', /explora/, 'Explora Natura'], ['explora', /\bcompass\b/, 'the compass'], ['explora', /\b(diary|log|placement log)\b/, 'the placement log'], ['alcar', /alcar/, 'Alcar'], ['mapping', /mapping/, 'the videomapping'], ['formacion', /\beducation\b/, 'my education'], ['sellos', /\bstamps?\b/, 'the stamps']],
-    goTo: p => `Off to ${p}.`,
-    reDance: /\b(dance|party|boogie)\b/,
-    dance: 'Cue the music.',
-    reFollow: /\b(follow|after me|behind me)\b/,
-    follow: "We’ll follow you anywhere.",
-    reCircle: /\b(circle|ring|line up|form)\b/,
-    circle: 'Everyone, in a circle.',
-    reLeave: /\b(holidays?|vacation|take a break|day off|go away|get lost|leave|clear off)\b/,
-    leave: 'See you later. Back in six seconds.',
-    reStrike: /\bstrike\b/,
-    reWork: /\b(back to work|get to work|work|come back)\b/,
-    work: 'Back to the grind.',
-    unknown: "That’s not in our contract. Try one of these orders.",
-    chips: ['Paint the background red', 'Bring me the O', 'Break the name', 'Dance', 'Follow me', 'Form a circle', 'Go to Zalapp', 'Holiday', 'Strike', 'Back to normal'],
-  },
-  strike: {
-    complaints: ["I’ve been lifting this O since seven", 'Nobody scrolls round here', 'We want more clicks', 'No scroll, no work', 'My contract says you have to move me', "Even the hosting wouldn’t pay for this"],
-    bannerMouse: 'On strike: move your mouse',
-    bannerTouch: 'On strike: tap the screen',
-    end: 'Fine, back to work',
-  },
-  notes: [
-    ['The intro', 'A portfolio competes with lots of open tabs. My name builds itself in front of you to win those first few seconds and stick in your memory.'],
-    ['One line', "If you only look for five seconds, you should still know what I do. That’s why it sits right under my name."],
-    ['An invitation to play', 'I ask you to break the site on purpose. People who interact with something stay longer and remember it better.'],
-    ['A short menu', "A handful of fixed links. You can jump straight to what you’re after without sitting through the whole story."],
-    ['A chosen path', "I only include what connects with the work I’m looking for. A portfolio is also made by leaving things out."],
-    ['Stamped, not listed', "My education isn’t a bullet list: the same cursors that build this site bring it in. The second stamp is only half-inked because I haven’t finished that course yet."],
-    ['From boat to website', 'The same dots that form the sailboat build the skeleton of the website, and then the real page appears. The industry and the work show up in a single gesture.'],
-    ['The method, under way', 'The four steps of every piece sit like buoys along a course, with no tabs: you take them in at a glance and the boat stays the star.'],
-    ['A knot, not a paragraph', 'Explora Natura ties Nautes and the videomapping together: the compass points up and down, and the log shows what came out of it, with dates.'],
-    ['The app, from the inside', 'A phone made of dots that switches on with the real beta. The buttons mimic the app’s own, so stepping into the project feels natural.'],
-    ['From plan to build', 'The new Alcar website is explained the way a house gets built: first the drawing, then the building. The same cursors that put this site together draw the plan.'],
-    ["Try it, don’t read it", 'Videomapping is hard to explain. Lining up the light yourself makes sense in ten seconds.'],
-    ['Honest levels', 'Every tool says where I used it and how well I know it. Overstating it would show in the first interview.'],
-    ['One goal', 'The whole journey ends here: a big email address and a button to copy it. No forms.'],
-  ],
-  noteCount: (i, n) => `Note ${i} of ${n}`,
-  notePin: (i, t) => `Note ${i}: ${t}`,
-};
-
 /* Diario de prácticas de Explora Natura: las piezas entregadas, en orden. fecha va en el botón, dia en el
    cuadro de texto. Si una tiene url, el cuadro enseña «Leer en Nautes ↗» (en otra pestaña).
    El HTML lleva una copia para quien navega sin JavaScript: si cambias un título, cámbialo también allí */
@@ -331,8 +186,11 @@ export const ENTREGAS = [
     en: { fecha: '13 Apr', dia: '13 April', titulo: 'The hidden upkeep of buying second-hand' } },
 ];
 
-export const STRINGS = { es, en };
 export const LANG = document.documentElement.lang.toLowerCase().startsWith('en') ? 'en' : 'es';
-export const T = STRINGS[LANG];
+// T: los textos del idioma de la página. En español son los de arriba. Los ingleses van en i18n-en.js, que solo
+// carga /en/: main-en.js los pasa a register() antes de arrancar la web (start() en main.js). Así la página en
+// español no descarga los textos en inglés
+export let T = es;
+export function register(strings) { T = strings; }
 // La analítica usa siempre los textos en español para que cada evento sume en una sola fila
 export const ES = es;

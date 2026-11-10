@@ -16,7 +16,7 @@ Las visitas a páginas (`/` y `/en/`) se cuentan solas. Los eventos de abajo se 
 
 ## Eventos
 
-Esta tabla sale del código de `src/main.js` (todas las llamadas a `track()`). Si añades o cambias un evento, cámbialo también aquí.
+Esta tabla sale del código de `src/main.js` y de `src/scenes/mapping.js` (todas las llamadas a `track()`). Si añades o cambias un evento, cámbialo también aquí.
 
 Los valores de los datos van siempre en español, aunque la visita sea en la versión inglesa. Así cada evento suma en una sola fila y no se reparte entre dos idiomas.
 

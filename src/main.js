@@ -3,7 +3,10 @@ import './style.css';
 import { T, ES, LANG, ENTREGAS } from './i18n.js';
 import alcarShot from './assets/alcar.webp';
 
-(()=>{
+/* Toda la web arranca al llamar a start(). La llaman las dos entradas: main-es.js (/) y main-en.js (/en/), esta
+   después de registrar los textos en inglés. No arranca sola al importarse: al empaquetar, este archivo e i18n.js
+   van juntos, y si arrancara al cargarse lo haría antes de que /en/ hubiera registrado sus textos */
+export function start(){
 const $=(s,r=document)=>r.querySelector(s), $$=(s,r=document)=>[...r.querySelectorAll(s)];
 const clamp=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)), rand=(a,b)=>a+Math.random()*(b-a);
 const smooth=t=>t*t*(3-2*t);
@@ -1950,4 +1953,4 @@ async function boot(){
   await intro();clearTimeout(guard);
 }
 boot().catch(e=>{console.error(e);rescue()});
-})();
+}
