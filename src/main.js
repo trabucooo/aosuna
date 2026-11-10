@@ -60,6 +60,17 @@ let tone='',toneBoxes=null,contactBox=null;
 function measureTones(){
   const y=scrollY,box=el=>{const r=el.getBoundingClientRect();return{el,top:r.top+y,bottom:r.bottom+y}};
   toneBoxes=toneEls.map(box);contactBox=box($('#contacto'));
+  docH=root.scrollHeight;
+}
+/* Profundidad de scroll: 25, 50, 75 y 100 % de la página, una vez cada uno por visita. No hay listener propio ni
+   lecturas de maqueta: usa el scroll que el bucle ya lee una vez por frame (SY) y el alto de la página, que se
+   mide solo cuando cambia la maqueta (measureTones). El 100 % tiene un margen de 1 punto por los redondeos */
+const DEPTHS=[25,50,75,100];
+let docH=0,depthI=0;
+function trackDepth(){
+  if(!docH)return;
+  const pct=(SY+vh)/docH*100;
+  while(depthI<DEPTHS.length&&pct>=DEPTHS[depthI]-1){track('scroll-profundidad',{pct:DEPTHS[depthI]});depthI++}
 }
 function applyTone(){
   if(!toneBoxes)measureTones();
@@ -2028,7 +2039,9 @@ function stepPit(){
     c.el.style.transform=`translate(${c.x-c.w/2}px,${c.y-c.h/2}px) rotate(${c.rot}deg)`;
   }
 }
-new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn)startPit();wake()},{threshold:.15}).observe(pit);
+// La primera vez que la caja entra en pantalla se apunta la entrada al laboratorio
+let labSeen=false;
+new IntersectionObserver(es=>{pitOn=es[0].isIntersecting;if(pitOn){startPit();if(!labSeen){labSeen=true;track('laboratorio-visto')}}wake()},{threshold:.15}).observe(pit);
 // El tamaño de la caja se lee solo cuando cambia, no en cada frame
 new ResizeObserver(()=>{if(pitBuilt){pW=pit.clientWidth;pH=pit.clientHeight}}).observe(pit);
 $('#dump').onclick=()=>{
@@ -2247,7 +2260,7 @@ function loop(now){
   busy=!introDone||!!order||strike;
   // scrollY se lee una vez, al principio del frame y antes de escribir nada
   SY=scrollY;
-  if(scrolled){scrolled=false;try{applyTone();updateTeam()}catch(e){console.error(e)}}
+  if(scrolled){scrolled=false;try{applyTone();updateTeam();trackDepth()}catch(e){console.error(e)}}
   for(let i=0;i<STEPS.length;i++){try{STEPS[i](f,now)}catch(e){console.error(e)}}
   if(busy||now-wakeT<IDLE_MS)requestAnimationFrame(loop);
   else{awake=false;armStrike()}

@@ -35,6 +35,8 @@ Los valores de los datos van siempre en español, aunque la visita sea en la ver
 
 | Evento | Cuándo se envía | Datos | Notas |
 | --- | --- | --- | --- |
+| `scroll-profundidad` | La primera vez en cada visita que se llega al 25, 50, 75 y 100 % de la página | `pct`: 25, 50, 75 o 100 | Quien salta a «Contacto» desde el menú o el dock pasa por los cuatro de golpe: para saber si se ha leído, míralo junto a los eventos de cada proyecto. |
+| `laboratorio-visto` | La primera vez en cada visita que la caja de herramientas entra en pantalla | — | La entrada al laboratorio. `herramienta` y `caja-volcada` dicen si además se juega con él. |
 | `menu` | Clic en un enlace del menú de arriba | `a`: `#inicio`, `#historia`, `#herramientas`, `#trabajo` o `#contacto` | `#trabajo` es «Proyectos». |
 | `idioma` | Clic en el selector ES / EN | `a`: el idioma al que se cambia, `es` o `en` | |
 | `intro-completa` | La intro llega al final sin que nadie la corte (o al tope de 2,4 s en un equipo lento) | — | La intro solo sale en la primera visita (se recuerda en `localStorage`), así que cuenta visitantes nuevos. Compárala con `intro-saltada`. |
@@ -98,6 +100,8 @@ El objetivo del portfolio es que te escriban. En Umami, crea un embudo (Reports 
 1. Visita a `/` o a `/en/`.
 2. `scroll-contacto`: ha llegado a la sección de contacto.
 3. `email-clic`, `email-copiado`, `linkedin` o `cv-descargado`: ha hecho algo para contactar.
+
+Para ver dónde se va la gente antes de llegar, mira `scroll-profundidad`: si muchos llegan al 25 % y pocos al 50 %, se pierden en los primeros proyectos.
 
 Para ver qué lleva hasta ahí, compara el paso 2 con:
 
