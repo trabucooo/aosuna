@@ -14,4 +14,18 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://aosuna.es/en/"/>
     <xhtml:link rel="alternate" hreflang="x-default" href="https://aosuna.es/"/>
   </url>
+  <url>
+    <loc>https://aosuna.es/zalapp/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://aosuna.es/zalapp/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aosuna.es/en/zalapp/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aosuna.es/zalapp/"/>
+  </url>
+  <url>
+    <loc>https://aosuna.es/en/zalapp/</loc>
+    <lastmod>2026-11-10</lastmod>
+    <xhtml:link rel="alternate" hreflang="es" href="https://aosuna.es/zalapp/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://aosuna.es/en/zalapp/"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://aosuna.es/zalapp/"/>
+  </url>
 </urlset>

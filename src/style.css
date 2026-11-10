@@ -153,6 +153,8 @@ main{position:relative;z-index:2}
 .facts dt{font:600 10px/1.9 var(--mono);text-transform:uppercase}
 /* Enlace de texto de cada ficha (A-01): siempre a la vista, también sin JavaScript y con teclado */
 .more{display:inline-block;padding-block:6px;font:600 12px/1.4 var(--mono);color:var(--accent);text-underline-offset:4px}
+/* Dos enlaces seguidos (Zalapp: el cuaderno y su página): separados, y si no caben, uno debajo del otro */
+.more-row{display:flex;flex-wrap:wrap;gap:0 18px}
 .toy{min-width:0;display:flex;flex-direction:column;gap:12px}
 .pills{display:flex;flex-wrap:wrap;gap:6px}
 .pill{background:transparent;border:1px solid currentColor;padding:7px 10px;font:600 11px/1 var(--mono)}
@@ -516,7 +518,8 @@ html:not(.js) .log-sheet{display:grid;grid-template-columns:minmax(0,1fr);gap:16
 html:not(.js) .log-page{height:auto;overflow:visible;padding:20px 18px 24px;font-size:16px}
 html:not(.js) .log-h{font-size:34px}
 html:not(.js) .log-art{display:none}
-html:not(.js) .cross{display:block}
+/* justify-items:normal: Chrome ya aplica el centrado de la rejilla también a un bloque, y las salidas quedaban escalonadas */
+html:not(.js) .cross{display:block;justify-items:normal}
 html:not(.js) .cross-road{display:none}
 html:not(.js) .exit{max-width:none;text-align:left;margin-bottom:10px}
 html:not(.js) .exit-btn{cursor:default}

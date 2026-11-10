@@ -70,6 +70,8 @@ Valores de `orden` en `jefe-orden`:
 | `zalapp-etapa` | Cada etapa del cuaderno que se ve (también la primera, al abrirlo) | `etapa`: El problema, La encuesta, La competencia, DAFO y CAME, La marca, La beta, Lo que no prometemos, Próxima salida o El equipo | |
 | `zalapp-cerrar` | Al cerrar el cuaderno (botón o Escape) | `etapa`: el número de la etapa en la que se cierra, de 1 a 9 | Dice hasta dónde se lee. |
 | `zalapp-filtro` | Al pulsar un filtro de la encuesta, en la etapa «La encuesta» | `filtro`: p. ej. «41 conductores» | |
+| `zalapp-pagina-etapa` | En la página propia de Zalapp (`/zalapp/` y `/en/zalapp/`): cada etapa, la primera vez que cruza el centro de la pantalla | `etapa`: los mismos nombres que `zalapp-etapa` | Dice hasta dónde se lee la página. La visita en sí no necesita evento: Umami la cuenta como página vista de `/zalapp/`. |
+| `zalapp-pagina-cta` | En la página propia de Zalapp: clic en uno de los dos botones del final | `a`: `contacto` («Escríbeme») o `portfolio` («Ver el portfolio») | Mide si la página lleva gente al resto del portfolio. |
 | `alcar-obra` | Al levantar la captura de la web nueva de Alcar sobre el plano (ratón encima, foco o primer toque) y, cuando haya dirección, al entrar en la web | `accion`: `levantar` o `entrar` | Mientras `PORTAL_URL` esté vacío, solo llega `levantar`. |
 | `videomapping-encajado` | La primera vez en cada visita que se encajan las cuatro esquinas del videomapping | — | |
 | `letra-rota` | Al soltar una letra del nombre después de arrastrarla | `letra`: A, L, O, N o S | |

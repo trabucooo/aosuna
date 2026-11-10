@@ -1,0 +1,32 @@
+/* Página propia de Zalapp (/zalapp/ y /en/zalapp/). Usa los estilos del cuaderno de style.css en su versión
+   estática (html:not(.js): las nueve etapas una detrás de otra). Aquí solo va lo que la página añade: el tono de la
+   sección de Zalapp en la portada (asphalt), la rejilla de fondo del cuaderno, la cabecera, el índice y el cierre */
+:root.zalapp{--ground:#0F0F11;--ink:#F4F1E6;--accent:#FFB300}
+.zpage{--line:color-mix(in srgb,var(--ink) 28%,transparent);--faint:color-mix(in srgb,var(--ink) 6%,transparent);--paper:color-mix(in srgb,var(--ground) 94%,var(--ink));
+  background-image:linear-gradient(var(--faint) 1px,transparent 1px),linear-gradient(90deg,var(--faint) 1px,transparent 1px);background-size:72px 72px}
+/* En la portada, el segundo enlace del menú se esconde en móvil; aquí solo hay dos y caben */
+.top.zpage-top li:nth-child(2){display:block}
+.wrap.zpage-main{max-width:1000px;display:flex;flex-direction:column;gap:32px;padding-top:104px;padding-bottom:14vh}
+.zpage-head{display:flex;flex-direction:column;gap:14px;max-width:40rem}
+/* El mismo título que el de cada proyecto en la portada (.proj h3) */
+.zpage h1{font:900 clamp(56px,9vw,116px)/.9 var(--display);text-transform:uppercase}
+.zpage-lead{font-size:20px;text-wrap:pretty}
+/* Índice: una píldora por etapa, como los filtros de la encuesta. En rejilla de columnas fijas y no en fila que
+   salta de línea: así el número de filas no depende del ancho de la letra. Con la fila, al llegar Martian Mono
+   (más ancha que la de reserva) el índice ganaba una fila y empujaba todo el cuaderno (CLS 0,26 en móvil) */
+.zpage-toc ol{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:6px;margin:0;padding:0;list-style:none}
+.zpage-toc .pill{display:block;text-decoration:none;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Las salidas del cruce, en lista y alineadas a la izquierda (sin esto quedaban escalonadas) */
+.zpage .exits{display:grid;justify-items:start;gap:6px;margin:0;padding:0}
+.zpage .exit{grid-area:auto}
+/* Son botones en la portada; aquí, títulos con el mismo marco */
+.zpage .exit-btn{display:inline-block;cursor:auto}
+.zpage .exit-btn:hover{border-color:var(--ink);color:var(--ink)}
+.zpage .sign:hover .sign-front{border-color:var(--line)}
+.zpage-cta{display:flex;flex-direction:column;gap:18px;margin-top:8vh}
+.zpage-cta .big{font-size:clamp(38px,7vw,88px)}
+.zpage-cta p:not(.eyebrow){max-width:36rem;font-size:20px}
+@media (max-width:860px){
+  .wrap.zpage-main{padding-top:84px;gap:24px}
+  .zpage-lead,.zpage-cta p:not(.eyebrow){font-size:17px}
+}
