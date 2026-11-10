@@ -1,0 +1,47 @@
+# Un bloque por dominio. Caddy pide el certificado HTTPS de cada uno la primera vez que arranca con él y
+# redirige solo de http a https. Para que funcione, el dominio tiene que apuntar ya a la IP del VPS (DNS).
+#
+# Después de editar este archivo, recarga sin cortar el servicio:
+#   docker exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+# Fragmento común: compresión, HSTS y fuera la cabecera que dice qué servidor es
+(comun) {
+	encode zstd gzip
+	header {
+		# Obliga a usar HTTPS. Empieza con 5 minutos; cuando todo vaya bien, cámbialo por un año:
+		#   "max-age=31536000; includeSubDomains"
+		# (includeSubDomains exige que TODOS los subdominios de aosuna.es tengan HTTPS: ver DESPLIEGUE.md)
+		Strict-Transport-Security "max-age=300"
+		-Server
+	}
+}
+
+# El portfolio. «portfolio» es el nombre del contenedor (compose.yaml de la raíz) dentro de la red «web».
+# El resto de cabeceras de seguridad (CSP, etc.) y la caché las pone el nginx de ese contenedor
+aosuna.es {
+	import comun
+	reverse_proxy portfolio:8080
+}
+
+# www siempre redirige al dominio sin www, conservando la ruta
+www.aosuna.es {
+	import comun
+	redir https://aosuna.es{uri} permanent
+}
+
+# --- Para añadir más contenedores ---
+# 1. Su compose.yaml en su propia carpeta, con la red «web» (externa) y SIN publicar puertos.
+# 2. Un registro DNS de tipo A para el subdominio, a la IP del VPS.
+# 3. Un bloque aquí y recargar Caddy.
+#
+# Umami (ver ANALITICA.md):
+# stats.aosuna.es {
+# 	import comun
+# 	reverse_proxy umami:3000
+# }
+#
+# Una web de prueba:
+# prueba.aosuna.es {
+# 	import comun
+# 	reverse_proxy nombre-del-contenedor:puerto
+# }
