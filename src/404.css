@@ -1,7 +1,7 @@
 /* Página 404: solo CSS y fuentes, sin la intro ni las partículas de la web */
-@import '@fontsource/big-shoulders-display/900';
-@import '@fontsource/schibsted-grotesk/400';
-@import '@fontsource/martian-mono/600';
+@import '@fontsource/big-shoulders-display/latin-900';
+@import '@fontsource/schibsted-grotesk/latin-400';
+@import '@fontsource/martian-mono/latin-600';
 
 :root{
   color-scheme:dark;
