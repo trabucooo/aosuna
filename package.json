@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "og": "node scripts/og.mjs"
+    "og": "node scripts/og.mjs",
+    "icono": "node scripts/icono.mjs"
   },
   "dependencies": {
     "@fontsource/big-shoulders-display": "^5.0.0",
