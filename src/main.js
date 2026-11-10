@@ -182,12 +182,30 @@ function stepLetters(f){
     paintLetter(L);
   }
 }
+/* Reposo del equipo. Un cursor sin encargo (duty) deja de gastar frames en dos casos:
+   1. Escondido (clase off, fuera de la portada): no se calcula ni se toca el DOM hasta que vuelve a verse.
+   2. A la vista, con la intro terminada y CREW_REST_MS sin que nadie mueva el ratón, toque, teclee o haga scroll:
+      termina el trayecto que llevaba, se queda donde está y no elige otro destino. Cuando todos están quietos y su
+      rastro se ha recogido (TRAIL_FRAMES), el bucle se duerme. Con la primera actividad siguen paseando, cada uno
+      a su tiempo (si no, saldrían todos a la vez). El aspecto es el mismo: solo cambia que en reposo no se mueven.
+   En Contacto (gather) no hay reposo: la ronda del equipo es parte de la escena. crewClock es su reloj */
+const CREW_REST_MS=6000,TRAIL_FRAMES=92;
+let crewRest=false,crewClock=0;
 function stepCursors(f,now){
   if(paused)return;
   const vmax=MAX_WANDER_V();
+  const rest=introDone&&!order&&!strike&&!gather&&now-lastAct>CREW_REST_MS;
+  if(crewRest&&!rest)for(const c of cursors)if(c.next<now)c.next=now+rand(0,1800);
+  crewRest=rest;crewClock+=f*16.67;
   for(const c of cursors){
     let wander=false;
-    if(c.job||c.task||c.park||c.slot||!c.el.classList.contains('off'))busy=true;
+    const duty=c.job||c.task||c.park||c.slot;
+    if(!duty&&c.el.classList.contains('off')){
+      if(!c.wasOff){c.wasOff=true;c.trail.length=0;c.vx=c.vy=0}
+      continue;
+    }
+    if(c.wasOff){c.wasOff=false;if(c.next<now)c.next=now+rand(0,1500)}
+    if(duty)busy=true;
     if(c.job){
       const L=c.job.L;c.tx=L.cx+L.x+c.job.ox;c.ty=L.cy+L.y+c.job.oy;
       if(L.mode==='wait'&&Math.hypot(c.tx-c.x,c.ty-c.y)<34)L.mode='carry';
@@ -206,10 +224,10 @@ function stepCursors(f,now){
       // El tamaño es layout: solo se escribe cuando cambia (casi nunca), la posición va por transform
       if(c.bw!==w||c.bh!==h){c.bw=w;c.bh=h;c.box.style.width=w+'px';c.box.style.height=h+'px'}
     }else if(!c.script){
-      if(gather){const i=cursors.indexOf(c),a=i/cursors.length*6.283+now*.00018;
+      if(gather){const i=cursors.indexOf(c),a=i/cursors.length*6.283+crewClock*.00018;
         if(small()){c.tx=(i/cursors.length)*vw*.8+6;c.ty=vh-110+Math.sin(a*3)*10}
         else{c.tx=vw*.82+Math.cos(a)*vw*.1;c.ty=vh*.34+Math.sin(a)*vh*.2}}
-      else{if(now>c.next)wanderTarget(c);wander=true}
+      else{if(!rest&&now>c.next)wanderTarget(c);wander=true}
     }
     // Paseo libre: apunta a un lado del destino en proporción a lo que falta (el desvío se anula al llegar),
     // así el trayecto sale en arco. La intro, los encargos y las órdenes van directos porque llevan tiempos medidos
@@ -223,6 +241,9 @@ function stepCursors(f,now){
     c.el.style.transform=`translate3d(${c.x}px,${c.y}px,0)`;
     c.trail.push(c.x,c.y);if(c.trail.length>180)c.trail.splice(0,2);
     if(c.slot){const w=Math.max(0,c.x-c.sx),h=Math.max(0,c.y-c.sy);c.slot.style.width=w+'px';c.slot.style.height=h+'px'}
+    // Sin encargo: pide otro frame mientras haya actividad reciente o, en reposo, hasta que se pare y recoja el rastro
+    c.still=Math.abs(c.vx)+Math.abs(c.vy)>.05?0:(c.still||0)+1;
+    if(!duty&&(!rest||c.still<TRAIL_FRAMES))busy=true;
   }
 }
 let gather=false;
@@ -627,8 +648,9 @@ function stepDust(f,now){
     rc=Math.cos(q);rs=Math.sin(q);rdy=BOAT_BOB_PX*Math.cos(ph)*calm;rpx=bx+bw/2;rpy=by+bh*.95;rkA=a===boat.st;rkB=b===boat.st;
   }
   const mr=small()?70:110,mr2=mr*mr,PR2=BOAT_PULL_R*BOAT_PULL_R;
-  // Ruido solo cuando no se hace scroll: entra en medio segundo
-  const amp=calm()?0:NOISE*smooth(clamp((now-scrollT-150)/500));
+  // Ruido solo cuando no se hace scroll: entra en medio segundo. Con los puntos invisibles (arriba del todo, al = 0)
+  // no hay ruido: no se vería, y mantenía el bucle despierto aunque los cursores estuvieran en reposo
+  const amp=calm()||al<.01?0:NOISE*smooth(clamp((now-scrollT-150)/500));
   // La ola (forma de reserva de Nautes) se mueve con el tiempo; quieta con calm()
   const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y,wt=calm()?0:now*.0016;
   if(amp||(wa&&!calm()))busy=true;
@@ -1852,8 +1874,9 @@ let last=performance.now();
 /* Qué mantiene vivo cada paso (pone busy = true; si ninguno lo pone, el bucle se duerme):
    stepScene     un sello que cae, se asienta o flota (este solo sin calm()) y el golpe de la escena
    stepLetters   una letra que no está en reposo (arrastrada, suelta, esperando o de vuelta) o su escala
-   stepCursors   un cursor a la vista o con encargo (en pausa no se mueven: están ocultos)
-   stepDust      puntos que aún se mueven, el ruido de reposo y la ola (no con calm()), el vaivén del velero
+   stepCursors   un cursor con encargo, o a la vista mientras haya actividad reciente (ver «Reposo del equipo»;
+                 en pausa no se mueven: están ocultos)
+   stepDust      puntos que aún se mueven, el ruido de reposo (si se ven) y la ola (no con calm()), el vaivén del velero
                  y el cambio de color
    stepBoat      la transformación del velero, su atracción y el botón «Visitar nautes.es»
    stepCompass   el muelle de la aguja y el brillo de las letras
