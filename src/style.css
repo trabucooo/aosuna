@@ -298,6 +298,23 @@ html:not(.js) .ch-explora .static{grid-area:slot}
    (y son los dos colores del manual de marca). No hay estilos de :hover ni :active: el contraste es el mismo */
 .app-btn-main{border:0;background:var(--z-orange);color:var(--z-petrol)}
 .app-btn-ghost{border:1px solid #D9DEE2;background:#fff;color:var(--z-petrol)}
+/* «Ver cuaderno de ruta» responde al ratón sin cambiar de color (el contraste sigue en 4,73:1): sube 2 px y gana una
+   sombra suave; al pulsar vuelve a su sitio. Solo se animan transform y opacity: la sombra va en un ::after que ya
+   está pintado y solo cambia de opacidad (animar box-shadow obligaría a repintar en cada frame).
+   Dentro de (hover:hover) para que en táctil no se quede «pegado» después de tocar */
+.app-btn-main{position:relative;transition:transform 160ms var(--ease-out)}
+.app-btn-main::after{content:"";position:absolute;inset:0;border-radius:inherit;box-shadow:0 6px 14px rgba(0,0,0,.3);opacity:0;pointer-events:none;transition:opacity 160ms ease}
+@media (hover:hover){
+  .app-btn-main:hover{transform:translateY(-2px)}
+  .app-btn-main:hover::after{opacity:1}
+}
+.app-btn-main:active{transform:none}
+.app-btn-main:active::after{opacity:0}
+/* Con «reducir movimiento»: sin desplazamiento ni transición; la sombra aparece de golpe y hace de aviso */
+@media (prefers-reduced-motion:reduce){
+  .app-btn-main,.app-btn-main::after{transition:none}
+  .app-btn-main:hover{transform:none}
+}
 .app-btn:focus-visible{outline:2px solid var(--z-petrol);outline-offset:2px}
 /* El anillo petróleo se ve sobre la hoja blanca del móvil, pero no sobre el fondo oscuro de la página (1,3:1):
    en la captura fija, que va directamente sobre el fondo, el anillo usa el color del texto */
