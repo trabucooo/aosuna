@@ -12,7 +12,7 @@ El ID que te da Umami al dar de alta la web (Settings → Websites → Add websi
 UMAMI_WEBSITE_ID=el-id-de-36-caracteres
 ```
 
-Las cuatro páginas (`index.html`, `en/index.html`, `zalapp/index.html` y `en/zalapp/index.html`) llevan el marcador `UMAMI_WEBSITE_ID` y el build lo cambia por ese valor (`vite.config.js`, plugin `umami-id`). El `.env` no se sube a GitHub; hay una plantilla en `.env.example`. En el VPS va junto a `compose.yaml` (ver `DESPLIEGUE.md`, paso 7).
+Las cuatro páginas (`index.html`, `en/index.html`, `zalapp/index.html` y `en/zalapp/index.html`) llevan el marcador `UMAMI_WEBSITE_ID` y el build lo cambia por ese valor (`vite.config.js`, plugin `umami-id`). El `.env` no se sube a GitHub; hay una plantilla en `.env.example`. Va en tu ordenador, junto a `compose.yaml`: la imagen se compila ahí y se sube a Docker Hub (ver `DESPLIEGUE.md`, paso 7).
 
 **Sin el ID, la web se compila sin analítica:** el build quita la etiqueta del script (y avisa en la terminal) en vez de pedir un script que no registraría nada. Con `npm run dev` nunca se incluye.
 
@@ -216,8 +216,8 @@ Caddy saca el certificado HTTPS solo.
 
 1. Entra en `https://stats.aosuna.es`. El usuario inicial es `admin` y la contraseña `umami`: **cámbiala nada más entrar**.
 2. Settings → Websites → Add website: nombre «Portfolio», dominio `aosuna.es`.
-3. Copia el *Website ID* y ponlo en el `.env` del servidor (`~/apps/aosuna/.env`): `UMAMI_WEBSITE_ID=…`.
-4. Reconstruye el portfolio: `cd ~/apps/aosuna && docker compose up -d --build` (ver `DESPLIEGUE.md`, paso 7).
+3. Copia el *Website ID* y ponlo en el `.env` de tu ordenador (en la carpeta del proyecto): `UMAMI_WEBSITE_ID=…`.
+4. Vuelve a generar la imagen, súbela a Docker Hub y actualiza el servidor con `cd ~/apps/aosuna && docker compose up -d` (ver `DESPLIEGUE.md`, paso 7).
 
 ## Recomendaciones
 

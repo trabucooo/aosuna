@@ -1,10 +1,10 @@
 services:
   portfolio:
-    build:
-      context: .
-      args:
-        # Se lee del archivo .env que hay junto a este compose.yaml (ver .env.example). Vacío: sin analítica
-        UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+    # La imagen ya compilada se baja de Docker Hub: en el servidor basta «docker compose up -d».
+    # Se genera y se sube desde tu ordenador (compose.local.yaml; ver DESPLIEGUE.md)
+    image: alon54/aosuna-portfolio:latest
+    # Cada «up» mira si hay una imagen más nueva en Docker Hub; si la hay, cambia el contenedor
+    pull_policy: always
     container_name: portfolio
     restart: unless-stopped
     read_only: true

@@ -14,19 +14,19 @@ Internet ──► Caddy (puertos 80 y 443, HTTPS automático)
 
 - **Caddy** es la única puerta de entrada: saca y renueva solo los certificados de Let's Encrypt, redirige de http a https y de `www` a sin `www`, comprime y reparte cada dominio a su contenedor.
 - **Cada web o servicio va en su carpeta**, con su `compose.yaml`, conectado a la red `web` y **sin publicar puertos**. Añadir uno nuevo no toca a los demás.
-- **El portfolio se compila dentro del servidor** (`Dockerfile`): no hace falta subir `dist/`.
+- **El portfolio llega ya compilado**: la imagen se genera en tu ordenador (`Dockerfile`), se sube a Docker Hub (`alon54/aosuna-portfolio`) y el servidor solo la baja. En el servidor basta `git clone` y `docker compose up -d`.
 
 En el servidor quedará así:
 
 ```
 ~/apps/
   caddy/     compose.yaml + Caddyfile     (copiados de deploy/caddy/ de este repositorio)
-  aosuna/    este repositorio (git clone)  + .env con el ID de Umami
+  aosuna/    este repositorio (git clone)
 ```
 
 ## Antes de empezar
 
-1. **La rama `main` de GitHub tiene que llevar lo que quieres publicar.** El servidor baja el código de ahí.
+1. **La imagen tiene que estar subida a Docker Hub** (paso 6) y la rama `main` de GitHub tiene que llevar el `compose.yaml` al día. El servidor baja la web de Docker Hub y el `compose.yaml` de GitHub.
 2. **DNS** (en el panel de OVH, zona DNS de `aosuna.es`): dos registros de tipo **A** apuntando a la IP del VPS, uno para `aosuna.es` y otro para `www`. Si el VPS tiene IPv6, lo mismo con **AAAA**. Comprueba desde tu ordenador que ya responde antes de arrancar Caddy (si no, no podrá sacar el certificado):
    ```powershell
    nslookup aosuna.es
@@ -91,10 +91,11 @@ cd ~/apps && git clone git@github.com:trabucooo/aosuna.git aosuna
 
 ```sh
 cd ~/apps/aosuna
-cp .env.example .env        # el ID de Umami se rellena más adelante; vacío, la web sale sin analítica
-docker compose up -d --build
+docker compose up -d        # baja la imagen de Docker Hub y arranca el contenedor
 docker compose ps           # al medio minuto debe decir «healthy»
 ```
+
+Si el repositorio de Docker Hub es **privado**, antes hay que entrar con `docker login -u alon54` (te pedirá un *access token*, que se crea en Docker Hub → Account settings → Personal access tokens).
 
 Todavía no se ve desde fuera: falta Caddy.
 
@@ -127,17 +128,41 @@ curl.exe -sI -H "Accept-Encoding: gzip" https://aosuna.es/retrato-puntos.json   
 
 Y un archivo con huella (cópialo del código fuente de la página, empieza por `/assets/`): debe traer `cache-control: public, max-age=31536000, immutable`.
 
-## 6. Desplegar cambios desde Windows
+## 6. Publicar cambios
 
-Cada vez que quieras publicar:
+Cada vez que quieras publicar, dos pasos.
 
-1. Sube los cambios a `main` en GitHub.
-2. En la carpeta del proyecto:
-   ```powershell
-   .\deploy\deploy.ps1 -Destino usuario@IP
-   ```
+**1. En tu ordenador** (con Docker Desktop abierto, en la carpeta del proyecto): genera la imagen y súbela a Docker Hub. La primera vez hay que entrar con `docker login`.
 
-El script comprueba que GitHub tiene lo último, entra por SSH, hace `git pull`, reconstruye la imagen, cambia el contenedor y comprueba que la web responde. Si el build falla, la versión anterior sigue en marcha.
+```powershell
+docker compose -f compose.yaml -f compose.local.yaml build
+docker compose -f compose.yaml -f compose.local.yaml push
+```
+
+Conviene dejar además una copia con número de versión, para poder volver atrás (paso 9):
+
+```powershell
+docker tag alon54/aosuna-portfolio:latest alon54/aosuna-portfolio:v1.1
+docker push alon54/aosuna-portfolio:v1.1
+```
+
+**2. En el VPS:**
+
+```sh
+cd ~/apps/aosuna
+git pull                    # solo hace falta si ha cambiado compose.yaml
+docker compose up -d        # baja la imagen nueva y cambia el contenedor
+```
+
+Si la imagen no se puede bajar, la versión anterior sigue en marcha.
+
+### Con el script (opcional)
+
+`deploy\deploy.ps1` hace el paso 2 desde Windows: comprueba que GitHub tiene lo último, entra por SSH, hace `git pull` y `docker compose up -d`, y comprueba que la web responde. **No genera ni sube la imagen:** el paso 1 hay que hacerlo antes.
+
+```powershell
+.\deploy\deploy.ps1 -Destino usuario@IP
+```
 
 Para no escribir el destino cada vez (una sola vez, y abre otra terminal después):
 
@@ -149,13 +174,10 @@ Si PowerShell no deja ejecutar scripts: `powershell -ExecutionPolicy Bypass -Fil
 
 ## 7. Poner el ID de Umami (cuando Umami esté instalado)
 
-El ID no está en el HTML: las cuatro páginas llevan el marcador `UMAMI_WEBSITE_ID` y el build lo cambia por el valor del archivo `.env`.
+El ID no está en el HTML: las cuatro páginas llevan el marcador `UMAMI_WEBSITE_ID` y el build lo cambia por el valor del archivo `.env`. Como la imagen se compila en tu ordenador, el `.env` va **en tu ordenador**, no en el VPS:
 
-```sh
-cd ~/apps/aosuna
-nano .env                         # UMAMI_WEBSITE_ID=el-id-que-te-da-umami
-docker compose up -d --build      # hay que reconstruir: el ID se pone al compilar
-```
+1. En la carpeta del proyecto, copia `.env.example` como `.env` y rellena `UMAMI_WEBSITE_ID=el-id-que-te-da-umami`.
+2. Genera y sube la imagen otra vez, y actualiza el servidor (paso 6). Hay que reconstruir: el ID se pone al compilar.
 
 Compruébalo: `curl.exe -s https://aosuna.es/ | findstr data-website-id`. La instalación de Umami está en `ANALITICA.md`.
 
@@ -181,16 +203,15 @@ Compruébalo: `curl.exe -s https://aosuna.es/ | findstr data-website-id`. La ins
 
 ## 9. Volver atrás
 
-La forma segura: deshaz el cambio en tu ordenador con `git revert <commit>`, súbelo y despliega otra vez. Queda registrado y el servidor sigue en `main`.
+La forma segura: deshaz el cambio en tu ordenador con `git revert <commit>`, genera y sube la imagen otra vez y actualiza el servidor (paso 6). Queda registrado y el servidor sigue en `latest`.
 
-Si corre prisa, directamente en el VPS (y luego arréglalo en GitHub):
+Si corre prisa, directamente en el VPS, usando una versión numerada que subiste antes (y luego arréglalo con calma):
 
 ```sh
 cd ~/apps/aosuna
-git log --oneline -5               # busca el commit bueno
-git checkout <commit>
-docker compose up -d --build
-# para volver a la normalidad:  git checkout main
+nano compose.yaml                  # en «image:», cambia «latest» por la versión buena, p. ej. «v1.0»
+docker compose up -d
+# para volver a la normalidad:  git checkout compose.yaml && docker compose up -d
 ```
 
 ## 10. HSTS: de 5 minutos a un año
@@ -207,9 +228,9 @@ Strict-Transport-Security "max-age=31536000; includeSubDomains"
 ## Mantenimiento
 
 - **Sistema:** `sudo apt update && sudo apt upgrade -y` de vez en cuando.
-- **Imágenes:** las versiones están fijadas en `Dockerfile` (Node y nginx) y en `deploy/caddy/compose.yaml` (Caddy). Para actualizar, cambia el número, despliega y comprueba. En Caddy: edita `~/apps/caddy/compose.yaml` y `docker compose up -d`.
+- **Imágenes:** las versiones están fijadas en `Dockerfile` (Node y nginx) y en `deploy/caddy/compose.yaml` (Caddy). Para actualizar, cambia el número, genera y sube la imagen (paso 6) y comprueba. En Caddy: edita `~/apps/caddy/compose.yaml` y `docker compose up -d`.
 - **Certificados:** Caddy los renueva solo. Viven en el volumen `caddy_data`: no lo borres.
-- **Espacio:** `docker system df`. El script de despliegue ya borra las imágenes viejas.
+- **Espacio:** `docker system df`. Las imágenes viejas se borran con `docker image prune -f` (el script de despliegue ya lo hace).
 
 ## Si algo falla
 
@@ -217,9 +238,10 @@ Strict-Transport-Security "max-age=31536000; includeSubDomains"
 | --- | --- |
 | El navegador dice que el certificado no es válido o no carga | `docker logs --tail 50 caddy`. Casi siempre es el DNS (aún no apunta al VPS) o el cortafuegos (80 y 443 cerrados). |
 | 502 Bad Gateway | El contenedor `portfolio` no está en marcha o no está en la red `web`: `cd ~/apps/aosuna && docker compose ps && docker compose logs --tail 30`. |
-| El build falla | El error sale en pantalla. La versión anterior sigue sirviéndose. |
+| El build falla (en tu ordenador) | El error sale en pantalla. No se sube nada y el servidor sigue con la versión anterior. |
+| `pull access denied` o no baja la imagen | La imagen no está subida a Docker Hub, o el repositorio es privado y falta `docker login` en el VPS. |
 | `network web declared as external, but could not be found` | Falta `docker network create web`. |
-| La web sale sin analítica | El `.env` está vacío o no se reconstruyó: paso 7. |
+| La web sale sin analítica | El `.env` de tu ordenador estaba vacío al generar la imagen: paso 7. |
 | Caddy no arranca tras editar el `Caddyfile` | `docker run --rm -v ~/apps/caddy/Caddyfile:/etc/caddy/Caddyfile:ro caddy:2.11.9-alpine caddy validate --config /etc/caddy/Caddyfile` |
 
 ## Probar el contenedor en tu ordenador
@@ -231,3 +253,5 @@ docker network create web      # solo la primera vez
 docker compose -f compose.yaml -f compose.local.yaml up -d --build
 # http://localhost:8080  ·  para parar:  docker compose down
 ```
+
+Con los dos archivos, la imagen se compila aquí con el `Dockerfile`. Con `compose.yaml` solo (como en el servidor), se baja de Docker Hub.

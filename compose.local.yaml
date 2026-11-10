@@ -1,5 +1,14 @@
-# Solo para probar en tu ordenador: en el servidor, el único que publica puertos es Caddy
+# Solo para tu ordenador: probar la web en Docker y generar la imagen que se sube a Docker Hub.
+# Se usa siempre junto al otro:  docker compose -f compose.yaml -f compose.local.yaml ...
 services:
   portfolio:
+    # Aquí la imagen se compila con el Dockerfile en vez de bajarse
+    pull_policy: build
+    build:
+      context: .
+      args:
+        # Se lee del archivo .env que hay junto a este archivo (ver .env.example). Vacío: sin analítica
+        UMAMI_WEBSITE_ID: ${UMAMI_WEBSITE_ID:-}
+    # En el servidor, el único que publica puertos es Caddy
     ports:
       - "127.0.0.1:8080:8080"

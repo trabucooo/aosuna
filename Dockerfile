@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 COPY . .
-# El ID de Umami llega como argumento del build (compose.yaml lo lee del .env del servidor) y Vite lo pone en el HTML.
+# El ID de Umami llega como argumento del build (compose.local.yaml lo lee del .env de tu ordenador) y Vite lo pone en el HTML.
 # Vacío: la web sale sin analítica. No es un secreto: acaba a la vista en el HTML de cualquier visitante
 ARG UMAMI_WEBSITE_ID=""
 ENV UMAMI_WEBSITE_ID=$UMAMI_WEBSITE_ID

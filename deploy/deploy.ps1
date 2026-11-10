@@ -1,8 +1,9 @@
 # Despliega el portfolio en el VPS desde Windows (PowerShell).
 #
-# Que hace: entra por SSH en el servidor, baja de GitHub la ultima version de la rama, reconstruye la imagen
-# de Docker y cambia el contenedor por el nuevo. Caddy no se toca: sigue atendiendo mientras tanto.
-# La web se compila DENTRO del servidor (Dockerfile), asi que no hace falta subir dist/ ni tener Docker aqui.
+# Que hace: entra por SSH en el servidor, baja de GitHub la ultima version de la rama (compose.yaml), baja de
+# Docker Hub la ultima imagen y cambia el contenedor por el nuevo. Caddy no se toca: sigue atendiendo mientras tanto.
+# Es lo mismo que hacer a mano en el servidor:  git pull  y  docker compose up -d
+# La web NO se compila en el servidor: la imagen tiene que estar ya subida a Docker Hub (ver DESPLIEGUE.md).
 #
 # Uso:
 #   .\deploy\deploy.ps1 -Destino usuario@servidor
@@ -48,8 +49,8 @@ if ($local -and ($local -ne $remoto)) {
 }
 Write-Host ('Se va a desplegar: ' + (git log -1 --format='%h %s' "origin/$Rama"))
 
-# 2. En el servidor: bajar, reconstruir y arrancar. "set -e" corta en el primer fallo, asi el contenedor
-#    que esta en marcha no se toca si el build falla. --ff-only: nunca mezcla ni pisa nada alli
+# 2. En el servidor: bajar y arrancar. "set -e" corta en el primer fallo, asi el contenedor que esta en
+#    marcha no se toca si la imagen no se puede bajar. --ff-only: nunca mezcla ni pisa nada alli
 Paso "Desplegando en $Destino (~/$Ruta)"
 $remotoCmd = @(
     'set -e',
@@ -57,7 +58,6 @@ $remotoCmd = @(
     'git fetch --quiet origin',
     "git checkout --quiet $Rama",
     "git pull --ff-only --quiet origin $Rama",
-    'docker compose build',
     'docker compose up -d',
     'docker image prune -f > /dev/null',
     'sleep 3',
@@ -66,7 +66,7 @@ $remotoCmd = @(
 ssh $Destino $remotoCmd
 if ($LASTEXITCODE -ne 0) {
     Write-Host ''
-    Write-Host 'El despliegue ha fallado. Si fallo el build, la version anterior sigue en marcha.' -ForegroundColor Red
+    Write-Host 'El despliegue ha fallado. Si no se pudo bajar la imagen, la version anterior sigue en marcha.' -ForegroundColor Red
     Write-Host "Mira el error de arriba. Para ver el estado:  ssh $Destino 'cd ~/$Ruta && docker compose ps && docker compose logs --tail 30'"
     exit 1
 }
