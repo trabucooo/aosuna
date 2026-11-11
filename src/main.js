@@ -369,6 +369,18 @@ function finish(how){
   lastAct=performance.now();
   removeEventListener('wheel',finish);removeEventListener('touchmove',finish);removeEventListener('keydown',finish);
 }
+/* Equipo suelto sin intro (con «Pausar animaciones» o «reducir movimiento» al cargar, o cursores creados con la página
+   abierta): makeCursors los deja fuera de la pantalla y con script, esperando a la intro. Aquí se sueltan como en
+   finish() y entran paseando, cada uno a su tiempo: esperan fuera hasta c.next y stepCursors les da destino con
+   wanderTarget. Se pintan ya ahí fuera para que no asomen un frame en la esquina (left/top 0). En pausa no se mueven
+   (stepCursors no corre y #crew está oculto): entran al quitarla */
+function freeCrew(){
+  const now=performance.now();
+  for(const c of cursors){
+    c.job=null;c.slot=null;c.script=false;c.next=now+rand(0,1500);
+    c.tx=c.x;c.ty=c.y;c.el.style.transform=`translate3d(${c.x}px,${c.y}px,0)`;
+  }
+}
 
 /* ---------- Polvo: partículas que cambian de forma ---------- */
 const fine=matchMedia('(pointer:fine)').matches;
@@ -1931,7 +1943,7 @@ function setPaused(on,user){
     // Lo que llevaban los cursores sigue sin ellos: las letras vuelven solas y el plano se termina
     cursors.forEach(c=>{if(c.job){const L=c.job.L;if(L.mode==='wait')L.mode='carry';c.job=null}});
     if(plan.started&&!plan.done)planFinish();
-  }else cursors.forEach(c=>{c.next=0});
+  }else{const now=performance.now();cursors.forEach(c=>{c.next=now+rand(0,1200)})} // vuelven a pasear cada uno a su tiempo
   mapDrawn=false;updateTeam();wake();
 }
 bPause.addEventListener('click',()=>setPaused(!paused,true));
@@ -1940,7 +1952,7 @@ setPaused(paused);
 rmQuery.addEventListener('change',e=>{
   rm=e.matches;
   if(rm){endStrike();finish()}
-  else if(!cursors.length&&introDone){makeCursors();cursors.forEach(c=>{c.script=false;c.next=0});updateTeam()}
+  else if(!cursors.length&&introDone){makeCursors();freeCrew();updateTeam()}
   mapDrawn=false;wake();
 });
 
@@ -1980,7 +1992,7 @@ async function boot(){
   document.fonts.ready.then(pointsReady);
   // Las imágenes en puntos llegan después (pointsReady); si alguna llegó antes de boot, layout() ya la ha usado
   // Sin intro (ya vista en esta sesión o con «reducir movimiento»: boot.js no puso la clase), la página abre montada
-  if(!root.classList.contains('intro')){introDone=true;skipped=true;clearTimeout(guard);$('#skip').remove();return}
+  if(!root.classList.contains('intro')){introDone=true;skipped=true;clearTimeout(guard);$('#skip').remove();freeCrew();updateTeam();wake();return}
   surEl.textContent='';
   $('#skip').onclick=finish;
   addEventListener('wheel',finish,{passive:true});addEventListener('touchmove',finish,{passive:true});addEventListener('keydown',finish);
