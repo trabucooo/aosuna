@@ -110,7 +110,11 @@ function fitName(){
   const free=H-parseFloat(cs.paddingTop)-parseFloat(cs.paddingBottom)-rest;
   const fs=Math.max(36,Math.min(avail/w*100*.98,maxH/.84,free/wh*100));
   nameEl.style.fontSize=fs+'px';
-  letters.forEach(L=>{const r=L.el.getBoundingClientRect();L.cx=r.left+r.width/2;L.cy=r.top+r.height/2;L.w=r.width;L.h=r.height;L.box={left:r.left,top:r.top,width:r.width,height:r.height}});
+  // Medidas como si la portada estuviera pegada arriba (sticky): si layout() se ejecuta con la página bajada (llega un
+  // JSON de puntos, las fuentes o un resize), la portada ya ha subido y su rect sale negativo. Sin restar box.top, el
+  // nombre en puntos se muestreaba fuera del lienzo, salía vacío y las coordenadas de todos los puntos daban NaN
+  const by=box.getBoundingClientRect().top;
+  letters.forEach(L=>{const r=L.el.getBoundingClientRect(),t=r.top-by;L.cx=r.left+r.width/2;L.cy=t+r.height/2;L.w=r.width;L.h=r.height;L.box={left:r.left,top:t,width:r.width,height:r.height}});
   surEl.style.fontSize='';
 }
 function paintLetter(L){const s=L.sc.x,t=(L.x||L.y||L.r||s!==1)?`translate(${L.x}px,${L.y}px) rotate(${L.r}deg) scale(${s})`:'';if(t!==L.t){L.t=t;L.el.style.transform=t}}
@@ -227,7 +231,9 @@ function stepCursors(f,now){
       if(gather){const i=cursors.indexOf(c),a=i/cursors.length*6.283+crewClock*.00018;
         if(small()){c.tx=(i/cursors.length)*vw*.8+6;c.ty=vh-110+Math.sin(a*3)*10}
         else{c.tx=vw*.82+Math.cos(a)*vw*.1;c.ty=vh*.34+Math.sin(a)*vh*.2}}
-      else{if(!rest&&now>c.next)wanderTarget(c);wander=true}
+      // En reposo no eligen destino nuevo, salvo si se quedaron fuera de la pantalla (soltados por un sello o tras
+      // «idos»): si no, desaparecían hasta que alguien moviera el ratón
+      else{const out=c.x<-30||c.x>vw+30||c.y<-30||c.y>vh+30;if((!rest||out)&&now>c.next)wanderTarget(c);wander=true}
     }
     // Paseo libre: apunta a un lado del destino en proporción a lo que falta (el desvío se anula al llegar),
     // así el trayecto sale en arco. La intro, los encargos y las órdenes van directos porque llevan tiempos medidos
@@ -238,6 +244,7 @@ function stepCursors(f,now){
     // Tope de velocidad en el paseo: un trayecto largo se ve como un viaje, no como un latigazo
     if(wander){const s=Math.hypot(c.vx,c.vy);if(s>vmax){c.vx*=vmax/s;c.vy*=vmax/s}}
     c.x+=c.vx*f;c.y+=c.vy*f;
+    if(!(Math.abs(c.x)<1e5&&Math.abs(c.y)<1e5)){c.x=vw/2;c.y=vh/2;c.vx=c.vy=0;c.tx=c.x;c.ty=c.y;c.trail.length=0}
     c.el.style.transform=`translate3d(${c.x}px,${c.y}px,0)`;
     c.trail.push(c.x,c.y);if(c.trail.length>180)c.trail.splice(0,2);
     if(c.slot){const w=Math.max(0,c.x-c.sx),h=Math.max(0,c.y-c.sy);c.slot.style.width=w+'px';c.slot.style.height=h+'px'}
@@ -402,6 +409,8 @@ function sample(w,h,draw){
 }
 function toTargets(pts,x0,y0,sx,sy){
   const t=new Float32Array(N*2),n=pts.length/2||1;
+  // Muestreo vacío (forma fuera del lienzo): sin este respaldo, pts[0] es undefined y todo el polvo pasa a NaN para siempre
+  if(pts.length<2)pts=[160/sx,90/sy];
   for(let i=0;i<N;i++){const k=Math.min(n-1,Math.floor(pick[i]*n))*2;t[i*2]=x0+(pts[k]+jx[i]*2)*sx;t[i*2+1]=y0+(pts[k+1]+jy[i]*2)*sy}
   return t;
 }
@@ -684,6 +693,8 @@ function stepDust(f,now){
     const dx=px[n]-mx,dy=py[n]-my,d2=dx*dx+dy*dy;
     if(repel&&d2<mr2&&d2>1){const q=(1-d2/mr2)*3.2*repel/Math.sqrt(d2);pvx[n]+=dx*q*f;pvy[n]+=dy*q*f}
     pvx[n]*=dm;pvy[n]*=dm;px[n]+=pvx[n]*f;py[n]+=pvy[n]*f;
+    // Red de seguridad: si algo trae NaN o Infinity, el punto vuelve a su sitio (NaN no se arregla solo)
+    if(!(Math.abs(px[n])<1e6&&Math.abs(py[n])<1e6)){px[n]=Number.isFinite(gx)?gx:rand(0,vw);py[n]=Number.isFinite(gy)?gy:rand(0,vh);pvx[n]=pvy[n]=0}
     if(!moving&&pvx[n]*pvx[n]+pvy[n]*pvy[n]>.0004)moving=true;
   }
   if(moving)busy=true;
