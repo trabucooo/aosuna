@@ -124,12 +124,13 @@ const LABELS=T.crew;
 const COLORS=['#2A3FF0','#D6264F','#087A50','#B3470F','#7A2BD6','#00788C','#B81F8A','#667000','#3A3AD0','#A8341A','#006B4F','#C03030'];
 const crew=$('#crew'),cursors=[];
 const CURSOR_SVG='<svg viewBox="0 0 20 24"><path d="M1.5 1.5v18.6l5-4.5 3.4 7.6 3.5-1.6-3.4-7.4 7-.6z"/></svg>';
+// Uno por rol (LABELS), en ordenador y en móvil: los que iban sin etiqueta solo hacían bulto
 function makeCursors(){
-  const n=rm?0:(small()?12:22);
+  const n=rm?0:LABELS.length;
   for(let i=0;i<n;i++){
     const el=document.createElement('div');el.className='c';
     const col=COLORS[i%COLORS.length];el.style.setProperty('--c',col);
-    el.innerHTML=CURSOR_SVG+(i<LABELS.length?`<span>${LABELS[i]}</span>`:'');
+    el.innerHTML=CURSOR_SVG+`<span>${LABELS[i]}</span>`;
     crew.appendChild(el);
     const a=Math.random()*6.28,R=Math.hypot(vw,vh)*.62;
     const c={el,x:vw/2+Math.cos(a)*R,y:vh/2+Math.sin(a)*R,vx:0,vy:0,tx:vw/2,ty:vh/2,k:rand(.05,.085),next:0,trail:[],col,job:null,script:true,sel:null,slot:null,sx:0,sy:0,follow:null,hidden:false};
@@ -336,7 +337,7 @@ async function intro(){
   });
   const carry=letters.map(async(L,i)=>{
     await pause(i*35);if(skipped)return;
-    // Dos cursores por letra si hay bastantes (en móvil hay 12: uno por letra; repetir uno le quitaría la letra al otro)
+    // Dos cursores por letra si hay bastantes (con 12 quedan 6 carriers: uno por letra; repetir uno le quitaría la letra al otro)
     const two=carriers.length>=letters.length*2,list=(two?[carriers[i*2],carriers[i*2+1]]:[carriers[i%carriers.length]]).filter(Boolean);
     await fetchLetter(L,list);if(skipped)return;
     if(slots[i])slots[i].style.opacity=0;
