@@ -404,13 +404,11 @@ const SHAPES={
   // La brújula entera, sin partes (solo si su hueco no se puede medir; lo normal es compassTargets, más abajo)
   compass(c,w){COMPASS_PARTS.forEach(p=>p[2](c,w))},
   arrow(c,w,h){c.beginPath();[[.26,.04],[.26,.84],[.44,.67],[.57,.97],[.69,.91],[.56,.62],[.8,.6]].forEach((q,i)=>c[i?'lineTo':'moveTo'](q[0]*w,q[1]*h));c.fill()},
-  route(c,w,h){c.lineWidth=h*.024;c.beginPath();c.moveTo(0,h*.8);c.bezierCurveTo(w*.3,h*.2,w*.42,h*1.05,w*.66,h*.55);c.bezierCurveTo(w*.78,h*.3,w*.9,h*.3,w,h*.14);c.stroke();[[.16,.56],[.42,.67],[.66,.55],[.88,.32]].forEach(q=>{c.beginPath();c.arc(q[0]*w,q[1]*h,h*.04,0,6.3);c.fill()})},
-  wave(c,w,h){c.lineWidth=h*.022;for(let r=0;r<5;r++){c.beginPath();for(let x=0;x<=w;x+=6){const y=h*(.62+r*.08)+Math.sin(x/w*12+r)*h*.035;x?c.lineTo(x,y):c.moveTo(x,y)}c.stroke()}},
   facade(c,w,h){for(let x=0;x<8;x++)for(let y=0;y<4;y++)c.strokeRect(w*(.03+x*.12),h*(.06+y*.23),w*.09,h*.17)},
   beam(c,w,h){c.beginPath();c.moveTo(0,h*.92);c.lineTo(w*.98,h*.04);c.lineTo(w*.98,h*.82);c.closePath();c.fill()},
   scatter(c,w,h){c.fillRect(0,0,w,h)}
 };
-const FULL={route:1,wave:1,facade:1,beam:1,scatter:1};
+const FULL={facade:1,beam:1,scatter:1};
 const off=document.createElement('canvas');const octx=off.getContext('2d',{willReadFrequently:true});
 // La fuente del nombre, para lo que se dibuja con letras en el lienzo de muestreo (brújula y cuaderno de Zalapp)
 const ART_FONT=px=>`900 ${px}px "Big Shoulders Display",Impact,sans-serif`;
@@ -435,10 +433,10 @@ function heroPts(){
 /* Cada parada tiene s (la forma queda completa) y e (empieza a deshacerse). Casi todas son un punto
    (e = s); el retrato tiene meseta. Entre dos paradas a y b, los puntos viajan de a.e a b.s. */
 // data-points="/archivo.json": la parada dibuja esa imagen en puntos; si el archivo no llega, usa data-fallback.
-// data-alpha-points: opacidad cuando la imagen sí llega (si no, data-alpha). form: la forma que se dibuja al final.
+// data-alpha-points: opacidad cuando la imagen sí llega (si no, data-alpha).
 // anchor: los puntos se mueven con el contenido (scroll) en vez de quedarse fijos en la pantalla
 const stops=$$('[data-shape]').map(el=>{const d=el.dataset,alpha=+d.alpha;
-  return{el,shape:d.shape,form:d.shape,alpha,baseAlpha:alpha,imgAlpha:d.alphaPoints?+d.alphaPoints:alpha,src:d.points||'',fallback:d.fallback||'scatter',
+  return{el,shape:d.shape,alpha,baseAlpha:alpha,imgAlpha:d.alphaPoints?+d.alphaPoints:alpha,src:d.points||'',fallback:d.fallback||'scatter',
     data:null,s:0,e:0,t:null,z:null,anchor:false,box:null,shot:null,flat:d.shape==='portrait'}});
 function stopRange(st){
   if(st.shape==='hero'){st.s=st.e=vh*.32;return}
@@ -510,9 +508,10 @@ function portraitBox(ratio){
 }
 /* Capítulo: la imagen va donde iba la forma suelta, a la derecha del texto en ordenador (hasta el 46 % del ancho,
    centrada en vertical) y encima en móvil (92 % del ancho). Nunca pisa el texto, la barra de arriba ni el dock:
-   se mide dónde queda el texto en la pantalla cuando la forma está completa (scroll = st.s) */
+   se mide dónde queda el texto en la pantalla cuando la forma está completa (scroll = st.s). Fuera de los capítulos
+   (Contacto), el texto es su .wrap */
 function chapterBox(st,ratio){
-  const sm=small(),r=(st.el.querySelector('.ch-text')||st.el).getBoundingClientRect();
+  const sm=small(),r=(st.el.querySelector('.ch-text')||st.el.querySelector('.wrap')||st.el).getBoundingClientRect();
   const top=r.top+scrollY-st.s,gap=sm?14:32,y1=sm?58:72,y2=vh-60,g=16;
   // Al lado: entre el texto y el borde derecho, centrada en vh/2 y, si cabe, en el 72 % del ancho como la forma de antes
   const L=r.right+gap,R=vw-g,sw=Math.min(vw*(sm?.92:.46),R-L,(y2-y1)*ratio),sh=sw/ratio;
@@ -579,17 +578,20 @@ function layout(){
   fitName();measureScene();measureTones();
   const sm=small();
   for(const st of stops){
-    stopRange(st);st.z=null;st.shot=null;st.box=null;st.edge=null;st.anchor=false;st.alpha=st.baseAlpha;st.form=st.shape;
+    stopRange(st);st.z=null;st.shot=null;st.box=null;st.edge=null;st.anchor=false;st.alpha=st.baseAlpha;
     if(st.shape==='hero'){st.t=toTargets(heroPts(),0,0,2,2);continue}
     const pt=imageTargets(st);
     if(pt){st.t=pt.t;st.z=pt.z;st.alpha=st.imgAlpha;st.anchor=!!st.box;continue}
     // La brújula: en su hueco y anclada al contenido, como el velero
     if(st.shape==='compass'){const t=compassTargets(st);if(t){st.t=t;st.anchor=true;continue}}
     // Sin imagen (no hay data-points o el archivo no llegó): la forma dibujada, o la de reserva
-    const shape=st.form=SHAPES[st.shape]?st.shape:SHAPES[st.fallback]?st.fallback:'scatter';
+    const shape=SHAPES[st.shape]?st.shape:SHAPES[st.fallback]?st.fallback:'scatter';
     if(FULL[shape]){st.t=toTargets(sample(320,180,SHAPES[shape]),0,0,vw/320,vh/180);continue}
-    const size=sm?Math.min(vw*.74,vh*.38):Math.min(vw*.4,vh*.62);
-    const x0=sm?(vw-size)/2:vw*.72-size/2,y0=sm?vh*.1:(vh-size)/2;
+    let size=sm?Math.min(vw*.74,vh*.38):Math.min(vw*.4,vh*.62),x0=sm?(vw-size)/2:vw*.72-size/2,y0=sm?vh*.1:(vh-size)/2;
+    // En móvil, en el hueco entre la barra de arriba y el texto (como las imágenes de los capítulos). Si no cabe, se
+    // queda tenue detrás: con la forma completa delante, el texto y los botones de la sección se leían mal
+    if(sm){const[bx,by,bw,bh]=chapterBox(st,1),s=Math.min(size,bw);
+      if(s>=96){size=s;x0=bx+(bw-s)/2;y0=by+(bh-s)/2}else st.alpha=Math.min(st.alpha,.16)}
     st.t=toTargets(sample(240,240,SHAPES[shape]),x0,y0,size/240,size/240);
   }
   placeBoatShot();placePhone();
@@ -642,7 +644,6 @@ function stepDust(f,now){
   // Sin animaciones: las imágenes en puntos (retrato, apretón de manos) aparecen ya formadas (fundido, sin viaje)
   if(rm&&(a.flat||b.flat||a.z||b.z)){t=raw<.5?0:1;al=(t?b.alpha:a.alpha)*smooth(clamp(Math.abs(raw-.5)*4))}
   if(i===0)al*=clamp(hp*1.6);
-  const wa=a.form==='wave'?1-t:b.form==='wave'?t:0;
   const ta=a.t,tb=b.t;
   // Paradas ancladas (el velero): sus dianas suben y bajan con el contenido
   const oa=a.anchor?a.s-y:0,ob=b.anchor?b.s-y:0;
@@ -673,9 +674,8 @@ function stepDust(f,now){
   // Ruido solo cuando no se hace scroll: entra en medio segundo. Con los puntos invisibles (arriba del todo, al = 0)
   // no hay ruido: no se vería, y mantenía el bucle despierto aunque los cursores estuvieran en reposo
   const amp=calm()||al<.01?0:NOISE*smooth(clamp((now-scrollT-150)/500));
-  // La ola (forma de reserva de Nautes) se mueve con el tiempo; quieta con calm()
-  const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y,wt=calm()?0:now*.0016;
-  if(amp||(wa&&!calm()))busy=true;
+  const dm=Math.pow(.8,f),mx=mouse.x,my=mouse.y;
+  if(amp)busy=true;
   let moving=false;
   for(let n=0;n<N;n++){
     const k=n*2;
@@ -687,7 +687,6 @@ function stepDust(f,now){
     if(peA){ax+=peA[k]*pp;ay+=peA[k+1]*pp}
     if(peB){bx+=peB[k]*pp;by+=peB[k+1]*pp}
     let gx=ax+(bx-ax)*t,gy=ay+oa+(by+ob-ay-oa)*t;
-    if(wa)gy+=Math.sin(gx*.012+wt)*16*wa;
     // Atracción suave: cada punto se acerca un poco al ratón, menos cuanto más lejos está
     if(pull){const u=mx-gx,v=my-gy,q=BOAT_PULL*pull/(1+(u*u+v*v)/PR2);gx+=u*q;gy+=v*q}
     if(bm){const p=bm.mb[(n*MBN)|0];
