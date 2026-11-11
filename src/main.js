@@ -62,7 +62,7 @@ let tone='',toneBoxes=null,contactBox=null;
    leerlas en cada evento de scroll obligaba al navegador a recalcularla a mitad de frame */
 function measureTones(){
   const y=scrollY,box=el=>{const r=el.getBoundingClientRect();return{el,top:r.top+y,bottom:r.bottom+y}};
-  toneBoxes=toneEls.map(box);contactBox=box($('#contacto'));
+  toneBoxes=toneEls.map(box);contactBox=box($('#contacto'));contactBox.text=box($('#contacto .wrap')).top;
   docH=root.scrollHeight;
 }
 /* Profundidad de scroll: 25, 50, 75 y 100 % de la página, una vez cada uno por visita. No hay listener propio ni
@@ -229,8 +229,10 @@ function stepCursors(f,now){
       // El tamaño es layout: solo se escribe cuando cambia (casi nunca), la posición va por transform
       if(c.bw!==w||c.bh!==h){c.bw=w;c.bh=h;c.box.style.width=w+'px';c.box.style.height=h+'px'}
     }else if(!c.script){
+      // En móvil, en fila justo encima del texto de Contacto, y suben con él al hacer scroll: abajo tapaban los botones
+      // y, a la derecha (en horizontal), el titular, que ahí ocupa todo el ancho
       if(gather){const i=cursors.indexOf(c),a=i/cursors.length*6.283+crewClock*.00018;
-        if(small()){c.tx=(i/cursors.length)*vw*.8+6;c.ty=vh-110+Math.sin(a*3)*10}
+        if(small()){c.tx=(i/cursors.length)*vw*.8+6;c.ty=Math.min(contactBox.text-SY-56,vh-150)+Math.sin(a*3)*8}
         else{c.tx=vw*.82+Math.cos(a)*vw*.1;c.ty=vh*.34+Math.sin(a)*vh*.2}}
       // En reposo no eligen destino nuevo, salvo si se quedaron fuera de la pantalla (soltados por un sello o tras
       // «idos»): si no, desaparecían hasta que alguien moviera el ratón

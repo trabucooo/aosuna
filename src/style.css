@@ -670,9 +670,13 @@ html:not(.js) .plan{cursor:default}
   .tag{font-size:clamp(18px,min(4.2vw,7svh),50px)}
   .lead{font-size:15px;line-height:1.4}
   .js .open-stick{padding-top:44px}
+  /* Más columna para el texto y sellos más compactos: si no, los sellos acababan debajo del dock */
+  .open-grid{grid-template-columns:minmax(0,1fr) minmax(0,2fr)}
   .open-copy{gap:12px}
   .open .big{font-size:clamp(26px,min(7vw,10svh),100px)}
-  .open-text p:not(.eyebrow){font-size:15px;line-height:1.4;margin-top:8px}
+  .open-text p:not(.eyebrow){font-size:14px;line-height:1.35;margin-top:8px}
+  .stamp-face{padding:7px 8px 6px;gap:4px}
+  .stamp-title{font-size:15px}
 }
 /* Móviles pequeños en horizontal (unos 320 px de alto): más columna para el texto y sellos más apretados */
 @media (orientation:landscape) and (max-height:340px){
@@ -712,7 +716,9 @@ html:not(.js) .plan{cursor:default}
 .pin{position:absolute;left:0;top:0;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;border:0;padding:0;background:var(--accent);color:var(--ground);font:600 10px/26px var(--mono);pointer-events:auto;box-shadow:0 0 0 0 var(--accent);animation:ping 1.8s infinite}
 .pin.on{outline:2px solid var(--ink);outline-offset:2px}
 @keyframes ping{70%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 0 transparent}}
-.panel{box-sizing:border-box;position:fixed;z-index:34;left:var(--gutter-l);bottom:calc(52px + env(safe-area-inset-bottom,0px));width:min(25rem,calc(100vw - 32px));background:var(--ground);border:1.5px solid var(--ink);padding:16px;display:flex;flex-direction:column;gap:9px;box-shadow:0 14px 40px rgba(0,0,0,.5)}
+.panel{box-sizing:border-box;position:fixed;z-index:34;left:var(--gutter-l);bottom:calc(52px + env(safe-area-inset-bottom,0px));width:min(25rem,calc(100vw - 32px));background:var(--ground);border:1.5px solid var(--ink);padding:16px;display:flex;flex-direction:column;gap:9px;box-shadow:0 14px 40px rgba(0,0,0,.5);
+  /* Entre el dock y la barra de arriba; si no cabe (móvil en horizontal), se desplaza por dentro */
+  max-height:calc(100svh - 100px - env(safe-area-inset-bottom,0px) - env(safe-area-inset-top,0px));overflow-y:auto;overscroll-behavior:contain}
 .panel h2{margin:0;font:900 28px/1.05 var(--display);text-transform:uppercase;text-wrap:balance}
 .panel p{margin:0;font-size:15px}
 .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
@@ -721,6 +727,22 @@ html:not(.js) .plan{cursor:default}
 .speech{position:fixed;left:0;top:0;z-index:31;pointer-events:none;background:var(--ink);color:var(--ground);font:600 11px/1.3 var(--body);padding:6px 9px;max-width:13rem}
 .banner{position:fixed;left:0;top:0;z-index:29;pointer-events:none;background:#F4C20D;color:#14161C;font:900 clamp(20px,3.4vw,34px)/1 var(--display);text-transform:uppercase;padding:8px 14px;white-space:nowrap;border:3px solid #14161C}
 
+/* Móvil: áreas táctiles de al menos 44 px de alto y letra de al menos 11 px.
+   El área se amplía con un ::after transparente centrado (no cambia el aspecto ni la maqueta). Donde dos quedan
+   uno encima del otro (los dos enlaces de Zalapp, los botones de «Más») se separan lo justo para que sus áreas no
+   se pisen: si no, un toque en el borde de uno lo recibiría el otro */
+@media (max-width:860px){
+  :is(.top a,.dock :is(button,a),.more,#mail a){position:relative}
+  :is(.top a,.dock :is(button,a),.more,#mail a)::after{content:"";position:absolute;left:0;right:0;top:50%;height:44px;translate:0 -50%}
+  .more-row{row-gap:16px}
+  .buoy{padding-block:7px}
+  .btn{padding-block:15px}
+  #dump{padding-block:16.5px}
+  .dock :is(button,a),.buoy,.route-label,.piece-date,.facts dt,.stamp-school,.stamp-foot,.team-stamp .stamp-school{font-size:11px}
+}
+@media (max-width:540px){
+  .dock-group{gap:14px;bottom:calc(100% + 14px)}
+}
 .gap-top{margin-top:8px}
 #mRead{font-size:26px}
 .intro-text{margin-top:14px;max-width:36rem}
